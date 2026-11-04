@@ -4,7 +4,15 @@
 </style></head><body><div id="toast"></div><div class="wrap"><header><div><div class="logo"><b>B</b>BOUNCY</div><div class="tag">BOUNCE INTO YOUR WORLD</div></div><button id="out" class="btn alt hidden">Sign out</button></header>
 <main><section id="auth"><div class="card"><span class="pill">WELCOME TO BOUNCY</span><h1>People. Moments.<br>Live experiences.</h1><p>Connect with people, share moments and discover live creators around the world.</p><div class="row"><button class="btn" id="signupTab">Create account</button><button class="btn alt" id="loginTab">Log in</button></div></div><div class="card"><h2 id="authTitle">Create your account</h2><form id="authForm"><div id="nameBox"><label>Your name</label><input id="name" maxlength="60" placeholder="Your display name"></div><label>Email address</label><input id="email" type="email" required placeholder="you@example.com"><label>Password</label><input id="password" type="password" minlength="8" required placeholder="At least 8 characters"><button class="btn" id="submit" style="width:100%">Create account</button></form><small>Confirm your email if BOUNCY asks you to.</small></div></section>
 <section id="app" class="hidden"><div id="homePage"><div class="card"><span class="pill">YOUR WORLD, YOUR PEOPLE</span><h1 id="welcome">Welcome to BOUNCY</h1><p>Find people to connect with and discover what's happening.</p></div><div class="card"><h2>Discover people</h2><input id="search" placeholder="Search names or usernames"><div id="people"><p class="muted">Loading…</p></div></div></div>
-<div id="chatsPage" class="hidden"><div class="card"><span class="pill">MESSAGING</span><h1>Your chats</h1><p>Private and group messaging are being connected to the secured BOUNCY chat database.</p></div></div>
+<div id="chatsPage" class="hidden">
+<div id="chatListPane">
+<div class="card"><span class="pill">MESSAGING</span><h1>Your chats</h1><input id="memberSearch" placeholder="Find a BOUNCY member to message"><div id="memberResults"></div></div>
+<div class="card"><h2>Start a group</h2><input id="groupTitle" maxlength="80" placeholder="Group name"><div id="groupPeople"></div><button class="btn" id="createGroup" style="width:100%">Create group chat</button></div>
+<div class="card"><h2>Recent conversations</h2><div id="conversationList"><p class="muted">Loading your chats…</p></div></div>
+</div>
+<div id="chatRoomPane" class="hidden">
+<div class="card"><button class="btn alt" id="backToChats">← Back to chats</button><h2 id="roomTitle">Conversation</h2><div id="messageList" style="min-height:240px;max-height:55vh;overflow-y:auto;padding:8px 0"><p class="muted">Loading messages…</p></div><form id="messageForm"><textarea id="messageBody" rows="2" maxlength="10000" placeholder="Write a message…" required></textarea><button class="btn" id="sendMessage" style="width:100%">Send message</button></form></div>
+</div></div>
 <div id="livePage" class="hidden"><div class="card"><span class="pill">LIVE WORLDWIDE</span><h1>Discover live</h1><p>Followed creators and new creators from around the world.</p><p class="muted">LiveKit video infrastructure must be connected before real broadcasts can start. We will not show fake live streams.</p></div></div>
 <div id="profilePage" class="hidden"><div class="card"><span class="pill">YOUR ACCOUNT</span><h1>Your profile</h1><div class="row"><div class="avatar" id="avatar">B</div><div class="grow"><b id="accountEmail"></b><small>BOUNCY member</small></div></div><form id="profileForm"><label>Display name</label><input id="display" maxlength="60"><label>Username</label><input id="username" maxlength="30" minlength="3" pattern="[A-Za-z0-9_]+"><label>Bio</label><textarea id="bio" maxlength="300" rows="3"></textarea><button class="btn" style="width:100%">Save profile</button></form></div></div></section></main></div>
 <nav id="nav" class="tabs hidden"><button data-page="home" class="active">⌂<br>Home</button><button data-page="chats">▤<br>Chats</button><button data-page="live">◉<br>Live</button><button data-page="profile">◎<br>Profile</button></nav>
@@ -24,7 +32,53 @@ $('profileForm').onsubmit=async e=>{e.preventDefault();let username=$('username'
 async function loadPeople(){let{data,error}=await db.from('profiles').select('username,display_name,bio').neq('id',user.id).order('created_at',{ascending:false}).limit(50);if(error){$('people').innerHTML='<p class="muted">Could not load people yet.</p>';return}people=data||[];renderPeople()}
 function renderPeople(){let q=$('search').value.toLowerCase();let list=people.filter(p=>(p.username||'').toLowerCase().includes(q)||(p.display_name||'').toLowerCase().includes(q));$('people').innerHTML=list.length?list.map(p=>'<div class="person"><div class="avatar">'+initials(p.display_name||p.username)+'</div><div class="grow"><b>'+esc(p.display_name||p.username||'BOUNCY member')+'</b><br><small>@'+esc(p.username||'member')+'</small></div><span class="pill">MEMBER</span></div>').join(''):'<p class="muted">No other members yet. Invite a friend to join.</p>'}
 $('search').oninput=renderPeople;
-function showPage(page){['home','chats','live','profile'].forEach(p=>$(p+'Page').classList.toggle('hidden',p!==page));document.querySelectorAll('#nav button[data-page]').forEach(b=>{const selected=b.dataset.page===page;b.classList.toggle('active',selected);b.setAttribute('aria-current',selected?'page':'false')})}document.querySelectorAll('#nav button[data-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));showPage('home');
+function showPage(page){['home','chats','live','profile'].forEach(p=>$(p+'Page').classList.toggle('hidden',p!==page));document.querySelectorAll('#nav button[data-page]').forEach(b=>{const selected=b.dataset.page===page;b.classList.toggle('active',selected);b.setAttribute('aria-current',selected?'page':'false')});if(page==='chats'&&user)loadChatHome()}document.querySelectorAll('#nav button[data-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));showPage('home');
+
+let chatProfiles=[], chatRows=[], activeConversation=null, messageChannel=null;
+function chatEsc(v){return esc(v).replace(/\n/g,'<br>')}
+async function loadChatHome(){
+  const {data: memberships,error}=await db.from('conversation_members').select('conversation_id').eq('user_id',user.id);
+  if(error){$('conversationList').innerHTML='<p class="muted">Could not load conversations: '+esc(error.message)+'</p>';return}
+  const ids=[...new Set((memberships||[]).map(x=>x.conversation_id))];
+  if(!ids.length){chatRows=[];$('conversationList').innerHTML='<p class="muted">No conversations yet. Search for a member above to start chatting.</p>'}
+  else{
+    const {data: conversations,error:ce}=await db.from('conversations').select('id,conversation_type,title,updated_at').in('id',ids).order('updated_at',{ascending:false});
+    if(ce){$('conversationList').innerHTML='<p class="muted">Could not load chats.</p>';return}
+    const {data: members}=await db.from('conversation_members').select('conversation_id,user_id,member_role').in('conversation_id',ids);
+    const otherIds=[...new Set((members||[]).filter(m=>m.user_id!==user.id).map(m=>m.user_id))];
+    const {data: profiles}=otherIds.length?await db.from('profiles').select('id,username,display_name').in('id',otherIds):{data:[]};
+    const byId=Object.fromEntries((profiles||[]).map(p=>[p.id,p]));
+    chatRows=(conversations||[]).map(cv=>({...cv,members:(members||[]).filter(m=>m.conversation_id===cv.id),people:(members||[]).filter(m=>m.conversation_id===cv.id&&m.user_id!==user.id).map(m=>byId[m.user_id]).filter(Boolean)}));
+    $('conversationList').innerHTML=chatRows.map(cv=>{const title=cv.conversation_type==='group'?cv.title:(cv.people[0]?.display_name||cv.people[0]?.username||'BOUNCY member');const sub=cv.conversation_type==='group'?'Group chat':('@'+(cv.people[0]?.username||'member'));return '<button class="person" data-conversation="'+cv.id+'" style="width:100%;text-align:left;background:#fff;border:0;color:#111"><span class="avatar">'+initials(title)+'</span><span class="grow"><b>'+esc(title)+'</b><br><small>'+esc(sub)+'</small></span><span>›</span></button>'}).join('')||'<p class="muted">No conversations yet.</p>';
+    document.querySelectorAll('[data-conversation]').forEach(b=>b.onclick=()=>openConversation(b.dataset.conversation));
+  }
+  const {data: people}=await db.from('profiles').select('id,username,display_name').neq('id',user.id).order('created_at',{ascending:false}).limit(100);
+  chatProfiles=people||[];renderChatPeople();
+}
+function renderChatPeople(){
+ const q=($('memberSearch')?.value||'').toLowerCase();
+ const list=chatProfiles.filter(p=>(p.username||'').toLowerCase().includes(q)||(p.display_name||'').toLowerCase().includes(q));
+ $('memberResults').innerHTML=list.length?list.map(p=>'<div class="person"><span class="avatar">'+initials(p.display_name||p.username)+'</span><span class="grow"><b>'+esc(p.display_name||p.username)+'</b><br><small>@'+esc(p.username)+'</small></span><button class="btn" data-start-chat="'+p.id+'">Message</button></div>').join(''):'<p class="muted">No other members found yet. Invite a friend to join BOUNCY.</p>';
+ $('groupPeople').innerHTML=list.map(p=>'<label style="display:flex;align-items:center;gap:8px;padding:6px"><input type="checkbox" value="'+p.id+'" style="width:auto;margin:0"> '+esc(p.display_name||p.username||'Member')+' <small>@'+esc(p.username||'')+'</small></label>').join('');
+ document.querySelectorAll('[data-start-chat]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await db.rpc('create_direct_conversation',{p_other_user:b.dataset.startChat});b.disabled=false;if(error){say(error.message);return}await loadChatHome();openConversation(data)});
+}
+$('memberSearch').addEventListener('input',renderChatPeople);
+$('createGroup').onclick=async()=>{const title=$('groupTitle').value.trim();const ids=[...$('groupPeople').querySelectorAll('input:checked')].map(x=>x.value);if(!title||!ids.length){say('Enter a group name and select at least one member.');return}const {data,error}=await db.rpc('create_group_conversation',{p_title:title,p_member_ids:ids});if(error){say(error.message);return}$('groupTitle').value='';$('groupPeople').querySelectorAll('input').forEach(x=>x.checked=false);await loadChatHome();openConversation(data)};
+async function openConversation(id){
+ activeConversation=id;const cv=chatRows.find(x=>x.id===id);$('chatListPane').classList.add('hidden');$('chatRoomPane').classList.remove('hidden');$('roomTitle').textContent=cv?(cv.conversation_type==='group'?cv.title:(cv.people[0]?.display_name||cv.people[0]?.username||'Private chat')):'Conversation';
+ await loadMessages();
+ if(messageChannel)db.removeChannel(messageChannel);
+ messageChannel=db.channel('bouncy-chat-'+id).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'conversation_id=eq.'+id},payload=>{if(activeConversation===id)loadMessages()}).subscribe();
+}
+async function loadMessages(){
+ if(!activeConversation)return;
+ const {data,error}=await db.from('messages').select('id,sender_id,body,message_type,created_at,deleted_at').eq('conversation_id',activeConversation).order('created_at',{ascending:true}).limit(200);
+ if(error){$('messageList').innerHTML='<p class="muted">Could not load messages: '+esc(error.message)+'</p>';return}
+ $('messageList').innerHTML=(data||[]).map(m=>{const mine=m.sender_id===user.id;return '<div style="display:flex;justify-content:'+(mine?'flex-end':'flex-start')+';margin:8px 0"><div style="max-width:85%;padding:10px 13px;border:1px solid #ddd;border-radius:14px;background:'+(mine?'#111':'#f5f5f5')+';color:'+(mine?'#fff':'#111')+'"><div>'+ (m.deleted_at?'<i>Message deleted</i>':chatEsc(m.body||''))+'</div><small style="color:'+(mine?'#ddd':'#666')+'">'+new Date(m.created_at).toLocaleString()+'</small></div></div>'}).join('')||'<p class="muted">No messages yet. Say hello!</p>';
+ $('messageList').scrollTop=$('messageList').scrollHeight;
+}
+$('messageForm').onsubmit=async e=>{e.preventDefault();const body=$('messageBody').value.trim();if(!body||!activeConversation)return;$('sendMessage').disabled=true;const {error}=await db.from('messages').insert({conversation_id:activeConversation,sender_id:user.id,message_type:'text',body});$('sendMessage').disabled=false;if(error){say(error.message);return}$('messageBody').value='';await loadMessages()};
+$('backToChats').onclick=async()=>{activeConversation=null;if(messageChannel){await db.removeChannel(messageChannel);messageChannel=null}$('chatRoomPane').classList.add('hidden');$('chatListPane').classList.remove('hidden');await loadChatHome()};
 $('out').onclick=async()=>{await db.auth.signOut();user=null;$('app').classList.add('hidden');$('nav').classList.add('hidden');$('out').classList.add('hidden');$('auth').classList.remove('hidden');say('Signed out')};
 let{data:{session}}=await db.auth.getSession();if(session)await enter(session.user);
 db.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'&&user){user=null;$('app').classList.add('hidden');$('nav').classList.add('hidden');$('out').classList.add('hidden');$('auth').classList.remove('hidden')}});
