@@ -1,4 +1,4 @@
-const CACHE_NAME = "bouncy-shell-v3";
+const CACHE_NAME = "bouncy-shell-v4";
 const APP_FILES = ["./", "./index.html", "./manifest.webmanifest"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
