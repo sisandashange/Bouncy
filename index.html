@@ -161,8 +161,8 @@ if(r.error){toast('Couldn’t post your comment');return}
 all.push(r.data);inp.value='';inp.placeholder='Add a comment';to=null;c.cb++;if(c.el){kind=='post'?paint(c):sync(c)}draw()}}
 async function watchById(id){const {data}=await sb.from('videos').select(COLS).eq('id',id).single();if(!data){toast('That video isn’t available anymore');return}const [c]=await hydrate([data]);watch(c)}
 function dot(n){$('#dot').style.display=n?'inline-block':'none'}
-async function unread(){if(!me)return;const r=await sb.from('notifications').select('*',{count:'exact',head:true}).is('read_at',null);dot(r.count||0)}
-setInterval(unread,60000);
+async function unread(){if(!me)return;const [a,b]=await Promise.all([sb.from('notifications').select('*',{count:'exact',head:true}).is('read_at',null),sb.rpc('unread_counts')]);dot((a.count||0)+((b.data||[]).reduce((s,x)=>s+Number(x.unread),0)))}
+setInterval(unread,20000);
 async function drawInbox(){const d=$('#inbox');d.replaceChildren(el('<h2>Chats</h2>'));
 const sg=document.createElement('div');sg.style.cssText='display:flex;gap:8px;margin:0 16px 12px';
 [['msg','Chats'],['act','Activity']].forEach(([k,l])=>{const b=document.createElement('button');b.className='fol'+(inboxTab==k?' on':'');b.textContent=l;b.onclick=()=>{inboxTab=k;drawInbox()};sg.append(b)});d.append(sg);
@@ -173,7 +173,7 @@ if(!data.length){d.append(el('<div class="empty">Nothing yet. When someone likes
 const ids=[...new Set(data.map(x=>x.actor_id).filter(Boolean))],pm={};if(ids.length)((await sb.from('profiles').select('id,username').in('id',ids)).data||[]).forEach(x=>pm[x.id]=x.username);
 data.forEach(n=>{const b=document.createElement('button');b.className='cm';b.style.cssText='display:block;width:calc(100% - 32px);margin:0 16px;text-align:left;'+(n.read_at?'':'font-weight:800');const u=document.createElement('b');u.textContent='@'+(pm[n.actor_id]||'someone');b.append(u,n.body);
 b.onclick=()=>n.notification_type=='follow'?showUser(n.actor_id):watchById(n.reference_id);d.append(b)});
-await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);dot(0)}
+await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);unread()}
 function watch(c){const d=el('<h3></h3><video controls autoplay loop playsinline></video>');d.querySelector('h3').textContent='@'+c.u+' · '+c.c;d.querySelector('video').src=pub(c.path);
 if(me&&c.o===me.id){const x=document.createElement('button');x.className='fol';x.textContent='Delete video';x.style.marginTop='12px';x.onclick=()=>del(c);d.append(x)}open(d)}
 async function del(c){if(!confirm('Delete this video? This can’t be undone.'))return;const r=await sb.from('videos').delete().eq('id',c.id);if(r.error){toast('Couldn’t delete the video');return}await sb.storage.from('videos').remove([c.path].concat(c.tp?[c.tp]:[]));close();hideClip(c);clips=clips.filter(k=>k!==c);toast('Video deleted');if(!$('#me').classList.contains('hide'))drawMe()}
@@ -280,25 +280,45 @@ open(d);if(pre){q.value=pre;run()}q.focus()}
 $('#sr').onclick=()=>search();
 let poll,inboxTab='msg';
 async function drawChats(d){
+const ng=document.createElement('button');ng.className='fol';ng.textContent='＋ New group';ng.style.cssText='margin:0 16px 8px';ng.onclick=newGroup;d.append(ng);
 const m=await sb.from('conversation_members').select('conversation_id').eq('user_id',me.id);const ids=(m.data||[]).map(x=>x.conversation_id);
-if(!ids.length){d.append(el('<div class="empty">No chats yet.<br>Open someone’s profile and tap Message.</div>'));return}
-const [mm,ls]=await Promise.all([sb.from('conversation_members').select('conversation_id,user_id').in('conversation_id',ids),sb.from('messages').select('conversation_id,body,message_type,created_at').in('conversation_id',ids).is('deleted_at',null).order('created_at',{ascending:false}).limit(200)]);
-const other={};(mm.data||[]).forEach(x=>{if(x.user_id!==me.id)other[x.conversation_id]=x.user_id});
+if(!ids.length){d.append(el('<div class="empty">No chats yet.<br>Open someone’s profile and tap Message, or start a group.</div>'));return}
+const [cv,mm,ls,uc]=await Promise.all([sb.from('conversations').select('id,conversation_type,title').in('id',ids),sb.from('conversation_members').select('conversation_id,user_id').in('conversation_id',ids),sb.from('messages').select('conversation_id,sender_id,body,message_type,created_at').in('conversation_id',ids).is('deleted_at',null).order('created_at',{ascending:false}).limit(200),sb.rpc('unread_counts')]);
+const type={},title={};(cv.data||[]).forEach(x=>{type[x.id]=x.conversation_type;title[x.id]=x.title});
+const other={};(mm.data||[]).forEach(x=>{if(x.user_id!==me.id&&type[x.conversation_id]!='group')other[x.conversation_id]=x.user_id});
 const last={};(ls.data||[]).forEach(x=>{if(!last[x.conversation_id])last[x.conversation_id]=x});
-const uids=[...new Set(Object.values(other))],pm={};if(uids.length)((await sb.from('profiles').select('id,username,avatar_url').in('id',uids)).data||[]).forEach(x=>pm[x.id]=x);
+const un={};(uc.data||[]).forEach(x=>un[x.conversation_id]=Number(x.unread));
+const uids=[...new Set([...Object.values(other),...Object.values(last).map(x=>x.sender_id)])],pm={};if(uids.length)((await sb.from('profiles').select('id,username,avatar_url').in('id',uids)).data||[]).forEach(x=>pm[x.id]=x);
 ids.sort((a,b)=>(last[b]?last[b].created_at:'').localeCompare(last[a]?last[a].created_at:''));
-ids.forEach(id=>{const o=pm[other[id]]||{username:'member'},l=last[id],b=document.createElement('button');b.style.cssText='display:flex;gap:12px;align-items:center;width:100%;padding:12px 16px;text-align:left;border-bottom:1px solid var(--line)';
+ids.forEach(id=>{const g=type[id]=='group',o=g?{username:title[id]||'Group'}:(pm[other[id]]||{username:'member'}),l=last[id],n=un[id]||0,b=document.createElement('button');
+b.style.cssText='display:flex;gap:12px;align-items:center;width:100%;padding:12px 16px;text-align:left;border-bottom:1px solid var(--line)';
 const t=document.createElement('div');t.style.cssText='flex:1;min-width:0';const top=document.createElement('div');top.style.cssText='display:flex;justify-content:space-between;gap:8px';
-const n=document.createElement('b');n.textContent='@'+o.username;const tm=document.createElement('span');tm.style.cssText='color:var(--mute);font-size:12px';tm.textContent=l?ago(l.created_at):'';top.append(n,tm);
-const s=document.createElement('div');s.style.cssText='color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px';s.textContent=l?(l.body||'Sent a '+l.message_type):'No messages yet';
-t.append(top,s);b.append(avatar(o.username,o.avatar_url,48),t);b.onclick=()=>openChat(id,o.username);d.append(b)})}
+const nm=document.createElement('b');nm.textContent=(g?'':'@')+o.username;const tm=document.createElement('span');tm.style.cssText='color:var(--mute);font-size:12px';tm.textContent=l?ago(l.created_at):'';top.append(nm,tm);
+const s=document.createElement('div');s.style.cssText='display:flex;justify-content:space-between;gap:8px;margin-top:2px;color:'+(n?'var(--fg)':'var(--mute)')+';font-weight:'+(n?'800':'500');
+const pv=document.createElement('span');pv.style.cssText='white-space:nowrap;overflow:hidden;text-overflow:ellipsis';pv.textContent=l?((g&&l.sender_id!==me.id?'@'+((pm[l.sender_id]||{}).username||'member')+': ':'')+(l.body||'Sent a '+l.message_type)):'No messages yet';s.append(pv);
+if(n){const bd=document.createElement('span');bd.textContent=n>99?'99+':n;bd.style.cssText='background:var(--fg);color:var(--bg);border-radius:10px;min-width:20px;padding:0 6px;text-align:center;font-size:12px;line-height:20px;font-weight:800';s.append(bd)}
+t.append(top,s);b.append(avatar(o.username,g?null:o.avatar_url,48),t);b.onclick=()=>openChat(id,o.username,g);d.append(b)})}
+async function newGroup(){const d=el('<h3>New group</h3><input type="text" id="gn" maxlength="80" placeholder="Group name" aria-label="Group name" style="flex:none;margin-bottom:10px"><input type="text" id="gs" placeholder="Search people" aria-label="Search people" style="flex:none;margin-bottom:8px"><div class="list" id="gl">Loading…</div><div class="row"><button class="btn" id="gc">Create group</button></div>');open(d);
+const r=await sb.from('profiles').select('id,username,avatar_url').order('created_at',{ascending:false}).limit(100),all=(r.data||[]).filter(x=>x.id!==me.id),sel=new Set(),L=d.querySelector('#gl');
+const draw=()=>{const q=d.querySelector('#gs').value.trim().toLowerCase(),list=all.filter(x=>x.username.toLowerCase().includes(q));L.replaceChildren();if(!list.length){L.textContent='No people found.';return}
+list.forEach(x=>{const b=document.createElement('button');b.style.cssText='display:flex;gap:10px;align-items:center;width:100%;padding:8px 0;text-align:left';const t=document.createElement('span');t.style.flex='1';t.textContent='@'+x.username;const ck=document.createElement('span');ck.textContent=sel.has(x.id)?'✓':'';ck.style.fontWeight='800';b.append(avatar(x.username,x.avatar_url,36),t,ck);b.onclick=()=>{sel.has(x.id)?sel.delete(x.id):sel.add(x.id);draw()};L.append(b)})};
+draw();d.querySelector('#gs').oninput=draw;
+d.querySelector('#gc').onclick=async()=>{const name=d.querySelector('#gn').value.trim();if(!name){toast('Give your group a name');return}if(!sel.size){toast('Pick at least one person');return}
+const x=await sb.rpc('create_group_conversation',{p_title:name,p_member_ids:[...sel]});if(x.error){toast(x.error.message.includes('cannot be added')?'You can’t add one of those people.':'Couldn’t create the group');return}
+close();inboxTab='msg';openChat(x.data,name,true)}}
 function ago(t){const d=new Date(t);return d.toDateString()==new Date().toDateString()?d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString([],{day:'numeric',month:'short'})}
-async function openChat(id,name){show('chat');const d=$('#chat');
-d.replaceChildren(...el('<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)"><button id="cb" aria-label="Back" style="font-size:28px;line-height:1;padding:0 8px 4px 0">‹</button><b id="cn" style="font-size:17px"></b></div><div id="ml" style="flex:1;min-height:0;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div><div class="row" style="padding:10px 16px;margin:0;border-top:1px solid var(--line)"><input type="text" id="mi" maxlength="1000" placeholder="Message" aria-label="Message"><button class="btn" id="ms">Send</button></div>').childNodes);
-d.querySelector('#cn').textContent='@'+name;d.querySelector('#cb').onclick=()=>{inboxTab='msg';show('inbox')};
+async function openChat(id,name,g){show('chat');const d=$('#chat');
+d.replaceChildren(...el('<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)"><button id="cb" aria-label="Back" style="font-size:28px;line-height:1;padding:0 8px 4px 0">‹</button><b id="cn" style="font-size:17px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b></div><div id="ml" style="flex:1;min-height:0;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div><div class="row" style="padding:10px 16px;margin:0;border-top:1px solid var(--line)"><input type="text" id="mi" maxlength="1000" placeholder="Message" aria-label="Message"><button class="btn" id="ms">Send</button></div>').childNodes);
+d.querySelector('#cn').textContent=(g?'':'@')+name;d.querySelector('#cb').onclick=()=>{inboxTab='msg';show('inbox')};
+if(g){const lv=document.createElement('button');lv.className='fol';lv.textContent='Leave';lv.onclick=async()=>{if(!confirm('Leave this group?'))return;const r=await sb.rpc('leave_conversation',{p_conv:id});if(r.error){toast('Couldn’t leave the group');return}toast('You left the group');inboxTab='msg';show('inbox')};d.firstChild.append(lv)}
+const pm={},mem=await sb.from('conversation_members').select('user_id').eq('conversation_id',id),mu=(mem.data||[]).map(x=>x.user_id);
+if(mu.length)((await sb.from('profiles').select('id,username').in('id',mu)).data||[]).forEach(x=>pm[x.id]=x.username);
+if(g)d.querySelector('#cn').textContent=name+' · '+mu.length+' members';
 const L=d.querySelector('#ml'),inp=d.querySelector('#mi');let n=-1;
 const draw=async()=>{const r=await sb.from('messages').select('sender_id,body,message_type,created_at').eq('conversation_id',id).is('deleted_at',null).order('created_at').limit(300);if(r.error||r.data.length===n)return;n=r.data.length;L.replaceChildren();
-r.data.forEach(x=>{const e=document.createElement('div'),mine=x.sender_id===me.id;e.textContent=x.body||('Sent a '+x.message_type);e.style.cssText='max-width:78%;padding:8px 12px;border-radius:18px;line-height:1.3;word-break:break-word;'+(mine?'border-bottom-right-radius:4px;align-self:flex-end;background:var(--fg);color:var(--bg)':'border-bottom-left-radius:4px;align-self:flex-start;background:#f0f0f0');const tm=document.createElement('span');tm.textContent=ago(x.created_at);tm.style.cssText='display:block;font-size:11px;opacity:.6;text-align:right;margin-top:2px';e.append(tm);L.append(e)});L.scrollTop=L.scrollHeight};
+r.data.forEach(x=>{const e=document.createElement('div'),mine=x.sender_id===me.id;e.textContent=x.body||('Sent a '+x.message_type);e.style.cssText='max-width:78%;padding:8px 12px;border-radius:18px;line-height:1.3;word-break:break-word;'+(mine?'border-bottom-right-radius:4px;align-self:flex-end;background:var(--fg);color:var(--bg)':'border-bottom-left-radius:4px;align-self:flex-start;background:#f0f0f0');
+if(g&&!mine){const sn=document.createElement('b');sn.textContent='@'+(pm[x.sender_id]||'member');sn.style.cssText='display:block;font-size:12px;margin-bottom:2px';e.prepend(sn)}
+const tm=document.createElement('span');tm.textContent=ago(x.created_at);tm.style.cssText='display:block;font-size:11px;opacity:.6;text-align:right;margin-top:2px';e.append(tm);L.append(e)});L.scrollTop=L.scrollHeight;sb.rpc('mark_conversation_read',{p_conv:id}).then(unread)};
 await draw();clearInterval(poll);poll=setInterval(draw,4000);
 const send=async()=>{const t=inp.value.trim();if(!t)return;inp.value='';const r=await sb.from('messages').insert({conversation_id:id,sender_id:me.id,body:t,message_type:'text'});if(r.error){inp.value=t;toast('Couldn’t send. You may have blocked, or been blocked by, this person.');return}n=-1;draw()};
 d.querySelector('#ms').onclick=send;inp.onkeydown=e=>{if(e.key=='Enter')send()}}
