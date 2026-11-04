@@ -107,13 +107,13 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelec
 function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');f.hidden=c.o===me.id;s.querySelector('[data-a=rp]').hidden=c.o===me.id;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
 function mk(c){const s=document.createElement('section');s.className='clip real';
 s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button></div><div class="meta"><div><strong><button data-a="pf" style="font:inherit;color:inherit;padding:0"></button></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
-s.querySelector('video').src=pub(c.path);s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});c.el=s;sync(c);io.observe(s);return s}
+s.querySelector('video').src=pub(c.path);if(c.tp)s.querySelector('video').poster=pub(c.tp);s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});c.el=s;sync(c);io.observe(s);return s}
 async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];
 const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username').in('id',ids),sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id),sb.from('follows').select('followed_id').eq('follower_id',me.id)]);
 const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
-return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',c:x.caption,path:x.storage_path,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
-const COLS='id,owner_id,caption,storage_path,like_count,comment_count';
+return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',c:x.caption,path:x.storage_path,tp:x.thumbnail_path,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
+const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count';
 async function load(){let q=sb.from('videos').select(COLS).order('created_at',{ascending:false}).limit(20);
 if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);q=q.in('owner_id',ids.length?ids:['00000000-0000-0000-0000-000000000000'])}
 const {data,error}=await q;
@@ -164,12 +164,12 @@ b.onclick=()=>n.notification_type=='follow'?showUser(n.actor_id):watchById(n.ref
 await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);dot(0)}
 function watch(c){const d=el('<h3></h3><video controls autoplay loop playsinline></video>');d.querySelector('h3').textContent='@'+c.u+' · '+c.c;d.querySelector('video').src=pub(c.path);
 if(c.o===me.id){const x=document.createElement('button');x.className='fol';x.textContent='Delete video';x.style.marginTop='12px';x.onclick=()=>del(c);d.append(x)}open(d)}
-async function del(c){if(!confirm('Delete this video? This can’t be undone.'))return;const r=await sb.from('videos').delete().eq('id',c.id);if(r.error){toast('Couldn’t delete the video');return}await sb.storage.from('videos').remove([c.path]);close();hideClip(c);clips=clips.filter(k=>k!==c);toast('Video deleted');if(!$('#me').classList.contains('hide'))drawMe()}
+async function del(c){if(!confirm('Delete this video? This can’t be undone.'))return;const r=await sb.from('videos').delete().eq('id',c.id);if(r.error){toast('Couldn’t delete the video');return}await sb.storage.from('videos').remove([c.path].concat(c.tp?[c.tp]:[]));close();hideClip(c);clips=clips.filter(k=>k!==c);toast('Video deleted');if(!$('#me').classList.contains('hide'))drawMe()}
 function hideClip(c){if(c.el){io.unobserve(c.el);c.el.remove()}}
 function report(c){const d=el('<h3>Report this video</h3><div class="col" id="rs"></div><button class="fol" id="bk" style="margin-top:14px"></button>');
 ['Spam or scam','Nudity or sexual content','Violence or dangerous acts','Hate or harassment','Copyright or stolen content','Something else'].forEach(r=>{const b=document.createElement('button');b.className='btn';b.style.margin='0';b.textContent=r;b.onclick=async()=>{const x=await sb.from('reports').insert({reporter_id:me.id,reported_user_id:c.o,video_id:c.id,reason:r});close();if(x.error&&x.error.code!='23505'){toast('Couldn’t send your report');return}hideClip(c);toast('Thanks. We’ll review this video.')};d.querySelector('#rs').append(b)});
 const bk=d.querySelector('#bk');bk.textContent='Block @'+c.u;bk.onclick=async()=>{const x=await sb.from('blocked_users').insert({blocker_id:me.id,blocked_id:c.o});close();if(x.error&&x.error.code!='23505'){toast('Couldn’t block this user');return}clips.filter(k=>k.o==c.o).forEach(hideClip);toast('Blocked @'+c.u)};open(d)}
-function tile(c,rank){const t=document.createElement('button');t.className='tile';const v=document.createElement('video');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v);
+function tile(c,rank){const t=document.createElement('button');t.className='tile';if(c.tp){const im=document.createElement('img');im.src=pub(c.tp);im.alt='';im.loading='lazy';im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';t.append(im)}else{const v=document.createElement('video');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v)}
 if(rank){const r=document.createElement('span');r.className='rk';r.textContent=rank;t.append(r)}
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
 function show(v){if(v!='user')prev=v;['feed','trend','me','user','inbox'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe();if(v=='inbox')drawInbox()}
@@ -202,6 +202,10 @@ for(let i=0;i<20;i++){const l=await sb.storage.from('videos').list(me.id,{limit:
 const r=await sb.rpc('delete_my_account');
 if(r.error){msg('Couldn’t delete your account. Try again.');b.disabled=false;return}
 await sb.auth.signOut();toast('Account deleted')};open(d)}
+function cover(f){return new Promise(res=>{const v=document.createElement('video'),u=URL.createObjectURL(f);v.muted=true;v.playsInline=true;v.preload='auto';v.src=u;
+const fail=()=>{URL.revokeObjectURL(u);res(null)};v.onerror=fail;setTimeout(fail,8000);
+v.onloadeddata=()=>{v.currentTime=Math.min(1,(v.duration||2)/2)};
+v.onseeked=()=>{const w=360,hh=Math.round(w*(v.videoHeight/v.videoWidth))||640,c=document.createElement('canvas');c.width=w;c.height=hh;try{c.getContext('2d').drawImage(v,0,0,w,hh);c.toBlob(b=>{URL.revokeObjectURL(u);res(b)},'image/jpeg',.8)}catch(e){fail()}}})}
 $('#up').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
@@ -213,7 +217,8 @@ const ext=((f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'
 const path=me.id+'/'+crypto.randomUUID()+'.'+ext;
 const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'video/mp4'});
 if(up.error)return reset('Upload failed. Use an MP4, MOV or WebM under 50 MB.');
-const ins=await sb.from('videos').insert({owner_id:me.id,caption:d.querySelector('#cap').value.trim(),storage_path:path});
+const cb=await cover(f);let tp=null;if(cb){const cpath=me.id+'/cover-'+crypto.randomUUID()+'.jpg';const cu=await sb.storage.from('videos').upload(cpath,cb,{contentType:'image/jpeg'});if(!cu.error)tp=cpath}
+const ins=await sb.from('videos').insert({owner_id:me.id,caption:d.querySelector('#cap').value.trim(),storage_path:path,thumbnail_path:tp});
 if(ins.error)return reset('Couldn’t publish the video. Try again.');
 close();toast('Posted');await load();show('feed');feed.scrollTop=0};
 open(d)};
