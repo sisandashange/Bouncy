@@ -87,13 +87,13 @@ input{flex:1;min-width:0;background:var(--bg);color:var(--fg);border:1.5px solid
 <button data-v="me">Profile</button>
 </nav>
 <div id="shade"></div><div id="sheet" role="dialog"></div><div id="toast" role="status"></div>
-<input type="file" id="file" accept="video/*" hidden>
+<input type="file" id="file" accept="video/*" hidden><input type="file" id="pic" accept="image/*" hidden>
 </div>
 <script>
 const SB_URL='https://lakupnehsetdazezlsrs.supabase.co',SB_KEY='sb_publishable_3ePLMRIKVNms7Qi461FQXw_x2TGc75s';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=s=>document.querySelector(s);
-const I={heart:'<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>',chat:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',share:'<svg viewBox="0 0 24 24"><path d="M12 15V3m0 0L7 8m5-5 5 5M5 13v8h14v-8"/></svg>'};
+const I={heart:'<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>',chat:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',flag:'<svg viewBox="0 0 24 24"><path d="M5 21V4m0 0h12l-2 4 2 4H5"/></svg>',share:'<svg viewBox="0 0 24 24"><path d="M12 15V3m0 0L7 8m5-5 5 5M5 13v8h14v-8"/></svg>'};
 const fmt=n=>n>=1e3?(n/1e3).toFixed(1).replace('.0','')+'k':String(n);
 const pub=p=>sb.storage.from('videos').getPublicUrl(p).data.publicUrl;
 const feed=$('#feed'),sheet=$('#sheet'),shade=$('#shade');
@@ -104,9 +104,9 @@ function open(node){sheet.replaceChildren(node);sheet.classList.add('o');shade.c
 function close(){if(!me)return;sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
 shade.onclick=close;
 const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){e.isIntersecting?v.play().catch(()=>{}):v.pause()}}),{root:feed,threshold:.6});
-function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');f.hidden=c.o===me.id;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
+function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');f.hidden=c.o===me.id;s.querySelector('[data-a=rp]').hidden=c.o===me.id;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
 function mk(c){const s=document.createElement('section');s.className='clip real';
-s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button></div><div class="meta"><div><strong></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
+s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button></div><div class="meta"><div><strong></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
 s.querySelector('video').src=pub(c.path);s.querySelector('strong').textContent='@'+c.u;s.querySelector('p').textContent=c.c;c.el=s;sync(c);io.observe(s);return s}
 async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];
@@ -126,7 +126,7 @@ async function follow(c){const on=!c.fol;
 const r=on?await sb.from('follows').insert({follower_id:me.id,followed_id:c.o}):await sb.from('follows').delete().eq('follower_id',me.id).eq('followed_id',c.o);
 if(r.error){toast('Couldn’t update follow');return}
 clips.filter(x=>x.o==c.o).forEach(x=>{x.fol=on?1:0;sync(x)});toast(on?'Following @'+c.u:'Unfollowed')}
-function act(a,c){if(a=='like')like(c);if(a=='fol')follow(c);if(a=='cm')comments(c);if(a=='sh'){if(navigator.share)navigator.share({title:'BOUNCY',text:c.c,url:location.href}).catch(()=>{});else toast('Sharing isn’t available in this browser')}}
+function act(a,c){if(a=='like')like(c);if(a=='fol')follow(c);if(a=='cm')comments(c);if(a=='rp')report(c);if(a=='sh'){if(navigator.share)navigator.share({title:'BOUNCY',text:c.c,url:location.href}).catch(()=>{});else toast('Sharing isn’t available in this browser')}}
 let lt=0;
 feed.addEventListener('click',e=>{const s=e.target.closest('.clip');if(!s)return;const c=clips.find(x=>x.el===s),b=e.target.closest('button');
 if(b){act(b.dataset.a,c);return}
@@ -142,7 +142,13 @@ if(error){L.textContent='Couldn’t load comments.'}else{const ids=[...new Set(d
 d.querySelector('#cs').onclick=async()=>{const i=d.querySelector('#ci'),t=i.value.trim();if(!t)return;const r=await sb.from('video_comments').insert({video_id:c.id,user_id:me.id,body:t});
 if(r.error){toast('Couldn’t post your comment');return}
 if(!data||!data.length&&!L.querySelector('.cm'))L.replaceChildren();add(me.username,t);i.value='';c.cb++;if(c.el)sync(c)}}
-function watch(c){const d=el('<h3></h3><video controls autoplay loop playsinline></video>');d.querySelector('h3').textContent='@'+c.u+' · '+c.c;d.querySelector('video').src=pub(c.path);open(d)}
+function watch(c){const d=el('<h3></h3><video controls autoplay loop playsinline></video>');d.querySelector('h3').textContent='@'+c.u+' · '+c.c;d.querySelector('video').src=pub(c.path);
+if(c.o===me.id){const x=document.createElement('button');x.className='fol';x.textContent='Delete video';x.style.marginTop='12px';x.onclick=()=>del(c);d.append(x)}open(d)}
+async function del(c){if(!confirm('Delete this video? This can’t be undone.'))return;const r=await sb.from('videos').delete().eq('id',c.id);if(r.error){toast('Couldn’t delete the video');return}await sb.storage.from('videos').remove([c.path]);close();hideClip(c);clips=clips.filter(k=>k!==c);toast('Video deleted');if(!$('#me').classList.contains('hide'))drawMe()}
+function hideClip(c){if(c.el){io.unobserve(c.el);c.el.remove()}}
+function report(c){const d=el('<h3>Report this video</h3><div class="col" id="rs"></div><button class="fol" id="bk" style="margin-top:14px"></button>');
+['Spam or scam','Nudity or sexual content','Violence or dangerous acts','Hate or harassment','Copyright or stolen content','Something else'].forEach(r=>{const b=document.createElement('button');b.className='btn';b.style.margin='0';b.textContent=r;b.onclick=async()=>{const x=await sb.from('reports').insert({reporter_id:me.id,reported_user_id:c.o,video_id:c.id,reason:r});close();if(x.error&&x.error.code!='23505'){toast('Couldn’t send your report');return}hideClip(c);toast('Thanks. We’ll review this video.')};d.querySelector('#rs').append(b)});
+const bk=d.querySelector('#bk');bk.textContent='Block @'+c.u;bk.onclick=async()=>{const x=await sb.from('blocked_users').insert({blocker_id:me.id,blocked_id:c.o});close();if(x.error&&x.error.code!='23505'){toast('Couldn’t block this user');return}clips.filter(k=>k.o==c.o).forEach(hideClip);toast('Blocked @'+c.u)};open(d)}
 function tile(c,rank){const t=document.createElement('button');t.className='tile';const v=document.createElement('video');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v);
 if(rank){const r=document.createElement('span');r.className='rk';r.textContent=rank;t.append(r)}
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
@@ -157,9 +163,12 @@ async function drawMe(){const d=$('#me');
 const [v,fr,fg]=await Promise.all([sb.from('videos').select(COLS).eq('owner_id',me.id).order('created_at',{ascending:false}),sb.from('follows').select('*',{count:'exact',head:true}).eq('followed_id',me.id),sb.from('follows').select('*',{count:'exact',head:true}).eq('follower_id',me.id)]);
 const m=await hydrate(v.data||[]);
 const h=el('<div class="prof"><div class="av"></div><div><b style="font-size:20px"></b><div class="stats" style="margin-top:8px"><div><b>'+m.length+'</b><span>Videos</span></div><div><b>'+(fr.count||0)+'</b><span>Followers</span></div><div><b>'+(fg.count||0)+'</b><span>Following</span></div></div></div></div>');
-h.querySelector('.av').textContent=me.username[0].toUpperCase();h.querySelector('b').textContent='@'+me.username;
+const av=h.querySelector('.av');if(me.avatar){const im=document.createElement('img');im.src=me.avatar;im.alt='';im.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover';av.append(im)}else av.textContent=me.username[0].toUpperCase();h.querySelector('b').textContent='@'+me.username;
 const lo=document.createElement('button');lo.className='fol';lo.textContent='Log out';lo.style.margin='0 16px 8px';lo.onclick=()=>sb.auth.signOut();
-d.replaceChildren(h,lo);
+const ed=document.createElement('button');ed.className='fol on';ed.textContent='Edit profile';ed.onclick=editProfile;
+const bar=document.createElement('div');bar.style.cssText='display:flex;gap:8px;margin:0 16px 8px';lo.style.margin='0';bar.append(ed,lo);
+const parts=[h];if(me.bio){const q=document.createElement('p');q.style.cssText='margin:0 16px 12px;line-height:1.35';q.textContent=me.bio;parts.push(q)}
+d.replaceChildren(...parts,bar);
 const g=document.createElement('div');g.className='grid';
 if(!m.length){const e=el('<div class="empty">No videos yet.<br>Upload your first one and it shows up here.<br><button class="btn">Upload a video</button></div>').firstChild;e.querySelector('button').onclick=()=>$('#file').click();g.append(e)}
 m.forEach(c=>g.append(tile(c)));d.append(g)}
@@ -178,6 +187,20 @@ const ins=await sb.from('videos').insert({owner_id:me.id,caption:d.querySelector
 if(ins.error)return reset('Couldn’t publish the video. Try again.');
 close();toast('Posted');await load();show('feed');feed.scrollTop=0};
 open(d)};
+function editProfile(){const d=el('<h3>Edit profile</h3><div class="col"><button class="btn" id="ph" style="margin:0">Change photo</button><input type="text" id="eu" maxlength="30" aria-label="Username" placeholder="Username"><input type="text" id="eb" maxlength="300" aria-label="Bio" placeholder="Bio"></div><div class="row"><button class="btn" id="sv">Save</button></div><p id="em" class="sub" style="margin:10px 0 0" role="alert"></p>');
+const g=s=>d.querySelector(s),msg=t=>g('#em').textContent=t;g('#eu').value=me.username;g('#eb').value=me.bio;
+g('#ph').onclick=()=>$('#pic').click();
+g('#sv').onclick=async()=>{const u=g('#eu').value.trim(),b=g('#eb').value.trim();if(!/^[A-Za-z0-9_.]{3,30}$/.test(u)){msg('Pick a username with 3 to 30 letters, numbers, dots or underscores.');return}
+const r=await sb.from('profiles').update({username:u,bio:b}).eq('id',me.id);
+if(r.error){msg(r.error.code=='23505'?'That username is taken. Try another.':'Couldn’t save your profile.');return}
+me.username=u;me.bio=b;close();drawMe();toast('Profile saved')};open(d)}
+$('#pic').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+const im=new Image();im.src=URL.createObjectURL(f);try{await im.decode()}catch(_){toast('That image can’t be read');return}
+const s=Math.min(im.width,im.height),c=document.createElement('canvas');c.width=c.height=256;c.getContext('2d').drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,256,256);
+const bl=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));const path=me.id+'/avatar-'+Date.now()+'.jpg';
+const up=await sb.storage.from('videos').upload(path,bl,{contentType:'image/jpeg'});if(up.error){toast('Couldn’t upload your photo');return}
+const url=pub(path),r=await sb.from('profiles').update({avatar_url:url}).eq('id',me.id);if(r.error){toast('Couldn’t save your photo');return}
+me.avatar=url;close();drawMe();toast('Photo updated')};
 function authSheet(){const d=el('<h3>Join BOUNCY</h3><div class="col"><input type="text" id="an" placeholder="Name (sign up)" aria-label="Name" autocomplete="name"><input type="text" id="au" placeholder="Username (sign up)" aria-label="Username" autocomplete="username" maxlength="30"><input type="email" id="ae" placeholder="Email" aria-label="Email" autocomplete="email"><input type="password" id="ap" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="current-password"></div><div class="row"><button class="btn" id="li">Log in</button><button class="btn" id="su">Create account</button></div><p id="am" class="sub" style="margin:10px 0 0" role="alert"></p>');
 const g=s=>d.querySelector(s),msg=t=>g('#am').textContent=t;
 g('#li').onclick=async()=>{msg('');const r=await sb.auth.signInWithPassword({email:g('#ae').value.trim(),password:g('#ap').value});if(r.error)msg(r.error.message)};
@@ -185,7 +208,7 @@ g('#su').onclick=async()=>{msg('');const u=g('#au').value.trim();if(!/^[A-Za-z0-
 const r=await sb.auth.signUp({email:g('#ae').value.trim(),password:g('#ap').value,options:{data:{name:g('#an').value.trim(),username:u}}});
 if(r.error)msg(r.error.message);else if(!r.data.session)msg('Check your email to confirm your account, then log in.')};
 open(d)}
-async function start(user){me=user;const {data}=await sb.from('profiles').select('username').eq('id',user.id).single();me.username=data?data.username:'user';
+async function start(user){me=user;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
 close();show('feed');await load()}
