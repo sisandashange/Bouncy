@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>BOUNCY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#000000"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
@@ -90,6 +91,7 @@ input{flex:1;min-width:0;background:var(--bg);color:var(--fg);border:1.5px solid
 <input type="file" id="file" accept="video/*" hidden><input type="file" id="pic" accept="image/*" hidden>
 </div>
 <script>
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 const SB_URL='https://lakupnehsetdazezlsrs.supabase.co',SB_KEY='sb_publishable_3ePLMRIKVNms7Qi461FQXw_x2TGc75s';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=s=>document.querySelector(s);
