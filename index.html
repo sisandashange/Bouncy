@@ -305,7 +305,7 @@ async function start(user){me=user;me.email=user.email;const {data}=await sb.fro
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
 close();show('feed');await load();unread();
-const dv=new URLSearchParams(location.search).get('v');if(dv&&/^[0-9a-f-]{36}$/i.test(dv)){history.replaceState(null,'',location.pathname);watchById(dv)}}
+deep()}
 sb.auth.onAuthStateChange((ev,s)=>{if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
 </script></body></html>
