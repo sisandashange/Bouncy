@@ -77,13 +77,13 @@ input{flex:1;min-width:0;background:var(--bg);color:var(--fg);border:1.5px solid
 <main>
 <div id="feed" class="v"></div>
 <div id="trend" class="v hide"></div>
-<div id="me" class="v hide"></div><div id="user" class="v hide"></div>
+<div id="me" class="v hide"></div><div id="user" class="v hide"></div><div id="inbox" class="v hide"></div>
 </main>
 <nav>
 <button data-v="feed" class="on">Home</button>
 <button data-v="trend">Trending</button>
 <button class="plus" id="up" aria-label="Upload a video"><span>+</span></button>
-<button data-v="me">Profile</button>
+<button data-v="inbox">Inbox<i id="dot" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--fg);margin-left:4px;vertical-align:middle"></i></button><button data-v="me">Profile</button>
 </nav>
 <div id="shade"></div><div id="sheet" role="dialog"></div><div id="toast" role="status"></div>
 <input type="file" id="file" accept="video/*" hidden><input type="file" id="pic" accept="image/*" hidden>
@@ -128,7 +128,7 @@ async function follow(c){const on=!c.fol;
 const r=on?await sb.from('follows').insert({follower_id:me.id,followed_id:c.o}):await sb.from('follows').delete().eq('follower_id',me.id).eq('followed_id',c.o);
 if(r.error){toast('Couldn’t update follow');return}
 clips.filter(x=>x.o==c.o).forEach(x=>{x.fol=on?1:0;sync(x)});toast(on?'Following @'+c.u:'Unfollowed')}
-function act(a,c,b){if(a=='pf')showUser(c.o);if(a=='tg')search(b.textContent);if(a=='like')like(c);if(a=='fol')follow(c);if(a=='cm')comments(c);if(a=='rp')report(c);if(a=='sh'){if(navigator.share)navigator.share({title:'BOUNCY',text:c.c,url:location.href}).catch(()=>{});else toast('Sharing isn’t available in this browser')}}
+function act(a,c,b){if(a=='pf')showUser(c.o);if(a=='tg')search(b.textContent);if(a=='like')like(c);if(a=='fol')follow(c);if(a=='cm')comments(c);if(a=='rp')report(c);if(a=='sh'){const u=location.origin+location.pathname+'?v='+c.id;if(navigator.share)navigator.share({title:'BOUNCY',text:c.c,url:u}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>toast('Link copied'),()=>toast('Couldn’t copy the link'));else toast('Sharing isn’t available in this browser')}}
 let lt=0;
 feed.addEventListener('click',e=>{const s=e.target.closest('.clip');if(!s)return;const c=clips.find(x=>x.el===s),b=e.target.closest('button');
 if(b){act(b.dataset.a,c,b);return}
@@ -137,13 +137,31 @@ if(n-lt<320){if(!c.liked)like(c);const h=document.createElement('span');h.classN
 else{const v=s.querySelector('video');v.muted=!v.muted;toast(v.muted?'Sound off':'Sound on')}
 lt=n});
 async function comments(c){const d=el('<h3>Comments</h3><div class="list">Loading…</div><div class="row"><input type="text" id="ci" maxlength="500" placeholder="Add a comment" aria-label="Add a comment"><button class="btn" id="cs">Send</button></div>');open(d);
-const L=d.querySelector('.list');
-const add=(u,t)=>{const x=document.createElement('div');x.className='cm';const b=document.createElement('b');b.textContent=u;x.append(b,t);L.append(x)};
-const {data,error}=await sb.from('video_comments').select('user_id,body').eq('video_id',c.id).order('created_at').limit(100);
-if(error){L.textContent='Couldn’t load comments.'}else{const ids=[...new Set(data.map(x=>x.user_id))];const p=ids.length?(await sb.from('profiles').select('id,username').in('id',ids)).data||[]:[];const pm=Object.fromEntries(p.map(x=>[x.id,x.username]));L.replaceChildren();if(!data.length)L.textContent='No comments yet. Say something first.';data.forEach(x=>add(pm[x.user_id]||'user',x.body))}
-d.querySelector('#cs').onclick=async()=>{const i=d.querySelector('#ci'),t=i.value.trim();if(!t)return;const r=await sb.from('video_comments').insert({video_id:c.id,user_id:me.id,body:t});
+const L=d.querySelector('.list'),inp=d.querySelector('#ci');let all=[],pm={},to=null;
+const draw=()=>{L.replaceChildren();if(!all.length){L.textContent='No comments yet. Say something first.';return}
+const row=(x,rp)=>{const e=document.createElement('div');e.className='cm';if(rp)e.style.marginLeft='24px';const b=document.createElement('b');b.textContent=pm[x.user_id]||'user';e.append(b,x.body);
+if(!rp){const r=document.createElement('button');r.textContent='Reply';r.style.cssText='margin-left:10px;color:var(--mute);font-size:13px;font-weight:800';r.onclick=()=>{to=x;inp.placeholder='Replying to @'+b.textContent;inp.focus()};e.append(r)}L.append(e)};
+all.filter(x=>!x.parent_id).forEach(x=>{row(x,0);all.filter(y=>y.parent_id===x.id).forEach(y=>row(y,1))})};
+const {data,error}=await sb.from('video_comments').select('id,user_id,body,parent_id').eq('video_id',c.id).order('created_at').limit(200);
+if(error){L.textContent='Couldn’t load comments.';return}
+all=data;const ids=[...new Set(all.map(x=>x.user_id))];if(ids.length)((await sb.from('profiles').select('id,username').in('id',ids)).data||[]).forEach(x=>pm[x.id]=x.username);
+pm[me.id]=me.username;draw();
+d.querySelector('#cs').onclick=async()=>{const t=inp.value.trim();if(!t)return;
+const r=await sb.from('video_comments').insert({video_id:c.id,user_id:me.id,body:t,parent_id:to?to.id:null}).select('id,user_id,body,parent_id').single();
 if(r.error){toast('Couldn’t post your comment');return}
-if(!data||!data.length&&!L.querySelector('.cm'))L.replaceChildren();add(me.username,t);i.value='';c.cb++;if(c.el)sync(c)}}
+all.push(r.data);inp.value='';inp.placeholder='Add a comment';to=null;c.cb++;if(c.el)sync(c);draw()}}
+async function watchById(id){const {data}=await sb.from('videos').select(COLS).eq('id',id).single();if(!data){toast('That video isn’t available anymore');return}const [c]=await hydrate([data]);watch(c)}
+function dot(n){$('#dot').style.display=n?'inline-block':'none'}
+async function unread(){if(!me)return;const r=await sb.from('notifications').select('*',{count:'exact',head:true}).is('read_at',null);dot(r.count||0)}
+setInterval(unread,60000);
+async function drawInbox(){const d=$('#inbox');d.replaceChildren(el('<h2>Inbox</h2><p class="sub">Likes, comments, replies and new followers.</p>'));
+const {data,error}=await sb.from('notifications').select('actor_id,notification_type,reference_id,body,read_at').order('created_at',{ascending:false}).limit(40);
+if(error){d.append(el('<p class="sub">Couldn’t load your inbox.</p>'));return}
+if(!data.length){d.append(el('<div class="empty">Nothing yet. When someone likes, comments or follows, you’ll see it here.</div>'));return}
+const ids=[...new Set(data.map(x=>x.actor_id).filter(Boolean))],pm={};if(ids.length)((await sb.from('profiles').select('id,username').in('id',ids)).data||[]).forEach(x=>pm[x.id]=x.username);
+data.forEach(n=>{const b=document.createElement('button');b.className='cm';b.style.cssText='display:block;width:calc(100% - 32px);margin:0 16px;text-align:left;'+(n.read_at?'':'font-weight:800');const u=document.createElement('b');u.textContent='@'+(pm[n.actor_id]||'someone');b.append(u,n.body);
+b.onclick=()=>n.notification_type=='follow'?showUser(n.actor_id):watchById(n.reference_id);d.append(b)});
+await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);dot(0)}
 function watch(c){const d=el('<h3></h3><video controls autoplay loop playsinline></video>');d.querySelector('h3').textContent='@'+c.u+' · '+c.c;d.querySelector('video').src=pub(c.path);
 if(c.o===me.id){const x=document.createElement('button');x.className='fol';x.textContent='Delete video';x.style.marginTop='12px';x.onclick=()=>del(c);d.append(x)}open(d)}
 async function del(c){if(!confirm('Delete this video? This can’t be undone.'))return;const r=await sb.from('videos').delete().eq('id',c.id);if(r.error){toast('Couldn’t delete the video');return}await sb.storage.from('videos').remove([c.path]);close();hideClip(c);clips=clips.filter(k=>k!==c);toast('Video deleted');if(!$('#me').classList.contains('hide'))drawMe()}
@@ -154,7 +172,7 @@ const bk=d.querySelector('#bk');bk.textContent='Block @'+c.u;bk.onclick=async()=
 function tile(c,rank){const t=document.createElement('button');t.className='tile';const v=document.createElement('video');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v);
 if(rank){const r=document.createElement('span');r.className='rk';r.textContent=rank;t.append(r)}
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
-function show(v){if(v!='user')prev=v;['feed','trend','me','user'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe()}
+function show(v){if(v!='user')prev=v;['feed','trend','me','user','inbox'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe();if(v=='inbox')drawInbox()}
 document.querySelectorAll('nav [data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v));
 async function drawTrend(){const d=$('#trend');d.replaceChildren(el('<h2>Trending</h2><p class="sub">Ranked by likes right now.</p>'));
 const {data}=await sb.from('videos').select(COLS).order('like_count',{ascending:false}).order('created_at',{ascending:false}).limit(30);
@@ -251,7 +269,8 @@ open(d)}
 async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
-close();show('feed');await load()}
+close();show('feed');await load();unread();
+const dv=new URLSearchParams(location.search).get('v');if(dv&&/^[0-9a-f-]{36}$/i.test(dv)){history.replaceState(null,'',location.pathname);watchById(dv)}}
 sb.auth.onAuthStateChange((ev,s)=>{if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){me=null;feed.replaceChildren();clips=[];authSheet()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me)authSheet()});
 </script></body></html>
