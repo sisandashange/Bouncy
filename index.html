@@ -171,7 +171,17 @@ const parts=[h];if(me.bio){const q=document.createElement('p');q.style.cssText='
 d.replaceChildren(...parts,bar);
 const g=document.createElement('div');g.className='grid';
 if(!m.length){const e=el('<div class="empty">No videos yet.<br>Upload your first one and it shows up here.<br><button class="btn">Upload a video</button></div>').firstChild;e.querySelector('button').onclick=()=>$('#file').click();g.append(e)}
-m.forEach(c=>g.append(tile(c)));d.append(g)}
+m.forEach(c=>g.append(tile(c)));d.append(g);
+const ft=el('<p class="sub" style="margin:18px 16px"><a href="privacy.html" style="color:inherit">Privacy policy</a></p>');const da=document.createElement('button');da.className='fol';da.textContent='Delete account';da.style.margin='0 16px 24px';da.onclick=delAccountSheet;d.append(ft,da)}
+function delAccountSheet(){const d=el('<h3>Delete your account</h3><p class="sub" style="margin:0 0 12px">This permanently removes your profile, videos, comments, likes and follows. It can’t be undone.</p><div class="col"><input type="password" id="dp" placeholder="Enter your password to confirm" aria-label="Password" autocomplete="current-password"></div><div class="row"><button class="btn" id="dd">Delete my account</button></div><p id="dm" class="sub" style="margin:10px 0 0" role="alert"></p>');
+const g=s=>d.querySelector(s),msg=t=>g('#dm').textContent=t;
+g('#dd').onclick=async()=>{const b=g('#dd');b.disabled=true;msg('');
+const ok=await sb.auth.signInWithPassword({email:me.email,password:g('#dp').value});
+if(ok.error){msg('That password isn’t right.');b.disabled=false;return}
+for(let i=0;i<20;i++){const l=await sb.storage.from('videos').list(me.id,{limit:100});if(!l.data||!l.data.length)break;const rm=await sb.storage.from('videos').remove(l.data.map(x=>me.id+'/'+x.name));if(rm.error)break}
+const r=await sb.rpc('delete_my_account');
+if(r.error){msg('Couldn’t delete your account. Try again.');b.disabled=false;return}
+await sb.auth.signOut();toast('Account deleted')};open(d)}
 $('#up').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
@@ -201,14 +211,14 @@ const bl=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));const path=me.id+'/a
 const up=await sb.storage.from('videos').upload(path,bl,{contentType:'image/jpeg'});if(up.error){toast('Couldn’t upload your photo');return}
 const url=pub(path),r=await sb.from('profiles').update({avatar_url:url}).eq('id',me.id);if(r.error){toast('Couldn’t save your photo');return}
 me.avatar=url;close();drawMe();toast('Photo updated')};
-function authSheet(){const d=el('<h3>Join BOUNCY</h3><div class="col"><input type="text" id="an" placeholder="Name (sign up)" aria-label="Name" autocomplete="name"><input type="text" id="au" placeholder="Username (sign up)" aria-label="Username" autocomplete="username" maxlength="30"><input type="email" id="ae" placeholder="Email" aria-label="Email" autocomplete="email"><input type="password" id="ap" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="current-password"></div><div class="row"><button class="btn" id="li">Log in</button><button class="btn" id="su">Create account</button></div><p id="am" class="sub" style="margin:10px 0 0" role="alert"></p>');
+function authSheet(){const d=el('<h3>Join BOUNCY</h3><div class="col"><input type="text" id="an" placeholder="Name (sign up)" aria-label="Name" autocomplete="name"><input type="text" id="au" placeholder="Username (sign up)" aria-label="Username" autocomplete="username" maxlength="30"><input type="email" id="ae" placeholder="Email" aria-label="Email" autocomplete="email"><input type="password" id="ap" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="current-password"></div><div class="row"><button class="btn" id="li">Log in</button><button class="btn" id="su">Create account</button></div><p class="sub" style="margin:10px 0 0">By joining, you agree to our <a href="privacy.html" target="_blank" rel="noopener" style="color:inherit">privacy policy</a>.</p><p id="am" class="sub" style="margin:10px 0 0" role="alert"></p>');
 const g=s=>d.querySelector(s),msg=t=>g('#am').textContent=t;
 g('#li').onclick=async()=>{msg('');const r=await sb.auth.signInWithPassword({email:g('#ae').value.trim(),password:g('#ap').value});if(r.error)msg(r.error.message)};
 g('#su').onclick=async()=>{msg('');const u=g('#au').value.trim();if(!/^[A-Za-z0-9_.]{3,30}$/.test(u)){msg('Pick a username with 3 to 30 letters, numbers, dots or underscores.');return}
 const r=await sb.auth.signUp({email:g('#ae').value.trim(),password:g('#ap').value,options:{data:{name:g('#an').value.trim(),username:u}}});
 if(r.error)msg(r.error.message);else if(!r.data.session)msg('Check your email to confirm your account, then log in.')};
 open(d)}
-async function start(user){me=user;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';
+async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
 close();show('feed');await load()}
