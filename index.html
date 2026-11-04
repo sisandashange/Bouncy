@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>BOUNCY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#000000"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#ffffff"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
-:root{--bg:#000;--fg:#fff;--mute:#9a9a9a;--line:#2b2b2b;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2}}
-:root[data-theme="light"]{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2}
+:root{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-weight:500}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -73,13 +71,13 @@ input{flex:1;min-width:0;background:var(--bg);color:var(--fg);border:1.5px solid
 #toast{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:20px;font-weight:800;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;white-space:nowrap}
 #toast.o{opacity:1}
 @media (prefers-reduced-motion:reduce){.ball,.sh,header i{animation:none}.ball{transform:translateY(-90px)}}
-.col{display:flex;flex-direction:column;gap:10px}[hidden]{display:none!important}.tile{background:#000;color:#fff}.tile b,.tile span{text-shadow:0 0 6px #000}</style></head><body>
+.col{display:flex;flex-direction:column;gap:10px}[hidden]{display:none!important}.tile{background:#000;color:#fff}.tile b,.tile span{text-shadow:0 0 6px #000}.tabs{margin-left:auto;display:flex;align-items:center;gap:2px}.tabs button{font-size:14px;font-weight:800;color:var(--mute);padding:8px 8px;border-bottom:2px solid transparent}.tabs button.on{color:var(--fg);border-bottom-color:var(--fg)}.tabs svg{width:22px;height:22px}</style></head><body>
 <div id="app">
-<header><i></i>BOUNCY</header>
+<header><i></i>BOUNCY<div class="tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button><button id="sr" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></div></header>
 <main>
 <div id="feed" class="v"></div>
 <div id="trend" class="v hide"></div>
-<div id="me" class="v hide"></div>
+<div id="me" class="v hide"></div><div id="user" class="v hide"></div>
 </main>
 <nav>
 <button data-v="feed" class="on">Home</button>
@@ -108,18 +106,20 @@ shade.onclick=close;
 const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){e.isIntersecting?v.play().catch(()=>{}):v.pause()}}),{root:feed,threshold:.6});
 function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');f.hidden=c.o===me.id;s.querySelector('[data-a=rp]').hidden=c.o===me.id;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
 function mk(c){const s=document.createElement('section');s.className='clip real';
-s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button></div><div class="meta"><div><strong></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
-s.querySelector('video').src=pub(c.path);s.querySelector('strong').textContent='@'+c.u;s.querySelector('p').textContent=c.c;c.el=s;sync(c);io.observe(s);return s}
+s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button></div><div class="meta"><div><strong><button data-a="pf" style="font:inherit;color:inherit;padding:0"></button></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
+s.querySelector('video').src=pub(c.path);s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});c.el=s;sync(c);io.observe(s);return s}
 async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];
 const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username').in('id',ids),sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id),sb.from('follows').select('followed_id').eq('follower_id',me.id)]);
 const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
 return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',c:x.caption,path:x.storage_path,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,like_count,comment_count';
-async function load(){const {data,error}=await sb.from('videos').select(COLS).order('created_at',{ascending:false}).limit(20);
+async function load(){let q=sb.from('videos').select(COLS).order('created_at',{ascending:false}).limit(20);
+if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);q=q.in('owner_id',ids.length?ids:['00000000-0000-0000-0000-000000000000'])}
+const {data,error}=await q;
 if(error){toast('Couldn’t load videos. Check your connection.');return}
 feed.replaceChildren();clips=await hydrate(data);
-if(!clips.length){const e=el('<div class="empty" style="padding-top:30%">No videos yet.<br>Be the first to post on BOUNCY.<br><button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=()=>$('#file').click();feed.append(e);return}
+if(!clips.length){const e=el('<div class="empty" style="padding-top:30%">'+(tab=='following'?'Follow creators and their videos show up here.<br>':'No videos yet.<br>Be the first to post on BOUNCY.<br>')+'<button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=()=>$('#file').click();feed.append(e);return}
 clips.forEach(c=>feed.append(mk(c)))}
 async function like(c){const on=!c.liked;c.liked=on?1:0;c.l+=on?1:-1;sync(c);
 const r=on?await sb.from('video_likes').insert({video_id:c.id,user_id:me.id}):await sb.from('video_likes').delete().eq('video_id',c.id).eq('user_id',me.id);
@@ -128,10 +128,10 @@ async function follow(c){const on=!c.fol;
 const r=on?await sb.from('follows').insert({follower_id:me.id,followed_id:c.o}):await sb.from('follows').delete().eq('follower_id',me.id).eq('followed_id',c.o);
 if(r.error){toast('Couldn’t update follow');return}
 clips.filter(x=>x.o==c.o).forEach(x=>{x.fol=on?1:0;sync(x)});toast(on?'Following @'+c.u:'Unfollowed')}
-function act(a,c){if(a=='like')like(c);if(a=='fol')follow(c);if(a=='cm')comments(c);if(a=='rp')report(c);if(a=='sh'){if(navigator.share)navigator.share({title:'BOUNCY',text:c.c,url:location.href}).catch(()=>{});else toast('Sharing isn’t available in this browser')}}
+function act(a,c,b){if(a=='pf')showUser(c.o);if(a=='tg')search(b.textContent);if(a=='like')like(c);if(a=='fol')follow(c);if(a=='cm')comments(c);if(a=='rp')report(c);if(a=='sh'){if(navigator.share)navigator.share({title:'BOUNCY',text:c.c,url:location.href}).catch(()=>{});else toast('Sharing isn’t available in this browser')}}
 let lt=0;
 feed.addEventListener('click',e=>{const s=e.target.closest('.clip');if(!s)return;const c=clips.find(x=>x.el===s),b=e.target.closest('button');
-if(b){act(b.dataset.a,c);return}
+if(b){act(b.dataset.a,c,b);return}
 const n=Date.now();
 if(n-lt<320){if(!c.liked)like(c);const h=document.createElement('span');h.className='burst';h.textContent='♥';const r=s.getBoundingClientRect();h.style.left=(e.clientX-r.left-40)+'px';h.style.top=(e.clientY-r.top-40)+'px';s.append(h);setTimeout(()=>h.remove(),700)}
 else{const v=s.querySelector('video');v.muted=!v.muted;toast(v.muted?'Sound off':'Sound on')}
@@ -154,7 +154,7 @@ const bk=d.querySelector('#bk');bk.textContent='Block @'+c.u;bk.onclick=async()=
 function tile(c,rank){const t=document.createElement('button');t.className='tile';const v=document.createElement('video');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v);
 if(rank){const r=document.createElement('span');r.className='rk';r.textContent=rank;t.append(r)}
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
-function show(v){['feed','trend','me'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe()}
+function show(v){if(v!='user')prev=v;['feed','trend','me','user'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe()}
 document.querySelectorAll('nav [data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v));
 async function drawTrend(){const d=$('#trend');d.replaceChildren(el('<h2>Trending</h2><p class="sub">Ranked by likes right now.</p>'));
 const {data}=await sb.from('videos').select(COLS).order('like_count',{ascending:false}).order('created_at',{ascending:false}).limit(30);
@@ -213,6 +213,34 @@ const bl=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));const path=me.id+'/a
 const up=await sb.storage.from('videos').upload(path,bl,{contentType:'image/jpeg'});if(up.error){toast('Couldn’t upload your photo');return}
 const url=pub(path),r=await sb.from('profiles').update({avatar_url:url}).eq('id',me.id);if(r.error){toast('Couldn’t save your photo');return}
 me.avatar=url;close();drawMe();toast('Photo updated')};
+let tab='foryou',prev='feed';
+document.querySelectorAll('.tabs [data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll('.tabs [data-t]').forEach(x=>x.classList.toggle('on',x===b));show('feed');load()});
+async function showUser(uid){if(uid===me.id){show('me');return}
+show('user');const d=$('#user');d.replaceChildren(el('<p class="sub" style="margin-top:20px">Loading…</p>'));
+const [p,v,fr,fg,im]=await Promise.all([sb.from('profiles').select('username,avatar_url,bio').eq('id',uid).single(),sb.from('videos').select(COLS).eq('owner_id',uid).order('created_at',{ascending:false}),sb.from('follows').select('*',{count:'exact',head:true}).eq('followed_id',uid),sb.from('follows').select('*',{count:'exact',head:true}).eq('follower_id',uid),sb.from('follows').select('follower_id').eq('follower_id',me.id).eq('followed_id',uid)]);
+if(p.error){d.replaceChildren(el('<p class="sub" style="margin:20px 16px">This profile isn’t available.</p>'));return}
+const m=await hydrate(v.data||[]);let on=(im.data||[]).length>0,n=fr.count||0;
+const h=el('<div class="prof"><div class="av"></div><div><b style="font-size:20px"></b><div class="stats" style="margin-top:8px"><div><b>'+m.length+'</b><span>Videos</span></div><div><b id="fc"></b><span>Followers</span></div><div><b>'+(fg.count||0)+'</b><span>Following</span></div></div></div></div>');
+const u=p.data.username;h.querySelector('b').textContent='@'+u;
+const av=h.querySelector('.av');if(p.data.avatar_url){const i=document.createElement('img');i.src=p.data.avatar_url;i.alt='';i.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover';av.append(i)}else av.textContent=u[0].toUpperCase();
+const bk=document.createElement('button');bk.className='fol';bk.textContent='Back';bk.onclick=()=>show(prev);
+const fb=document.createElement('button');fb.className='fol';const set=()=>{fb.textContent=on?'Following':'Follow';fb.classList.toggle('on',on);h.querySelector('#fc').textContent=n};set();
+fb.onclick=async()=>{const r=on?await sb.from('follows').delete().eq('follower_id',me.id).eq('followed_id',uid):await sb.from('follows').insert({follower_id:me.id,followed_id:uid});if(r.error){toast('Couldn’t update follow');return}on=!on;n+=on?1:-1;set();clips.filter(x=>x.o===uid).forEach(x=>{x.fol=on?1:0;sync(x)})};
+const bar=document.createElement('div');bar.style.cssText='display:flex;gap:8px;margin:0 16px 8px';bar.append(bk,fb);
+const parts=[h];if(p.data.bio){const q=document.createElement('p');q.style.cssText='margin:0 16px 12px;line-height:1.35';q.textContent=p.data.bio;parts.push(q)}
+const g=document.createElement('div');g.className='grid';if(!m.length)g.append(el('<div class="empty">No videos yet.</div>').firstChild);m.forEach(c=>g.append(tile(c)));
+d.replaceChildren(...parts,bar,g)}
+function search(pre){const d=el('<h3>Search</h3><div class="row" style="margin:0 0 10px"><input type="text" id="sq" maxlength="40" placeholder="People, captions, #hashtags" aria-label="Search"></div><div class="list" id="sres"></div>');
+const q=d.querySelector('#sq'),R=d.querySelector('#sres');let t;
+const run=async()=>{const s=q.value.trim().replace(/[%,_()]/g,' ').trim();R.replaceChildren();if(s.length<2)return;
+const [p,v]=await Promise.all([sb.from('profiles').select('id,username').ilike('username','%'+s.replace(/^#/,'')+'%').limit(8),sb.from('videos').select(COLS).ilike('caption','%'+s+'%').order('like_count',{ascending:false}).limit(12)]);
+const cs=await hydrate(v.data||[]);R.replaceChildren();
+(p.data||[]).forEach(x=>{const b=document.createElement('button');b.className='cm';b.style.cssText='display:block;width:100%;text-align:left';b.textContent='@'+x.username;b.onclick=()=>{close();showUser(x.id)};R.append(b)});
+if(cs.length){const g=document.createElement('div');g.className='grid';g.style.marginTop='10px';cs.forEach(c=>{const tl=tile(c),o=tl.onclick;tl.onclick=()=>{close();o()};g.append(tl)});R.append(g)}
+if(!R.children.length)R.textContent='No results. Try a different word.'};
+q.oninput=()=>{clearTimeout(t);t=setTimeout(run,300)};
+open(d);if(pre){q.value=pre;run()}q.focus()}
+$('#sr').onclick=()=>search();
 function authSheet(){const d=el('<h3>Join BOUNCY</h3><div class="col"><input type="text" id="an" placeholder="Name (sign up)" aria-label="Name" autocomplete="name"><input type="text" id="au" placeholder="Username (sign up)" aria-label="Username" autocomplete="username" maxlength="30"><input type="email" id="ae" placeholder="Email" aria-label="Email" autocomplete="email"><input type="password" id="ap" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="current-password"></div><div class="row"><button class="btn" id="li">Log in</button><button class="btn" id="su">Create account</button></div><p class="sub" style="margin:10px 0 0">By joining, you agree to our <a href="privacy.html" target="_blank" rel="noopener" style="color:inherit">privacy policy</a>.</p><p id="am" class="sub" style="margin:10px 0 0" role="alert"></p>');
 const g=s=>d.querySelector(s),msg=t=>g('#am').textContent=t;
 g('#li').onclick=async()=>{msg('');const r=await sb.auth.signInWithPassword({email:g('#ae').value.trim(),password:g('#ap').value});if(r.error)msg(r.error.message)};
