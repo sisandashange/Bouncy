@@ -82,7 +82,37 @@ header{height:56px}h2{font-size:30px;letter-spacing:-.01em}
 .cm{padding:12px 0}
 #app:not(.watch) .tabs{display:none}textarea{width:100%;font:inherit;border:1.5px solid var(--fg);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg);resize:none}#app.chatting header{display:none}:root[data-theme="dark"]{--bg:#000;--fg:#fff;--mute:#9a9a9a;--line:#2b2b2b;--soft:#1c1c1c;color-scheme:dark}
 @media (prefers-color-scheme:dark){:root[data-theme="system"]{--bg:#000;--fg:#fff;--mute:#9a9a9a;--line:#2b2b2b;--soft:#1c1c1c;color-scheme:dark}}
-#sheet{overflow-y:auto}</style></head><body>
+#sheet{overflow-y:auto}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+/* screen titles stay put while you scroll */
+.v>h2{position:sticky;top:0;z-index:3;background:var(--bg);margin:0;padding:0 16px;height:58px;display:flex;align-items:center;font-size:28px}
+/* bottom sheets */
+#sheet{border-radius:26px 26px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));border-top:0;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+#sheet::before{content:"";display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+#sheet h3{font-size:21px;margin:0 0 14px;letter-spacing:-.01em}
+/* buttons and chips */
+.btn{border-radius:14px;padding:14px 20px;font-size:16px;min-height:48px}
+.fol{padding:7px 16px;font-size:14px}
+input,textarea{transition:border-color .15s}
+input:focus,textarea:focus{border-color:var(--fg)}
+/* bottom navigation */
+nav button{position:relative}
+nav button:not(.plus).on::before{content:"";position:absolute;top:0;left:50%;width:26px;margin-left:-13px;height:3px;border-radius:0 0 3px 3px;background:var(--fg)}
+nav button:not(.plus){color:var(--mute)}
+nav button.on:not(.plus){color:var(--fg)}
+/* video screen: readable text and tidy action column */
+.clip.real::before{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:1;pointer-events:none}
+.side,.meta{z-index:2}
+.side{gap:12px}
+.meta strong{font-size:18px}
+.meta p{font-size:15px;line-height:1.4}
+/* chat */
+#chat .row input{border-radius:24px;padding:0 16px;height:46px}
+#chat .row .btn{border-radius:24px;min-height:46px;padding:0 18px;margin:0}
+/* lists and cards */
+.cm{padding:13px 0}
+.empty{line-height:1.5}
+</style></head><body>
 <div id="app" class="watch">
 <header><i></i>BOUNCY<div class="tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button><button id="snd" aria-label="Sound"></button><button id="sr" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></div></header>
 <main>
@@ -122,14 +152,14 @@ if(e.isIntersecting){const k=clips.indexOf(c);if(k>=clips.length-3)nextPage();co
 clearTimeout(vt.get(c.id));if(e.isIntersecting&&!seen.has(c.id))vt.set(c.id,setTimeout(()=>{seen.add(c.id);c.vw++;sb.rpc('record_view',{p_video:c.id})},2000))}),{root:feed,threshold:.6});
 function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');const mine=!!(me&&c.o===me.id);f.hidden=mine;s.querySelector('[data-a=rp]').hidden=mine;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
 function mk(c){const s=document.createElement('section');s.className='clip real';
-s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button><button data-a="sv" aria-label="Save video">'+I.save+'<b>Save</b></button></div><div class="meta"><div><strong><button data-a="pf" style="font:inherit;color:inherit;padding:0"></button></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
+s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="pf" aria-label="Open profile" style="min-height:50px"></button><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button><button data-a="sv" aria-label="Save video">'+I.save+'<b>Save</b></button></div><div class="meta"><div><strong><button data-a="pf" style="font:inherit;color:inherit;padding:0"></button></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
 const vv=s.querySelector('video');vv.src=pub(c.path);vv.preload=ds?'none':'metadata';if(c.tp)vv.poster=pub(c.tp);
-const pb=E('div','position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-size:64px;color:#fff;text-shadow:0 0 12px #000','▶'),upd=()=>{pb.hidden=!(ds&&vv.paused)};pb.hidden=true;s.append(pb);['play','pause','loadstart'].forEach(ev=>vv.addEventListener(ev,upd));upd();s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});c.el=s;sync(c);io.observe(s);return s}
+const pb=E('div','position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-size:64px;color:#fff;text-shadow:0 0 12px #000','▶'),upd=()=>{pb.hidden=!(ds&&vv.paused)};pb.hidden=true;s.append(pb);['play','pause','loadstart'].forEach(ev=>vv.addEventListener(ev,upd));upd();s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});const avb=s.querySelector('.side [data-a=pf]'),avt=avatar(c.u,c.av,46);avt.style.border='2px solid #fff';avb.append(avt);c.el=s;sync(c);io.observe(s);return s}
 async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];const none=Promise.resolve({data:[]});
-const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username').in('id',ids),me?sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id):none,me?sb.from('follows').select('followed_id').eq('follower_id',me.id):none]);
-const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
-return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
+const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username,avatar_url').in('id',ids),me?sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id):none,me?sb.from('follows').select('followed_id').eq('follower_id',me.id):none]);
+const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),am=Object.fromEntries((p.data||[]).map(x=>[x.id,x.avatar_url])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
+return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',av:am[x.owner_id],c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count,view_count';
 let page=0,more=true,busy=false;
 async function fetchPage(){const N=ds?4:8;let rows=[];
@@ -176,8 +206,8 @@ async function watchById(id){const {data}=await sb.from('videos').select(COLS).e
 function dot(n){$('#dot').style.display=n?'inline-block':'none'}
 async function unread(){if(!me)return;const [a,b]=await Promise.all([sb.from('notifications').select('*',{count:'exact',head:true}).is('read_at',null),sb.rpc('unread_counts')]);dot((a.count||0)+((b.data||[]).reduce((s,x)=>s+Number(x.unread),0)))}
 setInterval(unread,20000);
-async function drawInbox(){const d=$('#inbox');d.replaceChildren(el('<h2>Chats</h2>'));
-const sg=document.createElement('div');sg.style.cssText='display:flex;gap:8px;margin:0 16px 12px';
+async function drawInbox(){const d=$('#inbox');d.replaceChildren(...el('<h2>Chats</h2>').childNodes);
+const sg=document.createElement('div');sg.style.cssText='display:flex;gap:8px;padding:6px 16px 12px;position:sticky;top:58px;z-index:2;background:var(--bg)';
 [['msg','Chats'],['act','Activity']].forEach(([k,l])=>{const b=document.createElement('button');b.className='fol'+(inboxTab==k?' on':'');b.textContent=l;b.onclick=()=>{inboxTab=k;drawInbox()};sg.append(b)});d.append(sg);
 if(inboxTab=='msg'){await drawChats(d);return}
 const {data,error}=await sb.from('notifications').select('actor_id,notification_type,reference_id,body,read_at').order('created_at',{ascending:false}).limit(40);
@@ -199,7 +229,7 @@ if(rank){const r=document.createElement('span');r.className='rk';r.textContent=r
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
 function show(v){if(!me&&(v=='me'||v=='inbox'||v=='chat')){gate(v=='me'?'see your profile':'see your inbox');return}clearInterval(poll);if(v!='chat'&&chatCh){sb.removeChannel(chatCh);chatCh=null;onPresence=null}$('#app').classList.toggle('watch',v=='feed');if(v=='feed')feedPlay(true);else document.querySelectorAll('#feed video').forEach(x=>x.pause());$('#app').classList.toggle('chatting',v=='chat'||v=='me'||v=='user');if(v!='user')prev=v;['feed','trend','me','user','inbox','chat'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe();if(v=='inbox')drawInbox()}
 document.querySelectorAll('nav [data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v));
-async function drawTrend(){const d=$('#trend');d.replaceChildren(el('<h2>Feed</h2>'));segs(d);if(ftab=='posts'){await drawPosts(d);return}await people(d);d.append(el('<p style="margin:4px 16px 10px;font-weight:800">Trending videos</p>'));
+async function drawTrend(){const d=$('#trend');d.replaceChildren(...el('<h2>Feed</h2>').childNodes);segs(d);if(ftab=='posts'){await drawPosts(d);return}await people(d);d.append(el('<p style="margin:4px 16px 10px;font-weight:800">Trending videos</p>'));
 const {data}=await sb.from('videos').select(COLS).order('like_count',{ascending:false}).order('created_at',{ascending:false}).limit(30);
 const g=document.createElement('div');g.className='grid';const cs=await hydrate(data||[]);
 if(!cs.length)g.append(el('<div class="empty">Nothing is trending yet. Post a video to get things moving.</div>').firstChild);
@@ -360,7 +390,7 @@ chatCh=sb.channel('chat-'+id).on('postgres_changes',{event:'INSERT',schema:'publ
 const send=async()=>{const t=inp.value.trim();if(!t)return;inp.value='';const r=await sb.from('messages').insert({conversation_id:id,sender_id:me.id,body:t,message_type:'text'});if(r.error){inp.value=t;toast('Couldn’t send. You may have blocked, or been blocked by, this person.');return}n=-1;draw()};
 d.querySelector('#ms').onclick=send;d.querySelector('#mk').onclick=()=>recordVoice(id,()=>{n=-1;draw()});inp.onkeydown=e=>{if(e.key=='Enter')send()};inp.oninput=()=>{const t=Date.now();if(t-lastTy>2500&&chatCh){lastTy=t;chatCh.send({type:'broadcast',event:'typing',payload:{u:me.username}})}}}
 const RX=['👍','❤️','😂','😮','😢'];let ftab='posts';
-function segs(d){const sg=document.createElement('div');sg.style.cssText='display:flex;gap:8px;margin:0 16px 12px';[['posts','Posts'],['disc','Discover']].forEach(([k,l])=>{const b=document.createElement('button');b.className='fol'+(ftab==k?' on':'');b.textContent=l;b.onclick=()=>{ftab=k;drawTrend()};sg.append(b)});d.append(sg)}
+function segs(d){const sg=document.createElement('div');sg.style.cssText='display:flex;gap:8px;padding:6px 16px 12px;position:sticky;top:58px;z-index:2;background:var(--bg)';[['posts','Posts'],['disc','Discover']].forEach(([k,l])=>{const b=document.createElement('button');b.className='fol'+(ftab==k?' on':'');b.textContent=l;b.onclick=()=>{ftab=k;drawTrend()};sg.append(b)});d.append(sg)}
 function shrink(f,max){return new Promise(res=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(res,'image/jpeg',.82)};im.onerror=()=>res(null);im.src=URL.createObjectURL(f)})}
 function paint(p){const s=p.el.querySelector('.sm'),top=Object.entries(p.rx).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join('');s.querySelector('span').textContent=p.n?top+' '+p.n:'';s.querySelector('i').textContent=p.cb?p.cb+(p.cb==1?' comment':' comments'):'';const b=p.el.querySelector('[data-r]');b.textContent=p.my?p.my+' Reacted':'👍 React';b.style.fontWeight=p.my?'800':'500'}
 function postCard(p){const c=document.createElement('article');c.style.cssText='border-bottom:8px solid var(--soft);padding:14px 0 0';p.el=c;
