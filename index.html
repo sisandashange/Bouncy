@@ -197,7 +197,7 @@ const bk=d.querySelector('#bk');bk.textContent='Block @'+c.u;bk.onclick=async()=
 function tile(c,rank){const t=document.createElement('button');t.className='tile';if(c.tp){const im=document.createElement('img');im.src=pub(c.tp);im.alt='';im.loading='lazy';im.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';t.append(im)}else{const v=document.createElement('video');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v)}
 if(rank){const r=document.createElement('span');r.className='rk';r.textContent=rank;t.append(r)}
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
-function show(v){if(!me&&(v=='me'||v=='inbox'||v=='chat')){gate(v=='me'?'see your profile':'see your inbox');return}clearInterval(poll);$('#app').classList.toggle('watch',v=='feed');$('#app').classList.toggle('chatting',v=='chat'||v=='me'||v=='user');if(v!='user')prev=v;['feed','trend','me','user','inbox','chat'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe();if(v=='inbox')drawInbox()}
+function show(v){if(!me&&(v=='me'||v=='inbox'||v=='chat')){gate(v=='me'?'see your profile':'see your inbox');return}clearInterval(poll);$('#app').classList.toggle('watch',v=='feed');if(v=='feed')feedPlay(true);else document.querySelectorAll('#feed video').forEach(x=>x.pause());$('#app').classList.toggle('chatting',v=='chat'||v=='me'||v=='user');if(v!='user')prev=v;['feed','trend','me','user','inbox','chat'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));if(v=='trend')drawTrend();if(v=='me')drawMe();if(v=='inbox')drawInbox()}
 document.querySelectorAll('nav [data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v));
 async function drawTrend(){const d=$('#trend');d.replaceChildren(el('<h2>Feed</h2>'));segs(d);if(ftab=='posts'){await drawPosts(d);return}await people(d);d.append(el('<p style="margin:4px 16px 10px;font-weight:800">Trending videos</p>'));
 const {data}=await sb.from('videos').select(COLS).order('like_count',{ascending:false}).order('created_at',{ascending:false}).limit(30);
@@ -462,6 +462,8 @@ const seg=(t,opts,get,set)=>{c.append(E('p','margin:8px 0 0;font-weight:800',t))
 seg('Theme',[['light','Light'],['dark','Dark'],['system','System']],()=>document.documentElement.dataset.theme,setTheme);
 seg('Data saver',[['off','Off'],['on','On']],()=>ds?'on':'off',k=>{ds=k=='on';try{localStorage.setItem('bouncy-data',k)}catch(e){}load()});
 c.append(E('p','margin:0;color:var(--mute);font-size:13px;line-height:1.4','Data saver loads far less video: nothing plays or preloads until you tap it, and the feed loads in smaller pages. Good for limited data or slow networks.'));open(d)}
+function feedPlay(on){document.querySelectorAll('#feed .clip.on video').forEach(x=>{if(on){if(!ds||x.dataset.u){x.muted=!soundOn;x.play().catch(()=>{})}}else x.pause()})}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)document.querySelectorAll('video').forEach(x=>x.pause());else if(!$('#feed').classList.contains('hide')&&!document.getElementById('auth'))feedPlay(true)});
 let recovering=false;
 let rc=null,curAudio=null,pt,skipTap=false,blocked=false,soundOn=true;
 try{soundOn=localStorage.getItem('bouncy-sound')!=='off'}catch(e){}
@@ -517,23 +519,25 @@ c.append(b);d.append(c)})};
 draw()}
 function openCamera(){if(gate('use the camera'))return;
 if(!navigator.mediaDevices||!window.MediaRecorder){toast('The camera isn’t supported in this browser');return}
+document.querySelectorAll('#feed video').forEach(x=>x.pause());
 const FL=[['Normal','none'],['Mono','grayscale(1) contrast(1.1)'],['Noir','grayscale(1) contrast(1.5) brightness(.9)'],['Warm','sepia(.25) saturate(1.3) hue-rotate(-10deg) brightness(1.05)'],['Cool','saturate(1.1) hue-rotate(15deg) brightness(1.05) contrast(1.05)'],['Vivid','saturate(1.7) contrast(1.15)'],['Fade','contrast(.85) brightness(1.1) saturate(.8)'],['Vintage','sepia(.55) contrast(1.1) brightness(.95) saturate(1.2)']],TH=['None','Vignette','Frame','Neon','Bouncy'];
-let st=null,face='user',filt=0,theme=0,mode='photo',rec=null,raf=0,tick=0;
+let crop=false,st=null,face='user',filt=0,theme=0,mode='photo',rec=null,raf=0,tick=0;
 const o=E('div','position:absolute;inset:0;z-index:4;background:#000;color:#fff;--fg:#fff;--bg:#000;overflow:hidden'),cv=E('canvas','position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000'),ctx=cv.getContext('2d'),vid=document.createElement('video'),fok='filter' in ctx;
 vid.muted=true;vid.playsInline=true;
 const stopStream=()=>{if(st)st.getTracks().forEach(t=>t.stop());st=null};
-const closeCam=()=>{cancelAnimationFrame(raf);clearInterval(tick);if(rec){rec.onstop=null;try{rec.stop()}catch(e){}rec=null}stopStream();o.remove()};
+const closeCam=()=>{if(!$('#feed').classList.contains('hide'))feedPlay(true);cancelAnimationFrame(raf);clearInterval(tick);if(rec){rec.onstop=null;try{rec.stop()}catch(e){}rec=null}stopStream();o.remove()};
 const ov=(w,h)=>{if(theme==1){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.7);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.65)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h)}
 if(theme==2){const b=w*.035;ctx.strokeStyle='#fff';ctx.lineWidth=b*2;ctx.strokeRect(0,0,w,h);ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.strokeRect(b,b,w-2*b,h-2*b)}
 if(theme==3){ctx.save();ctx.shadowColor='#0ff';ctx.shadowBlur=w*.04;ctx.strokeStyle='#ff2d95';ctx.lineWidth=w*.012;ctx.strokeRect(w*.03,w*.03,w*.94,h-w*.06);ctx.restore()}
 if(theme==4){const r=w*.03,x=w-w*.34,y=h-w*.07;ctx.save();ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=8;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.font='800 '+Math.round(w*.045)+'px sans-serif';ctx.textBaseline='middle';ctx.fillText('BOUNCY',x+r*1.6,y);ctx.restore()}};
-const loop=()=>{raf=requestAnimationFrame(loop);if(!vid.videoWidth)return;const w=vid.videoWidth,h=vid.videoHeight;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
-ctx.save();if(face=='user'){ctx.translate(w,0);ctx.scale(-1,1)}if(fok)ctx.filter=FL[filt][1];ctx.drawImage(vid,0,0,w,h);ctx.restore();if(fok)ctx.filter='none';ov(w,h)};
+const loop=()=>{raf=requestAnimationFrame(loop);if(!vid.videoWidth)return;const vw=vid.videoWidth,h=vid.videoHeight,w=crop&&vw/h>9/16?Math.round(h*9/16):vw,sx=Math.round((vw-w)/2);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
+ctx.save();if(face=='user'){ctx.translate(w,0);ctx.scale(-1,1)}if(fok)ctx.filter=FL[filt][1];ctx.drawImage(vid,sx,0,w,h,0,0,w,h);ctx.restore();if(fok)ctx.filter='none';ov(w,h)};
 const begin=async()=>{stopStream();let s;try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:face,width:{ideal:1080},height:{ideal:1440},aspectRatio:{ideal:0.75}},audio:true})}catch(e){try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:face}})}catch(e2){toast('Allow the camera to use this feature');closeCam();return}}
 st=s;vid.srcObject=s;await vid.play().catch(()=>{});cancelAnimationFrame(raf);loop()};
 const chips=(arr,get,set)=>{const r=E('div','display:flex;gap:8px;overflow-x:auto;padding:0 12px 10px');const up=()=>[...r.children].forEach((c,k)=>{c.style.background=get()==k?'#fff':'rgba(0,0,0,.35)';c.style.color=get()==k?'#000':'#fff'});arr.forEach((n,i)=>{const b=E('button','flex:none;padding:6px 14px;border-radius:18px;font-size:13px;font-weight:800;border:1.5px solid #fff',n);b.onclick=()=>{set(i);up()};r.append(b)});up();return r};
 const top=E('div','position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top))'),cx=E('button','width:44px;height:44px;font-size:32px;line-height:1;text-shadow:0 0 6px #000','×'),fl=E('button','width:44px;height:44px;font-size:26px;text-shadow:0 0 6px #000','⟲'),timer=E('div','align-self:center;font-weight:800;text-shadow:0 0 6px #000');
-cx.setAttribute('aria-label','Close camera');fl.setAttribute('aria-label','Flip camera');cx.onclick=closeCam;fl.onclick=()=>{face=face=='user'?'environment':'user';begin()};top.append(cx,timer,fl);
+cx.setAttribute('aria-label','Close camera');fl.setAttribute('aria-label','Flip camera');cx.onclick=closeCam;fl.onclick=()=>{face=face=='user'?'environment':'user';begin()};const ar=E('button','height:36px;padding:0 12px;font-size:13px;font-weight:800;border:1.5px solid #fff;border-radius:18px;margin-right:6px;text-shadow:0 0 6px #000','Full');ar.setAttribute('aria-label','Switch between full frame and 9:16');ar.onclick=()=>{crop=!crop;ar.textContent=crop?'9:16':'Full'};
+const rg=E('div','display:flex;align-items:center');rg.append(ar,fl);top.append(cx,timer,rg);
 const bot=E('div','position:absolute;left:0;right:0;bottom:0;padding-top:30px;padding-bottom:max(16px,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.7))');
 const sh=E('button','width:78px;height:78px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center;margin:6px auto 0'),dot=E('span','width:58px;height:58px;border-radius:50%;background:#fff;display:block');sh.append(dot);sh.setAttribute('aria-label','Take photo');
 const modes=chips(['Photo','Video'],()=>mode=='photo'?0:1,i=>{mode=i?'video':'photo';sh.setAttribute('aria-label',i?'Start recording':'Take photo');dot.style.background=i?'#ff2d55':'#fff'});modes.style.justifyContent='center';
