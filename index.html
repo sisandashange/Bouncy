@@ -81,7 +81,7 @@ header{height:56px}h2{font-size:30px;letter-spacing:-.01em}
 .cm{padding:12px 0}
 #app:not(.watch) .tabs{display:none}textarea{width:100%;font:inherit;border:1.5px solid var(--fg);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg);resize:none}#app.chatting header{display:none}</style></head><body>
 <div id="app" class="watch">
-<header><i></i>BOUNCY<div class="tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button><button id="sr" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></div></header>
+<header><i></i>BOUNCY<div class="tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button><button id="snd" aria-label="Sound"></button><button id="sr" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></div></header>
 <main>
 <div id="feed" class="v"></div>
 <div id="trend" class="v hide"></div>
@@ -113,7 +113,7 @@ function open(node){sheet.replaceChildren(node);sheet.classList.add('o');shade.c
 function close(){if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
 shade.onclick=close;
 const vt=new Map(),seen=new Set();
-const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){e.isIntersecting?v.play().catch(()=>{}):v.pause()}
+const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){if(e.isIntersecting){v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});if(soundOn&&!blocked){blocked=true;sndUI();toast('Tap the screen to turn sound on')}})}else v.pause()}
 const c=clips.find(x=>x.el===e.target);if(!c)return;
 if(e.isIntersecting){const k=clips.indexOf(c);if(k>=clips.length-3)nextPage();const nx=clips[k+1],nv=nx&&nx.el&&nx.el.querySelector('video');if(nv)nv.preload='auto'}
 clearTimeout(vt.get(c.id));if(e.isIntersecting&&!seen.has(c.id))vt.set(c.id,setTimeout(()=>{seen.add(c.id);c.vw++;sb.rpc('record_view',{p_video:c.id})},2000))}),{root:feed,threshold:.6});
@@ -151,8 +151,8 @@ let lt=0;
 feed.addEventListener('click',e=>{const s=e.target.closest('.clip');if(!s)return;const c=clips.find(x=>x.el===s),b=e.target.closest('button');
 if(b){act(b.dataset.a,c,b);return}
 const n=Date.now();
-if(n-lt<320){if(!c.liked)like(c);const h=document.createElement('span');h.className='burst';h.textContent='♥';const r=s.getBoundingClientRect();h.style.left=(e.clientX-r.left-40)+'px';h.style.top=(e.clientY-r.top-40)+'px';s.append(h);setTimeout(()=>h.remove(),700)}
-else{const v=s.querySelector('video');v.muted=!v.muted;toast(v.muted?'Sound off':'Sound on')}
+if(n-lt<320){clearTimeout(pt);if(!c.liked)like(c);const h=document.createElement('span');h.className='burst';h.textContent='♥';const r=s.getBoundingClientRect();h.style.left=(e.clientX-r.left-40)+'px';h.style.top=(e.clientY-r.top-40)+'px';s.append(h);setTimeout(()=>h.remove(),700)}
+else if(!skipTap){clearTimeout(pt);pt=setTimeout(()=>{const v=s.querySelector('video');v.paused?v.play().catch(()=>{}):v.pause()},320)}
 lt=n});
 async function comments(c,kind){const d=el('<h3>Comments</h3><div class="list">Loading…</div><div class="row"><input type="text" id="ci" maxlength="500" placeholder="Add a comment" aria-label="Add a comment"><button class="btn" id="cs">Send</button></div>');open(d);
 const L=d.querySelector('.list'),inp=d.querySelector('#ci');let all=[],pm={},to=null;
@@ -449,7 +449,14 @@ const ext=isV?((f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]
 const up=await sb.storage.from('videos').upload(path,blob,{contentType:isV?(f.type||'video/mp4'):'image/jpeg'});if(up.error)return fail('Couldn’t upload. Use a photo, or an MP4, MOV or WebM video under 50 MB.');
 const r=await sb.from('stories').insert({owner_id:me.id,media_path:path,media_type:isV?'video':'image',caption:d.querySelector('#sc').value.trim()});if(r.error)return fail('Couldn’t share your story');
 close();toast('Story shared');if(!$('#trend').classList.contains('hide'))drawTrend()};open(d)};fi.click()}
-let rc=null,curAudio=null;
+let rc=null,curAudio=null,pt,skipTap=false,blocked=false,soundOn=true;
+try{soundOn=localStorage.getItem('bouncy-sound')!=='off'}catch(e){}
+const SND={on:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',off:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'};
+function sndUI(){const b=$('#snd');b.innerHTML=soundOn&&!blocked?SND.on:SND.off;b.setAttribute('aria-label',soundOn?'Turn sound off':'Turn sound on')}
+function applySound(){document.querySelectorAll('.clip.on video').forEach(v=>{v.muted=!soundOn;if(soundOn)v.play().catch(()=>{})});sndUI()}
+$('#snd').onclick=e=>{e.stopPropagation();soundOn=!soundOn;blocked=false;try{localStorage.setItem('bouncy-sound',soundOn?'on':'off')}catch(x){}applySound();toast(soundOn?'Sound on':'Sound off')};
+addEventListener('click',()=>{if(blocked&&soundOn){blocked=false;skipTap=true;setTimeout(()=>{skipTap=false},0);applySound()}},true);
+sndUI();
 function voiceEl(x){const w=E('div','display:flex;align-items:center;gap:10px;min-width:180px'),b=E('button','width:34px;height:34px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;flex:none;font-size:12px','▶');b.setAttribute('aria-label','Play voice message');
 const bar=E('div','flex:1;height:4px;position:relative'),tr=E('div','position:absolute;inset:0;background:currentColor;opacity:.25;border-radius:2px'),fl=E('div','position:absolute;left:0;top:0;bottom:0;width:0;background:currentColor;border-radius:2px');bar.append(tr,fl);
 let au=null;
