@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>BOUNCY</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('bouncy-theme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#ffffff"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
-:root{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2;--soft:#f0f0f0;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-weight:500}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -79,7 +80,9 @@ nav button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width
 header{height:56px}h2{font-size:30px;letter-spacing:-.01em}
 .tabs button{font-size:15px}
 .cm{padding:12px 0}
-#app:not(.watch) .tabs{display:none}textarea{width:100%;font:inherit;border:1.5px solid var(--fg);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg);resize:none}#app.chatting header{display:none}</style></head><body>
+#app:not(.watch) .tabs{display:none}textarea{width:100%;font:inherit;border:1.5px solid var(--fg);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg);resize:none}#app.chatting header{display:none}:root[data-theme="dark"]{--bg:#000;--fg:#fff;--mute:#9a9a9a;--line:#2b2b2b;--soft:#1c1c1c;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root[data-theme="system"]{--bg:#000;--fg:#fff;--mute:#9a9a9a;--line:#2b2b2b;--soft:#1c1c1c;color-scheme:dark}}
+</style></head><body>
 <div id="app" class="watch">
 <header><i></i>BOUNCY<div class="tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button><button id="snd" aria-label="Sound"></button><button id="sr" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button></div></header>
 <main>
@@ -110,17 +113,18 @@ let me=null,clips=[],tt;
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('o');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('o'),2200)}
 function el(h){const d=document.createElement('div');d.innerHTML=h;return d}
 function open(node){sheet.replaceChildren(node);sheet.classList.add('o');shade.classList.add('o')}
-function close(){if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
+function close(){const au=document.getElementById('auth');if(au)au.remove();if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
 shade.onclick=close;
 const vt=new Map(),seen=new Set();
-const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){if(e.isIntersecting){v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});if(soundOn&&!blocked){blocked=true;sndUI();toast('Tap the screen to turn sound on')}})}else v.pause()}
+const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){if(e.isIntersecting){if(!ds||v.dataset.u){v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});if(soundOn&&!blocked){blocked=true;sndUI();toast('Tap the screen to turn sound on')}})}}else v.pause()}
 const c=clips.find(x=>x.el===e.target);if(!c)return;
-if(e.isIntersecting){const k=clips.indexOf(c);if(k>=clips.length-3)nextPage();const nx=clips[k+1],nv=nx&&nx.el&&nx.el.querySelector('video');if(nv)nv.preload='auto'}
+if(e.isIntersecting){const k=clips.indexOf(c);if(k>=clips.length-3)nextPage();const nx=clips[k+1],nv=nx&&nx.el&&nx.el.querySelector('video');if(nv&&!ds)nv.preload='auto'}
 clearTimeout(vt.get(c.id));if(e.isIntersecting&&!seen.has(c.id))vt.set(c.id,setTimeout(()=>{seen.add(c.id);c.vw++;sb.rpc('record_view',{p_video:c.id})},2000))}),{root:feed,threshold:.6});
 function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');const mine=!!(me&&c.o===me.id);f.hidden=mine;s.querySelector('[data-a=rp]').hidden=mine;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
 function mk(c){const s=document.createElement('section');s.className='clip real';
 s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button><button data-a="sv" aria-label="Save video">'+I.save+'<b>Save</b></button></div><div class="meta"><div><strong><button data-a="pf" style="font:inherit;color:inherit;padding:0"></button></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
-s.querySelector('video').src=pub(c.path);if(c.tp)s.querySelector('video').poster=pub(c.tp);s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});c.el=s;sync(c);io.observe(s);return s}
+const vv=s.querySelector('video');vv.src=pub(c.path);vv.preload=ds?'none':'metadata';if(c.tp)vv.poster=pub(c.tp);
+const pb=E('div','position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font-size:64px;color:#fff;text-shadow:0 0 12px #000','▶'),upd=()=>{pb.hidden=!(ds&&vv.paused)};pb.hidden=true;s.append(pb);['play','pause','loadstart'].forEach(ev=>vv.addEventListener(ev,upd));upd();s.querySelector('strong button').textContent='@'+c.u;const cp=s.querySelector('p');c.c.split(/(#\w+)/).forEach(w=>{if(/^#\w+$/.test(w)){const t=document.createElement('button');t.dataset.a='tg';t.style.cssText='font:inherit;font-weight:800;color:inherit;padding:0';t.textContent=w;cp.append(t)}else cp.append(w)});c.el=s;sync(c);io.observe(s);return s}
 async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];const none=Promise.resolve({data:[]});
 const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username').in('id',ids),me?sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id):none,me?sb.from('follows').select('followed_id').eq('follower_id',me.id):none]);
@@ -128,7 +132,7 @@ const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),ls=new Set((
 return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count,view_count';
 let page=0,more=true,busy=false;
-async function fetchPage(){const N=8;let rows=[];
+async function fetchPage(){const N=ds?4:8;let rows=[];
 if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);
 if(ids.length){const r=await sb.from('videos').select(COLS).in('owner_id',ids).order('created_at',{ascending:false}).range(page*N,page*N+N-1);if(r.error)throw r.error;rows=r.data}}
 else{const r=await sb.rpc('for_you_feed',{p_limit:N,p_offset:page*N});if(r.error)throw r.error;const ids=(r.data||[]).map(x=>x.id);
@@ -152,7 +156,7 @@ feed.addEventListener('click',e=>{const s=e.target.closest('.clip');if(!s)return
 if(b){act(b.dataset.a,c,b);return}
 const n=Date.now();
 if(n-lt<320){clearTimeout(pt);if(!c.liked)like(c);const h=document.createElement('span');h.className='burst';h.textContent='♥';const r=s.getBoundingClientRect();h.style.left=(e.clientX-r.left-40)+'px';h.style.top=(e.clientY-r.top-40)+'px';s.append(h);setTimeout(()=>h.remove(),700)}
-else if(!skipTap){clearTimeout(pt);pt=setTimeout(()=>{const v=s.querySelector('video');v.paused?v.play().catch(()=>{}):v.pause()},320)}
+else if(!skipTap){clearTimeout(pt);pt=setTimeout(()=>{const v=s.querySelector('video');if(v.paused){v.dataset.u=1;v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}else v.pause()},320)}
 lt=n});
 async function comments(c,kind){const d=el('<h3>Comments</h3><div class="list">Loading…</div><div class="row"><input type="text" id="ci" maxlength="500" placeholder="Add a comment" aria-label="Add a comment"><button class="btn" id="cs">Send</button></div>');open(d);
 const L=d.querySelector('.list'),inp=d.querySelector('#ci');let all=[],pm={},to=null;
@@ -205,7 +209,7 @@ const E=(t,c,x)=>{const n=document.createElement(t);if(c)n.style.cssText=c;if(x!
 const IC={grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',doc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',heart:'<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',add:'<circle cx="10" cy="8" r="4"/><path d="M3 21c1-5 13-5 14 0M19 8v6M16 11h6"/>',back:'<path d="M15 5l-7 7 7 7"/>',share:'<path d="M12 15V3m0 0L7 8m5-5 5 5M5 13v8h14v-8"/>',dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'};
 const ib=(k,label,f)=>{const b=E('button','width:44px;height:44px;display:grid;place-items:center');b.setAttribute('aria-label',label);b.innerHTML='<svg viewBox="0 0 24 24" style="width:26px;height:26px">'+IC[k]+'</svg>';b.onclick=f;return b};
 function ptile(c){const t=E('button','position:relative;aspect-ratio:3/4;overflow:hidden;background:#111;display:block;width:100%');
-if(c.tp){const im=E('img','position:absolute;inset:0;width:100%;height:100%;object-fit:cover');im.src=pub(c.tp);im.alt='';im.loading='lazy';t.append(im)}else{const v=E('video','position:absolute;inset:0;width:100%;height:100%;object-fit:cover');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v)}
+if(c.tp){const im=E('img','position:absolute;inset:0;width:100%;height:100%;object-fit:cover');im.src=pub(c.tp);im.alt='';im.loading='lazy';t.append(im)}else if(!ds){const v=E('video','position:absolute;inset:0;width:100%;height:100%;object-fit:cover');v.src=pub(c.path)+'#t=0.1';v.muted=true;v.preload='metadata';t.append(v)}
 t.append(E('span','position:absolute;left:8px;bottom:6px;color:#fff;font-weight:800;font-size:14px;text-shadow:0 0 6px #000','▶ '+fmt(c.vw)));t.onclick=()=>watch(c);return t}
 function vgrid(list,empty,btn){const g=E('div','display:grid;grid-template-columns:repeat(3,1fr);gap:1px');if(!list.length){const e=E('div','grid-column:1/-1;padding:40px 24px;text-align:center;color:var(--mute)',empty);if(btn){const b=E('button','',btn);b.className='btn';b.onclick=pickVideo;e.append(document.createElement('br'),b)}g.append(e)}list.forEach(c=>g.append(ptile(c)));return g}
 async function postsOf(uid,P){const r=await sb.from('posts').select('id,owner_id,body,image_path,reactions,reaction_count,comment_count,created_at').eq('owner_id',uid).order('created_at',{ascending:false}).limit(30);const w=E('div');
@@ -214,7 +218,7 @@ const my={};if(me)((await sb.from('post_reactions').select('post_id,reaction').i
 r.data.forEach(x=>w.append(postCard({id:x.id,o:uid,u:P.username,av:P.avatar_url,c:x.body,img:x.image_path,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my:my[x.id]||null,t:x.created_at})));return w}
 async function likedVids(){const l=await sb.from('video_likes').select('video_id').eq('user_id',me.id).order('created_at',{ascending:false}).limit(60);const ids=(l.data||[]).map(x=>x.video_id);if(!ids.length)return[];const v=await sb.from('videos').select(COLS).in('id',ids);const cs=await hydrate(v.data||[]);return ids.map(i=>cs.find(c=>c.id===i)).filter(Boolean)}
 function profLink(uid){const u=location.origin+location.pathname+'?u='+uid;if(navigator.share)navigator.share({title:'BOUNCY',url:u}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>toast('Link copied'),()=>toast('Couldn’t copy the link'));else toast('Sharing isn’t available in this browser')}
-function menuSheet(){const d=el('<h3>Menu</h3><div class="col"></div>');[['Edit profile',()=>{close();editProfile()}],['Privacy policy',()=>window.open('privacy.html','_blank')],['Log out',()=>{close();sb.auth.signOut()}],['Delete account',()=>delAccountSheet()]].forEach(([l,f],i)=>{const b=E('button','margin:0',l);b.className='btn';if(i>1)b.style.cssText='margin:0;background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)';b.onclick=f;d.lastChild.append(b)});
+function menuSheet(){const d=el('<h3>Menu</h3><div class="col"></div>');[['Edit profile',()=>{close();editProfile()}],['Appearance and data saver',settingsSheet],['Privacy policy',()=>window.open('privacy.html','_blank')],['Log out',()=>{close();sb.auth.signOut()}],['Delete account',()=>delAccountSheet()]].forEach(([l,f],i)=>{const b=E('button','margin:0',l);b.className='btn';if(i>1)b.style.cssText='margin:0;background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)';b.onclick=f;d.lastChild.append(b)});
 if(me.admin){const b=E('button','margin:0','Review reports');b.className='btn';b.onclick=()=>{close();adminScreen()};d.lastChild.prepend(b)}open(d)}
 async function renderProfile(d,uid){const isMe=!!(me&&uid===me.id);
 const [p,v,pc,im]=await Promise.all([sb.from('profiles').select('username,display_name,avatar_url,bio').eq('id',uid).single(),sb.from('videos').select(COLS).eq('owner_id',uid).order('created_at',{ascending:false}),sb.rpc('profile_counts',{p_user:uid}),me&&!isMe?sb.from('follows').select('follower_id').eq('follower_id',me.id).eq('followed_id',uid):Promise.resolve({data:[]})]);
@@ -342,7 +346,7 @@ if(mu.length)((await sb.from('profiles').select('id,username').in('id',mu)).data
 if(g)d.querySelector('#cn').textContent=name+' · '+mu.length+' members';
 const L=d.querySelector('#ml'),inp=d.querySelector('#mi');let n=-1;
 const draw=async()=>{const r=await sb.from('messages').select('sender_id,body,message_type,media_url,created_at').eq('conversation_id',id).is('deleted_at',null).order('created_at').limit(300);if(r.error||r.data.length===n)return;n=r.data.length;L.replaceChildren();
-r.data.forEach(x=>{const e=document.createElement('div'),mine=x.sender_id===me.id;if(x.message_type=='voice')e.append(voiceEl(x));else e.textContent=x.body||('Sent a '+x.message_type);e.style.cssText='max-width:78%;padding:8px 12px;border-radius:18px;line-height:1.3;word-break:break-word;'+(mine?'border-bottom-right-radius:4px;align-self:flex-end;background:var(--fg);color:var(--bg)':'border-bottom-left-radius:4px;align-self:flex-start;background:#f0f0f0');
+r.data.forEach(x=>{const e=document.createElement('div'),mine=x.sender_id===me.id;if(x.message_type=='voice')e.append(voiceEl(x));else e.textContent=x.body||('Sent a '+x.message_type);e.style.cssText='max-width:78%;padding:8px 12px;border-radius:18px;line-height:1.3;word-break:break-word;'+(mine?'border-bottom-right-radius:4px;align-self:flex-end;background:var(--fg);color:var(--bg)':'border-bottom-left-radius:4px;align-self:flex-start;background:var(--soft)');
 if(g&&!mine){const sn=document.createElement('b');sn.textContent='@'+(pm[x.sender_id]||'member');sn.style.cssText='display:block;font-size:12px;margin-bottom:2px';e.prepend(sn)}
 const tm=document.createElement('span');tm.textContent=ago(x.created_at);tm.style.cssText='display:block;font-size:11px;opacity:.6;text-align:right;margin-top:2px';e.append(tm);L.append(e)});L.scrollTop=L.scrollHeight;sb.rpc('mark_conversation_read',{p_conv:id}).then(unread)};
 await draw();clearInterval(poll);poll=setInterval(draw,4000);
@@ -352,14 +356,14 @@ const RX=['👍','❤️','😂','😮','😢'];let ftab='posts';
 function segs(d){const sg=document.createElement('div');sg.style.cssText='display:flex;gap:8px;margin:0 16px 12px';[['posts','Posts'],['disc','Discover']].forEach(([k,l])=>{const b=document.createElement('button');b.className='fol'+(ftab==k?' on':'');b.textContent=l;b.onclick=()=>{ftab=k;drawTrend()};sg.append(b)});d.append(sg)}
 function shrink(f,max){return new Promise(res=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(res,'image/jpeg',.82)};im.onerror=()=>res(null);im.src=URL.createObjectURL(f)})}
 function paint(p){const s=p.el.querySelector('.sm'),top=Object.entries(p.rx).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join('');s.querySelector('span').textContent=p.n?top+' '+p.n:'';s.querySelector('i').textContent=p.cb?p.cb+(p.cb==1?' comment':' comments'):'';const b=p.el.querySelector('[data-r]');b.textContent=p.my?p.my+' Reacted':'👍 React';b.style.fontWeight=p.my?'800':'500'}
-function postCard(p){const c=document.createElement('article');c.style.cssText='border-bottom:8px solid #f3f3f3;padding:14px 0 0';p.el=c;
+function postCard(p){const c=document.createElement('article');c.style.cssText='border-bottom:8px solid var(--soft);padding:14px 0 0';p.el=c;
 const hd=document.createElement('div');hd.style.cssText='display:flex;gap:10px;align-items:center;padding:0 16px 10px';
 const av=avatar(p.u,p.av,40);av.onclick=()=>showUser(p.o);
 const nm=document.createElement('div');nm.style.cssText='flex:1;min-width:0';nm.innerHTML='<b></b><div style="color:var(--mute);font-size:12px"></div>';nm.firstChild.textContent='@'+p.u;nm.lastChild.textContent=ago(p.t);
 const mo=document.createElement('button');mo.textContent='⋯';mo.setAttribute('aria-label','More options');mo.style.cssText='font-size:22px;padding:4px 10px';mo.onclick=()=>{if(me&&p.o===me.id)delPost(p);else if(!gate('report posts'))report(p,'post')};
 hd.append(av,nm,mo);c.append(hd);
 if(p.c){const t=document.createElement('p');t.style.cssText='margin:0 16px 10px;line-height:1.4;white-space:pre-wrap;word-break:break-word';t.textContent=p.c;c.append(t)}
-if(p.img){const im=document.createElement('img');im.src=pub(p.img);im.alt='';im.loading='lazy';im.style.cssText='width:100%;max-height:520px;object-fit:cover;display:block;background:#eee';c.append(im)}
+if(p.img){const im=document.createElement('img');im.src=pub(p.img);im.alt='';im.loading='lazy';im.style.cssText='width:100%;max-height:520px;object-fit:cover;display:block;background:var(--soft)';c.append(im)}
 c.append(el('<div class="sm" style="display:flex;justify-content:space-between;padding:8px 16px;color:var(--mute);font-size:13px"><span></span><i style="font-style:normal"></i></div>').firstChild);
 const ac=document.createElement('div');ac.style.cssText='display:flex;border-top:1px solid var(--line)';
 [['r','👍 React',()=>p.my?react(p,p.my):reactPick(p)],['x','💬 Comment',()=>comments(p,'post')],['x','↗ Share',()=>{if(gate('share posts'))return;if(navigator.share)navigator.share({title:'BOUNCY',text:(p.c||'').slice(0,100),url:location.origin+location.pathname+'?p='+p.id}).catch(()=>{});else toast('Sharing isn’t available in this browser')}]].forEach(([k,l,f])=>{const b=document.createElement('button');if(k=='r')b.dataset.r=1;b.textContent=l;b.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--fg)';b.onclick=f;ac.append(b)});
@@ -450,6 +454,15 @@ const ext=isV?((f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]
 const up=await sb.storage.from('videos').upload(path,blob,{contentType:isV?(f.type||'video/mp4'):'image/jpeg'});if(up.error)return fail('Couldn’t upload. Use a photo, or an MP4, MOV or WebM video under 50 MB.');
 const r=await sb.from('stories').insert({owner_id:me.id,media_path:path,media_type:isV?'video':'image',caption:d.querySelector('#sc').value.trim()});if(r.error)return fail('Couldn’t share your story');
 close();toast('Story shared');if(!$('#trend').classList.contains('hide'))drawTrend()};open(d)};fi.click()}
+let ds=false;try{const s=localStorage.getItem('bouncy-data'),cn=navigator.connection;ds=s?s=='on':!!(cn&&(cn.saveData||/2g/.test(cn.effectiveType||'')))}catch(e){}
+function setTheme(k){document.documentElement.dataset.theme=k;try{localStorage.setItem('bouncy-theme',k)}catch(e){}const dk=k=='dark'||(k=='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.querySelector('meta[name=theme-color]').content=dk?'#000000':'#ffffff'}
+setTheme(document.documentElement.dataset.theme||'light');
+function settingsSheet(){const d=el('<h3>Appearance and data saver</h3><div class="col" id="st"></div>'),c=d.querySelector('#st');
+const seg=(t,opts,get,set)=>{c.append(E('p','margin:8px 0 0;font-weight:800',t));const r=E('div','display:flex;gap:8px');opts.forEach(([k,l])=>{const b=E('button','flex:1;padding:10px 0',l);b.className='fol'+(get()==k?' on':'');b.onclick=()=>{set(k);r.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on',opts[i][0]==k))};r.append(b)});c.append(r)};
+seg('Theme',[['light','Light'],['dark','Dark'],['system','System']],()=>document.documentElement.dataset.theme,setTheme);
+seg('Data saver',[['off','Off'],['on','On']],()=>ds?'on':'off',k=>{ds=k=='on';try{localStorage.setItem('bouncy-data',k)}catch(e){}load()});
+c.append(E('p','margin:0;color:var(--mute);font-size:13px;line-height:1.4','Data saver loads far less video: nothing plays or preloads until you tap it, and the feed loads in smaller pages. Good for limited data or slow networks.'));open(d)}
+let recovering=false;
 let rc=null,curAudio=null,pt,skipTap=false,blocked=false,soundOn=true;
 try{soundOn=localStorage.getItem('bouncy-sound')!=='off'}catch(e){}
 const SND={on:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',off:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'};
@@ -489,7 +502,7 @@ const r=await sb.rpc('admin_reports',{p_status:st});
 if(r.error){d.append(E('p','margin:16px;color:var(--mute)','You don’t have access to this screen.'));return}
 if(!r.data.length){d.append(E('p','margin:24px 16px;color:var(--mute)','No '+st+' reports.'));return}
 r.data.forEach(x=>{const c=E('div','margin:0 16px 14px;border:1px solid var(--line);border-radius:16px;overflow:hidden');
-if(x.media_path){if(x.kind=='post'){const m=E('img','width:100%;max-height:260px;object-fit:cover;display:block;background:#eee');m.src=pub(x.media_path);m.alt='';c.append(m)}
+if(x.media_path){if(x.kind=='post'){const m=E('img','width:100%;max-height:260px;object-fit:cover;display:block;background:var(--soft)');m.src=pub(x.media_path);m.alt='';c.append(m)}
 else{const m=E('video','width:100%;max-height:260px;object-fit:contain;display:block;background:#000');m.src=pub(x.media_path);m.controls=true;m.preload='metadata';m.muted=true;m.playsInline=true;if(x.thumb_path)m.poster=pub(x.thumb_path);c.append(m)}}
 const b=E('div','padding:12px');
 b.append(E('div','font-weight:800',x.kind.toUpperCase()+' · '+x.reason),E('div','color:var(--mute);font-size:13px;margin-top:2px','@'+(x.reported||'unknown')+' · reported by @'+(x.reporter||'unknown')+' · '+x.reporters+(x.reporters==1?' reporter':' reporters')+' · '+ago(x.created_at)));
@@ -510,18 +523,37 @@ const w=E('div','max-height:70vh;overflow-y:auto;margin:0 -16px');w.append(postC
 function deep(){const dp=new URLSearchParams(location.search).get('p');if(dp&&/^[0-9a-f-]{36}$/i.test(dp)){history.replaceState(null,'',location.pathname);openPost(dp);return}const du=new URLSearchParams(location.search).get('u');if(du&&/^[0-9a-f-]{36}$/i.test(du)){history.replaceState(null,'',location.pathname);showUser(du);return}const dv=new URLSearchParams(location.search).get('v');if(dv&&/^[0-9a-f-]{36}$/i.test(dv)){history.replaceState(null,'',location.pathname);watchById(dv)}}
 async function saveVideo(c){toast('Saving…');try{const r=await fetch(pub(c.path));if(!r.ok)throw 0;const bl=await r.blob(),name='bouncy-'+c.id.slice(0,8)+'.'+(c.path.split('.').pop()||'mp4');
 const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000);toast('Saved to Downloads. Open Gallery → Downloads.')}catch(e){toast('Couldn’t save this video. Try again.')}}
-function authSheet(why){const d=el('<h3>Join BOUNCY</h3>'+(why?'<p class="sub" style="margin:0 0 12px">Log in or create an account to '+why+'.</p>':'')+'<div class="col"><input type="text" id="an" placeholder="Name (sign up)" aria-label="Name" autocomplete="name"><input type="text" id="au" placeholder="Username (sign up)" aria-label="Username" autocomplete="username" maxlength="30"><input type="email" id="ae" placeholder="Email" aria-label="Email" autocomplete="email"><input type="password" id="ap" placeholder="Password (8+ characters)" aria-label="Password" autocomplete="current-password"></div><div class="row"><button class="btn" id="li">Log in</button><button class="btn" id="su">Create account</button><button class="btn" id="nn" style="background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)">Not now</button></div><p class="sub" style="margin:10px 0 0">By joining, you agree to our <a href="privacy.html" target="_blank" rel="noopener" style="color:inherit">privacy policy</a>.</p><p id="am" class="sub" style="margin:10px 0 0" role="alert"></p>');
-const g=s=>d.querySelector(s),msg=t=>g('#am').textContent=t;
-g('#nn').onclick=close;g('#li').onclick=async()=>{msg('');const r=await sb.auth.signInWithPassword({email:g('#ae').value.trim(),password:g('#ap').value});if(r.error)msg(r.error.message)};
-g('#su').onclick=async()=>{msg('');const u=g('#au').value.trim();if(!/^[A-Za-z0-9_.]{3,30}$/.test(u)){msg('Pick a username with 3 to 30 letters, numbers, dots or underscores.');return}
-const r=await sb.auth.signUp({email:g('#ae').value.trim(),password:g('#ap').value,options:{data:{name:g('#an').value.trim(),username:u}}});
-if(r.error)msg(r.error.message);else if(!r.data.session)msg('Check your email to confirm your account, then log in.')};
-open(d)}
+function authSheet(why){close();const o=E('div','position:absolute;inset:0;z-index:4;background:var(--bg);overflow-y:auto;display:flex;justify-content:center');o.id='auth';
+const w=E('div','width:100%;max-width:400px;padding:40px 24px 32px;padding-top:max(40px,env(safe-area-inset-top))');
+const lg=E('div','display:flex;align-items:center;gap:10px;font-size:34px;font-weight:800;letter-spacing:.02em');lg.append(E('i','width:22px;height:22px;border-radius:50%;background:var(--fg);animation:hop 1s infinite;transform-origin:bottom'),E('span','','BOUNCY'));
+w.append(lg,E('p','margin:6px 0 0;color:var(--mute);font-size:16px','Bounce Into Your World.'));
+if(why)w.append(E('p','margin:18px 0 0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:14px','Log in or create an account to '+why+'.'));
+let mode='in';const seg=E('div','display:flex;background:var(--soft);border-radius:14px;padding:4px;margin:24px 0 18px'),form=E('div','display:flex;flex-direction:column;gap:14px'),msg=E('p','margin:12px 0 0;font-size:14px;font-weight:800;min-height:20px'),go=E('button','width:100%;height:52px;border-radius:14px;background:var(--fg);color:var(--bg);font-size:16px;font-weight:800;margin-top:18px');msg.setAttribute('role','alert');
+const fld=(id,label,type,ac,ph)=>{const g=E('label','display:block;font-size:13px;font-weight:800');g.append(label);const i=document.createElement('input');i.id=id;i.type=type;i.autocomplete=ac;i.placeholder=ph;i.style.cssText='display:block;width:100%;height:50px;margin-top:6px;padding:0 14px;border:1.5px solid var(--line);border-radius:14px;font-size:16px;font-weight:500;flex:none';i.onfocus=()=>{i.style.borderColor='var(--fg)'};i.onblur=()=>{i.style.borderColor='var(--line)'};g.append(i);return g};
+const v=id=>o.querySelector('#'+id).value.trim(),say=(t,ok)=>{msg.textContent=t;msg.style.color=ok?'var(--fg)':'#d93025'},friendly=m=>/invalid login/i.test(m)?'Wrong email or password.':/already registered|already been registered/i.test(m)?'That email already has an account. Try logging in.':/email not confirmed/i.test(m)?'Confirm your email first, then log in.':m;
+const render=()=>{form.replaceChildren();msg.textContent='';[['in','Log in'],['up','Sign up']].forEach(([k,l])=>{const b=seg.children[k=='in'?0:1];b.style.background=mode==k?'var(--bg)':'transparent';b.style.boxShadow=mode==k?'0 1px 4px rgba(0,0,0,.18)':'none';b.style.color=mode==k?'var(--fg)':'var(--mute)'});
+if(mode=='up'){form.append(fld('an','Name','text','name','Your name'),fld('au','Username','text','username','3–30 letters, numbers, . or _'))}
+form.append(fld('ae','Email','email','email','you@example.com'));const pw=fld('ap','Password','password',mode=='in'?'current-password':'new-password',mode=='in'?'Your password':'At least 8 characters'),pi=pw.querySelector('input');pi.style.paddingRight='64px';pw.style.position='relative';const sh=E('button','position:absolute;right:6px;bottom:6px;height:38px;padding:0 10px;font-size:13px;font-weight:800;color:var(--mute)','Show');sh.type='button';sh.onclick=()=>{pi.type=pi.type=='password'?'text':'password';sh.textContent=pi.type=='password'?'Show':'Hide'};pw.append(sh);form.append(pw);
+if(mode=='in'){const fg=E('button','align-self:flex-end;font-size:14px;font-weight:800;color:var(--mute)','Forgot password?');fg.onclick=async()=>{const em=v('ae');if(!em){say('Enter your email above first.');return}const r=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});r.error?say(friendly(r.error.message)):say('Check your email for a link to reset your password.',1)};form.append(fg)}
+go.textContent=mode=='in'?'Log in':'Create account'};
+['Log in','Sign up'].forEach((l,i)=>{const b=E('button','flex:1;height:42px;border-radius:11px;font-size:15px;font-weight:800',l);b.onclick=()=>{mode=i?'up':'in';render()};seg.append(b)});
+go.onclick=async()=>{say('');go.disabled=true;const done=()=>{go.disabled=false};
+if(mode=='in'){const r=await sb.auth.signInWithPassword({email:v('ae'),password:o.querySelector('#ap').value});if(r.error)say(friendly(r.error.message));return done()}
+const u=v('au');if(!/^[A-Za-z0-9_.]{3,30}$/.test(u)){say('Pick a username with 3 to 30 letters, numbers, dots or underscores.');return done()}
+if(o.querySelector('#ap').value.length<8){say('Use a password with at least 8 characters.');return done()}
+const r=await sb.auth.signUp({email:v('ae'),password:o.querySelector('#ap').value,options:{data:{name:v('an'),username:u}}});
+if(r.error)say(friendly(r.error.message));else if(!r.data.session){mode='in';render();say('Account created. Check your email to confirm it, then log in.',1)}done()};
+o.onkeydown=e=>{if(e.key=='Enter'&&e.target.tagName=='INPUT')go.click()};
+const gs=E('button','display:block;margin:18px auto 0;font-size:15px;font-weight:800;text-decoration:underline','Continue as guest');gs.onclick=()=>o.remove();
+const ft=E('p','margin:22px 0 0;text-align:center;color:var(--mute);font-size:13px;line-height:1.5');ft.append('By continuing you agree to our ');const pl=E('a','color:inherit','privacy policy');pl.href='privacy.html';pl.target='_blank';pl.rel='noopener';const ap=E('button','display:block;margin:6px auto 0;color:inherit;font-size:13px;text-decoration:underline','Appearance and data saver');ap.onclick=settingsSheet;ft.append(pl,'.',ap);
+w.append(seg,form,msg,go,gs,ft);o.append(w);render();$('#app').append(o)}
+function newPassSheet(){const d=el('<h3>Set a new password</h3><div class="col"><input type="password" id="np" placeholder="New password (8+ characters)" aria-label="New password" autocomplete="new-password"></div><div class="row"><button class="btn" id="npb">Save password</button></div><p id="npm" class="sub" style="margin:10px 0 0" role="alert"></p>');
+d.querySelector('#npb').onclick=async()=>{const x=d.querySelector('#np').value;if(x.length<8){d.querySelector('#npm').textContent='Use at least 8 characters.';return}const r=await sb.auth.updateUser({password:x});if(r.error){d.querySelector('#npm').textContent=r.error.message;return}recovering=false;close();toast('Password updated')};open(d)}
 async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';sb.rpc('is_admin').then(r=>{me.admin=r.data===true});
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
-close();show('feed');await load();unread();
+if(!recovering)close();show('feed');await load();unread();
 deep()}
-sb.auth.onAuthStateChange((ev,s)=>{if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){me=null;clips=[];close();dot(0);show('feed');load()}});
+sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
 </script></body></html>
