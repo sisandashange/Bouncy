@@ -214,7 +214,8 @@ const my={};if(me)((await sb.from('post_reactions').select('post_id,reaction').i
 r.data.forEach(x=>w.append(postCard({id:x.id,o:uid,u:P.username,av:P.avatar_url,c:x.body,img:x.image_path,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my:my[x.id]||null,t:x.created_at})));return w}
 async function likedVids(){const l=await sb.from('video_likes').select('video_id').eq('user_id',me.id).order('created_at',{ascending:false}).limit(60);const ids=(l.data||[]).map(x=>x.video_id);if(!ids.length)return[];const v=await sb.from('videos').select(COLS).in('id',ids);const cs=await hydrate(v.data||[]);return ids.map(i=>cs.find(c=>c.id===i)).filter(Boolean)}
 function profLink(uid){const u=location.origin+location.pathname+'?u='+uid;if(navigator.share)navigator.share({title:'BOUNCY',url:u}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(u).then(()=>toast('Link copied'),()=>toast('Couldn’t copy the link'));else toast('Sharing isn’t available in this browser')}
-function menuSheet(){const d=el('<h3>Menu</h3><div class="col"></div>');[['Edit profile',()=>{close();editProfile()}],['Privacy policy',()=>window.open('privacy.html','_blank')],['Log out',()=>{close();sb.auth.signOut()}],['Delete account',()=>delAccountSheet()]].forEach(([l,f],i)=>{const b=E('button','margin:0',l);b.className='btn';if(i>1)b.style.cssText='margin:0;background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)';b.onclick=f;d.lastChild.append(b)});open(d)}
+function menuSheet(){const d=el('<h3>Menu</h3><div class="col"></div>');[['Edit profile',()=>{close();editProfile()}],['Privacy policy',()=>window.open('privacy.html','_blank')],['Log out',()=>{close();sb.auth.signOut()}],['Delete account',()=>delAccountSheet()]].forEach(([l,f],i)=>{const b=E('button','margin:0',l);b.className='btn';if(i>1)b.style.cssText='margin:0;background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)';b.onclick=f;d.lastChild.append(b)});
+if(me.admin){const b=E('button','margin:0','Review reports');b.className='btn';b.onclick=()=>{close();adminScreen()};d.lastChild.prepend(b)}open(d)}
 async function renderProfile(d,uid){const isMe=!!(me&&uid===me.id);
 const [p,v,pc,im]=await Promise.all([sb.from('profiles').select('username,display_name,avatar_url,bio').eq('id',uid).single(),sb.from('videos').select(COLS).eq('owner_id',uid).order('created_at',{ascending:false}),sb.rpc('profile_counts',{p_user:uid}),me&&!isMe?sb.from('follows').select('follower_id').eq('follower_id',me.id).eq('followed_id',uid):Promise.resolve({data:[]})]);
 if(p.error){d.replaceChildren(el('<p class="sub" style="margin:20px 16px">This profile isn’t available.</p>'));return}
@@ -480,6 +481,27 @@ const up=await sb.storage.from('voice').upload(path,blob,{contentType:base});if(
 const r=await sb.from('messages').insert({conversation_id:id,sender_id:me.id,message_type:'voice',media_url:path,body:fmtT(dur)});if(r.error){toast('Couldn’t send your voice message');return}after()};
 close();rec.stop()};
 rec.start();open(d)}
+async function adminScreen(){show('user');const d=$('#user');let st='open';
+const draw=async()=>{d.replaceChildren();
+const bar=E('div','display:flex;align-items:center;gap:6px;padding:6px 8px;padding-top:max(6px,env(safe-area-inset-top))');bar.append(ib('back','Back',()=>show('me')),E('b','font-size:20px','Reports'));
+const sg=E('div','display:flex;gap:8px;margin:6px 16px 12px');['open','resolved','dismissed'].forEach(k=>{const b=E('button','',k[0].toUpperCase()+k.slice(1));b.className='fol'+(st==k?' on':'');b.onclick=()=>{st=k;draw()};sg.append(b)});d.append(bar,sg);
+const r=await sb.rpc('admin_reports',{p_status:st});
+if(r.error){d.append(E('p','margin:16px;color:var(--mute)','You don’t have access to this screen.'));return}
+if(!r.data.length){d.append(E('p','margin:24px 16px;color:var(--mute)','No '+st+' reports.'));return}
+r.data.forEach(x=>{const c=E('div','margin:0 16px 14px;border:1px solid var(--line);border-radius:16px;overflow:hidden');
+if(x.media_path){if(x.kind=='post'){const m=E('img','width:100%;max-height:260px;object-fit:cover;display:block;background:#eee');m.src=pub(x.media_path);m.alt='';c.append(m)}
+else{const m=E('video','width:100%;max-height:260px;object-fit:contain;display:block;background:#000');m.src=pub(x.media_path);m.controls=true;m.preload='metadata';m.muted=true;m.playsInline=true;if(x.thumb_path)m.poster=pub(x.thumb_path);c.append(m)}}
+const b=E('div','padding:12px');
+b.append(E('div','font-weight:800',x.kind.toUpperCase()+' · '+x.reason),E('div','color:var(--mute);font-size:13px;margin-top:2px','@'+(x.reported||'unknown')+' · reported by @'+(x.reporter||'unknown')+' · '+x.reporters+(x.reporters==1?' reporter':' reporters')+' · '+ago(x.created_at)));
+if(x.preview)b.append(E('p','margin:8px 0 0;white-space:pre-wrap;word-break:break-word',x.preview));
+if(x.target_status)b.append(E('div','margin-top:8px;font-size:13px;font-weight:800','Content is '+x.target_status));
+if(x.details)b.append(E('p','margin:8px 0 0;color:var(--mute);font-size:13px','Details: '+x.details));
+if(st=='open'){const row=E('div','display:flex;gap:8px;margin-top:12px'),usr=x.kind=='user';
+const act=async(a,msg)=>{if(msg&&!confirm(msg))return;const q=await sb.rpc('admin_act',{p_report:x.report_id,p_action:a});if(q.error){toast('Couldn’t update this report');return}toast(a=='remove'?(usr?'Marked resolved':'Content removed'):'Report dismissed');draw()};
+const rm=E('button','flex:1;padding:10px 0',usr?'Mark resolved':'Remove');rm.className='fol on';rm.onclick=()=>act('remove',usr?null:'Remove this content for everyone?');
+const kp=E('button','flex:1;padding:10px 0',usr?'Dismiss':'Keep it up');kp.className='fol';kp.onclick=()=>act('dismiss');row.append(rm,kp);b.append(row)}
+c.append(b);d.append(c)})};
+draw()}
 async function openPost(id){const r=await sb.from('posts').select('id,owner_id,body,image_path,reactions,reaction_count,comment_count,created_at').eq('id',id).single();
 if(r.error||!r.data){toast('That post isn’t available anymore');return}
 const x=r.data,o=((await sb.from('profiles').select('username,avatar_url').eq('id',x.owner_id).single()).data)||{};let my=null;
@@ -495,7 +517,7 @@ g('#su').onclick=async()=>{msg('');const u=g('#au').value.trim();if(!/^[A-Za-z0-
 const r=await sb.auth.signUp({email:g('#ae').value.trim(),password:g('#ap').value,options:{data:{name:g('#an').value.trim(),username:u}}});
 if(r.error)msg(r.error.message);else if(!r.data.session)msg('Check your email to confirm your account, then log in.')};
 open(d)}
-async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';
+async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';sb.rpc('is_admin').then(r=>{me.admin=r.data===true});
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
 close();show('feed');await load();unread();
