@@ -114,7 +114,9 @@ function close(){if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o');shade
 shade.onclick=close;
 const vt=new Map(),seen=new Set();
 const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){e.isIntersecting?v.play().catch(()=>{}):v.pause()}
-const c=clips.find(x=>x.el===e.target);if(!c)return;clearTimeout(vt.get(c.id));if(e.isIntersecting&&!seen.has(c.id))vt.set(c.id,setTimeout(()=>{seen.add(c.id);c.vw++;sb.rpc('record_view',{p_video:c.id})},2000))}),{root:feed,threshold:.6});
+const c=clips.find(x=>x.el===e.target);if(!c)return;
+if(e.isIntersecting){const k=clips.indexOf(c);if(k>=clips.length-3)nextPage();const nx=clips[k+1],nv=nx&&nx.el&&nx.el.querySelector('video');if(nv)nv.preload='auto'}
+clearTimeout(vt.get(c.id));if(e.isIntersecting&&!seen.has(c.id))vt.set(c.id,setTimeout(()=>{seen.add(c.id);c.vw++;sb.rpc('record_view',{p_video:c.id})},2000))}),{root:feed,threshold:.6});
 function sync(c){const s=c.el;s.querySelector('[data-a=like]').classList.toggle('liked',!!c.liked);s.querySelector('[data-a=like] b').textContent=fmt(c.l);s.querySelector('[data-a=cm] b').textContent=fmt(c.cb);const f=s.querySelector('.fol');const mine=!!(me&&c.o===me.id);f.hidden=mine;s.querySelector('[data-a=rp]').hidden=mine;f.textContent=c.fol?'Following':'Follow';f.classList.toggle('on',!!c.fol)}
 function mk(c){const s=document.createElement('section');s.className='clip real';
 s.innerHTML='<video loop muted playsinline preload="metadata"></video><div class="side"><button data-a="like" aria-label="Like">'+I.heart+'<b></b></button><button data-a="cm" aria-label="Comments">'+I.chat+'<b></b></button><button data-a="sh" aria-label="Share">'+I.share+'<b>Share</b></button><button data-a="rp" aria-label="Report">'+I.flag+'<b>Report</b></button><button data-a="sv" aria-label="Save video">'+I.save+'<b>Save</b></button></div><div class="meta"><div><strong><button data-a="pf" style="font:inherit;color:inherit;padding:0"></button></strong><button class="fol" data-a="fol"></button></div><p></p></div>';
@@ -125,13 +127,18 @@ const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username').in('i
 const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
 return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count,view_count';
-async function load(){let q=sb.from('videos').select(COLS).order('created_at',{ascending:false}).limit(20);
-if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);q=q.in('owner_id',ids.length?ids:['00000000-0000-0000-0000-000000000000'])}
-const {data,error}=await q;
-if(error){toast('Couldn’t load videos. Check your connection.');return}
-feed.replaceChildren();clips=await hydrate(data);
-if(!clips.length){const e=el('<div class="empty" style="padding-top:30%">'+(tab=='following'?'Follow creators and their videos show up here.<br>':'No videos yet.<br>Be the first to post on BOUNCY.<br>')+'<button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=()=>pickVideo();feed.append(e);return}
-clips.forEach(c=>feed.append(mk(c)))}
+let page=0,more=true,busy=false;
+async function fetchPage(){const N=8;let rows=[];
+if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);
+if(ids.length){const r=await sb.from('videos').select(COLS).in('owner_id',ids).order('created_at',{ascending:false}).range(page*N,page*N+N-1);if(r.error)throw r.error;rows=r.data}}
+else{const r=await sb.rpc('for_you_feed',{p_limit:N,p_offset:page*N});if(r.error)throw r.error;const ids=(r.data||[]).map(x=>x.id);
+if(ids.length){const v=await sb.from('videos').select(COLS).in('id',ids);if(v.error)throw v.error;const m=Object.fromEntries(v.data.map(x=>[x.id,x]));rows=ids.map(i=>m[i]).filter(Boolean)}}
+page++;if(rows.length<N)more=false;return rows}
+async function nextPage(){if(busy||!more)return[];busy=true;
+try{const rows=await fetchPage(),have=new Set(clips.map(c=>c.id)),cs=await hydrate(rows.filter(r=>!have.has(r.id)));cs.forEach(c=>{clips.push(c);feed.append(mk(c))});return cs}
+catch(e){toast('Couldn’t load videos. Check your connection.');return[]}finally{busy=false}}
+async function load(){page=0;more=true;busy=false;feed.replaceChildren();clips=[];const cs=await nextPage();
+if(!cs.length&&!feed.children.length){const e=el('<div class="empty" style="padding-top:30%">'+(tab=='following'?'Follow creators and their videos show up here.<br>':'No videos yet.<br>Be the first to post on BOUNCY.<br>')+'<button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=pickVideo;feed.append(e)}}
 async function like(c){if(gate('like videos'))return;const on=!c.liked;c.liked=on?1:0;c.l+=on?1:-1;sync(c);
 const r=on?await sb.from('video_likes').insert({video_id:c.id,user_id:me.id}):await sb.from('video_likes').delete().eq('video_id',c.id).eq('user_id',me.id);
 if(r.error){c.liked=on?0:1;c.l+=on?-1:1;sync(c);toast('Couldn’t save your like')}}
