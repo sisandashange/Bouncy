@@ -637,8 +637,9 @@ const s=(fit?Math.min(W/vw,H/vh):Math.max(W/vw,H/vh))*dz,dw=vw*s,dh=vh*s;b2.save
 if(fx&&glOK){glx.texImage2D(glx.TEXTURE_2D,0,glx.RGBA,glx.RGBA,glx.UNSIGNED_BYTE,base);glx.uniform1f(gm,fx);glx.uniform1f(gt,performance.now()/1000);glx.drawArrays(glx.TRIANGLE_STRIP,0,4);ctx.drawImage(glc,0,0)}else ctx.drawImage(base,0,0);
 ov(ctx,W,H,theme)};
 const thumb=(c,fi)=>{const vw=vid.videoWidth,vh=vid.videoHeight,s=Math.min(vw,vh);c.save();if(face=='user'){c.translate(104,0);c.scale(-1,1)}if(fok)c.filter=FL[fi][1];c.drawImage(vid,(vw-s)/2,(vh-s)/2,s,s,0,0,104,104);c.restore();if(fok)c.filter='none'};
-const begin=async id=>{stopStream();torch=false;dz=1;let s;const vc={width:{ideal:1080},height:{ideal:1920}};if(id)vc.deviceId={exact:id};else vc.facingMode=face;
-try{s=await navigator.mediaDevices.getUserMedia({video:vc,audio:true})}catch(e){try{s=await navigator.mediaDevices.getUserMedia({video:id?{deviceId:{exact:id}}:{facingMode:face}})}catch(e2){toast('Allow the camera to use this feature');closeCam();return}}
+const begin=async id=>{stopStream();torch=false;dz=1;const b0=id?{deviceId:{exact:id}}:{facingMode:face},tries=[{...b0,width:{exact:1080},height:{exact:1440}},{...b0,aspectRatio:{exact:0.75}},{...b0,width:{ideal:720},height:{ideal:1280}},b0];let s=null;
+for(const v of tries){try{const x=await navigator.mediaDevices.getUserMedia({video:v,audio:true}),t=x.getVideoTracks()[0].getSettings();if(v===b0||t.height>=t.width){s=x;break}x.getTracks().forEach(k=>k.stop())}catch(e){}}
+if(!s){try{s=await navigator.mediaDevices.getUserMedia({video:b0})}catch(e){toast('Allow the camera to use this feature');closeCam();return}}
 st=s;vid.srcObject=s;await vid.play().catch(()=>{});cancelAnimationFrame(raf);draw()};
 const track=()=>st&&st.getVideoTracks()[0],caps=()=>{const t=track();return t&&t.getCapabilities?t.getCapabilities():{}};
 const zoomTo=async z=>{const cp=caps();dz=1;
