@@ -722,16 +722,19 @@ async function renderGiftAnimation(s,giftRow){
   sb.from('profiles').select('username').eq('id',giftRow.sender_id).maybeSingle()
  ]);
  const emoji=gr.data?.emoji||'🎁',username=pr.data?.username||'user';
+ const recipient=giftRow.recipient_id?await sb.from('profiles').select('username').eq('id',giftRow.recipient_id).maybeSingle():null;
+ const recipientText=recipient?.data?.username?' to @'+recipient.data.username:'';
  const fx=E('div','');fx.className='live-gift-fx';
- fx.append(E('div','',emoji),E('strong','', '@'+username+' sent '+(gr.data?.name||'Gift')+' '+emoji+' x'+Number(giftRow.quantity||1)));
+ fx.append(E('div','',emoji),E('strong','', '@'+username+' sent '+(gr.data?.name||'Gift')+' '+emoji+' x'+Number(giftRow.quantity||1)+recipientText));
  s._wrap?.append(fx);setTimeout(()=>fx.remove(),2000);
 }
 async function openLiveGiftPanel(s,comments,wrap){
  if(!s||s.closing||!liveSession||liveSession!==s)return;
  if(s._giftPanel){s._giftPanel.remove();s._giftPanel=null;return}
- const [wallet,catalog]=await Promise.all([
+ const [wallet,catalog,cohosts]=await Promise.all([
   sb.rpc('bouncy_get_coin_wallet'),
-  sb.from('gifts').select('id,name,emoji,coin_cost,animation_type').in('id',['rose','heart','fire','crown','lion','diamond']).order('coin_cost',{ascending:true})
+  sb.from('gifts').select('id,name,emoji,coin_cost,animation_type').in('id',['rose','heart','fire','crown','lion','diamond']).order('coin_cost',{ascending:true}),
+  sb.from('live_cohosts').select('user_id,username').eq('live_id',s.id).eq('status','accepted').order('seat_number')
  ]);
  if(wallet.error){toast(wallet.error.message||'Could not load your coin wallet');return}
  if(catalog.error||!catalog.data?.length){toast('Gift catalogue could not load');return}
@@ -742,6 +745,13 @@ async function openLiveGiftPanel(s,comments,wrap){
  head.append(E('strong','','Send a gift'),E('span','',Number(s.coinWallet.balance||0).toLocaleString()+' coins'));head.lastChild.dataset.giftBalance='1';
  const closeGift=E('button','','×');closeGift.className='live-gift-close';closeGift.onclick=()=>{overlay.remove();s._giftPanel=null};head.append(closeGift);
  const grid=E('div','');grid.className='live-gift-grid';
+ const recipientLine=E('div','');recipientLine.className='live-gift-recipient';
+ const recipientLabel=E('label','','Send to');recipientLine.append(recipientLabel);
+ const recipientSelect=E('select','');recipientSelect.setAttribute('aria-label','Gift recipient');
+ const recipients=[];
+ if(!s.host){const hostOption=E('option','','@'+(s.hostName||'Host')+' · Host');hostOption.value=s.hostId;recipientSelect.append(hostOption);recipients.push(s.hostId)}
+ (cohosts.data||[]).forEach(person=>{if(person.user_id===me.id)return;const option=E('option','','@'+(person.username||'Co-host')+' · Co-host');option.value=person.user_id;recipientSelect.append(option);recipients.push(person.user_id)});
+ recipientLine.append(recipientSelect);
  const qtyLine=E('div','');qtyLine.className='live-gift-quantity';
  const minus=E('button','','−'),qtyText=E('strong','','1'),plus=E('button','','+');
  minus.onclick=()=>{quantity=Math.max(1,quantity-1);qtyText.textContent=String(quantity);updateSend()};
@@ -762,8 +772,9 @@ async function openLiveGiftPanel(s,comments,wrap){
  const updateBalance=()=>{head.lastChild.previousSibling.textContent=Number(s.coinWallet?.balance||0).toLocaleString()+' coins'};
  sendGift.onclick=async()=>{
   if(sendGift.disabled)return;
+  if(!recipientSelect.value){toast('No eligible gift recipient is available');return}
   sendGift.disabled=true;
-  const result=await sb.rpc('bouncy_send_live_gift',{p_live_id:s.id,p_gift_id:selected.id,p_quantity:quantity});
+  const result=await sb.rpc('bouncy_send_live_gift',{p_live_id:s.id,p_gift_id:selected.id,p_quantity:quantity,p_recipient_id:recipientSelect.value||null});
   if(result.error){toast(result.error.message?.includes('Not enough coins')?'Not enough coins':(result.error.message||'Gift could not be sent'));sendGift.disabled=false;return}
   s.coinWallet={...(s.coinWallet||{}),balance:Number(result.data?.balance??s.coinWallet?.balance??0)};const badge=s._room?.querySelector('.live-demo-profile-coins');if(badge)badge.textContent='💎 '+Number(s.host?s.coinWallet.earned_coins||0:s.coinWallet.balance||0).toLocaleString();
   updateBalance();toast('Gift sent!');sendGift.disabled=false;
@@ -776,7 +787,8 @@ async function openLiveGiftPanel(s,comments,wrap){
   free.disabled=false;
  };
  updateSend();
- panel.append(head,grid,qtyLine,sendGift,free,note);overlay.append(panel);
+ if(!recipientSelect.value){sendGift.disabled=true;sendGift.textContent='No eligible recipient'}
+ panel.append(head,grid,recipientLine,qtyLine,sendGift,free,note);overlay.append(panel);
  overlay.onclick=e=>{if(e.target===overlay){overlay.remove();s._giftPanel=null}};
  s._room?.append(overlay);
 }
