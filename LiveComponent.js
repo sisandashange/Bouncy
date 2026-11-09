@@ -306,7 +306,12 @@
       }
       rows.forEach(x => {
         if (x.kind === 'comment' && x.body === '__bouncy_live_like__') {
-          if (x.user_id !== me.id) spawnHeart(s, stage.clientWidth * 0.72, stage.clientHeight * 0.72, false);
+          if (!s._seenLikeIds) s._seenLikeIds = new Set();
+          if (!s._seenLikeIds.has(x.id)) {
+            s._seenLikeIds.add(x.id);
+            if (s._seenLikeIds.size > 250) s._seenLikeIds.delete(s._seenLikeIds.values().next().value);
+            if (x.user_id !== me.id) spawnHeart(s, stage.clientWidth * 0.72, stage.clientHeight * 0.72, false);
+          }
           return;
         }
         const line = el('div', 'live-comment' + (x.kind === 'gift' ? ' live-gift-comment' : ''));
@@ -355,10 +360,8 @@
       const wallet = await sb.rpc('bouncy_get_coin_wallet');
       if (!wallet.error) {
         s.coinWallet = wallet.data;
-        if (s.host) {
-          const label = s._room?.querySelector('.live-demo-profile-coins');
-          if (label) label.textContent = '💎 ' + Number(wallet.data?.earned_coins || 0).toLocaleString();
-        }
+        const label = s._room?.querySelector('.live-demo-profile-coins');
+        if (label) label.textContent = '💎 ' + Number(s.host ? (wallet.data?.earned_coins || 0) : (wallet.data?.balance || 0)).toLocaleString();
       }
     }
   };
