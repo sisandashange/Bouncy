@@ -207,9 +207,10 @@
       }
       panel.remove(); s._cohostInvitePanel = null;
       if (s._cohostButton) {
-        s._cohostButton.textContent = value ? '✓' : '＋';
-        s._cohostButton.disabled = !!value;
-        s._cohostButton.title = value ? 'Co-Host accepted' : 'Request to Co-Host';
+        s._cohostButton.textContent = value ? '×' : '＋';
+        s._cohostButton.disabled = false;
+        s._cohostButton.title = value ? 'Leave Co-Host' : 'Request to Co-Host';
+        s._cohostButton.onclick = value ? () => leaveCohost(s, s._cohostButton) : () => requestCohost(s, s._cohostButton);
       }
       toast(value ? 'Co-host invitation accepted. Camera joining is not connected yet.' : 'Invitation declined');
     };
@@ -230,7 +231,7 @@
           const button = s._cohostButton;
           if (button) {
             if (ev.new.status === 'accepted') { button.textContent = '×'; button.title = 'Leave Co-Host'; button.disabled = false; button.onclick = () => leaveCohost(s, button); }
-            else if (ev.new.status === 'declined' || ev.new.status === 'kicked' || ev.new.status === 'left') { button.textContent = '＋'; button.title = 'Request to Co-Host'; button.disabled = false; button.classList.remove('requested'); }
+            else if (ev.new.status === 'declined' || ev.new.status === 'kicked' || ev.new.status === 'left') { button.textContent = '＋'; button.title = 'Request to Co-Host'; button.disabled = false; button.classList.remove('requested'); button.onclick = () => requestCohost(s, button); }
             else if (ev.new.status === 'requested' || ev.new.status === 'invited') { button.textContent = '…'; button.title = 'Waiting for host'; button.disabled = true; }
           }
           if (ev.new.status === 'accepted') toast('The host accepted your co-host request. Camera joining is not connected yet.');
