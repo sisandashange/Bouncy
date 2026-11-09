@@ -189,3 +189,11 @@
 #sheet.live-sheet .live-room-screen .bouncy-cohost-actions{display:flex!important;flex-wrap:wrap!important;justify-content:flex-end!important;gap:5px!important}
 #sheet.live-sheet .live-room-screen .bouncy-cohost-actions button{min-height:32px!important;padding:6px 8px!important;border:1px solid #ffffff20!important;border-radius:10px!important;background:#353640!important;color:#fff!important;font-size:9px!important}
 @media(max-width:360px){#sheet.live-sheet .live-room-screen .bouncy-cohost-settings{grid-template-columns:repeat(2,minmax(0,1fr))!important}#sheet.live-sheet .live-room-screen .bouncy-cohost-row{align-items:flex-start!important;flex-direction:column!important}#sheet.live-sheet .live-room-screen .bouncy-cohost-actions{width:100%!important}}
+
+#sheet.live-sheet .live-room-screen .bouncy-cohost-note{
+  margin:0!important;padding:9px 10px!important;border-radius:11px!important;
+  background:#262630!important;color:#d9d9e0!important;font-size:10px!important;line-height:1.45!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-actions button:disabled{
+  opacity:.5!important;cursor:not-allowed!important;
+}
