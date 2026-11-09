@@ -857,8 +857,8 @@ async function handleLiveSignal(s,x){
     const queues=peerKind==='cohost'?(s.cohostQueues||(s.cohostQueues=new Map())):s.queues;
     if(pc?.remoteDescription)await pc.addIceCandidate(payload);else{const q=queues.get(x.sender_id)||[];q.push(payload);queues.set(x.sender_id,q)}
    }else if(x.signal_type==='leave'){
-    const isGuest=!!s.cohostPcs?.has(x.sender_id),pc=isGuest?s.cohostPcs.get(x.sender_id):s.pcs.get(x.sender_id);
-    pc?.close();if(isGuest){s.cohostPcs.delete(x.sender_id);s.cohostStreams?.delete(x.sender_id)}else s.pcs.delete(x.sender_id);
+    const isGuest=!!s.cohostPcs?.has(x.sender_id);
+    if(isGuest)await window.bouncyRemoveCohost?.(s,x.sender_id);else{const pc=s.pcs.get(x.sender_id);pc?.close();s.pcs.delete(x.sender_id)}
     s.queues?.delete(x.sender_id);s.cohostQueues?.delete(x.sender_id);
    }
   }else if(s.isCohost){
