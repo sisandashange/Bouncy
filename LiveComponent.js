@@ -178,6 +178,8 @@ async function close(){
  ui?.remove();ui=null;
 }
 function launcher(){
+ const existing=document.getElementById('liveOpen');
+ if(existing){existing.classList.add('b-live-launch');existing.innerHTML='● LIVE';existing.setAttribute('aria-label','Open BOUNCY LIVE');existing.onclick=browse;return}
  if(document.getElementById('b-live-launch'))return;
  const b=el('button','b-live-launch','● LIVE');b.id='b-live-launch';b.onclick=browse;
  const target=document.querySelector('#app header')||document.querySelector('header')||document.querySelector('#app')||document.body;target.append(b);
