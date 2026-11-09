@@ -712,7 +712,7 @@ async function setupLiveGifts(s,comments,wrap){
  if(s.host){const earned=s._room?.querySelector('.live-gift-earned-pill');if(earned){earned.textContent='💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString();s.giftEarnedLabel=earned}}
  s.giftChannel=sb.channel('live-gifts-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_gifts',filter:'live_id=eq.'+s.id},async ev=>{
   if(liveSession!==s||s.closing)return;const wallet=await sb.rpc('bouncy_get_coin_wallet');
-  if(!wallet.error){s.coinWallet=wallet.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 '+Number(s.coinWallet.earned_coins||0).toLocaleString()}window.BouncyLiveComponent?.onGift(s,ev.new);
+  if(!wallet.error){s.coinWallet=wallet.data||s.coinWallet;if((s.host||s.isCohost)&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 '+Number(s.coinWallet.earned_coins||0).toLocaleString()}window.BouncyLiveComponent?.onGift(s,ev.new);
   const panel=s._giftPanel;if(panel){const bal=panel.querySelector('[data-gift-balance]');if(bal)bal.textContent='Your balance: '+Number(s.coinWallet?.balance||0).toLocaleString()+' coins'}
  }).subscribe();
 }
@@ -910,7 +910,7 @@ window.bouncyStartCohost=async function(s){
   const row=await sb.from('live_cohosts').select('status,is_muted_by_host').eq('live_id',s.id).eq('user_id',me.id).maybeSingle();
   if(row.error||row.data?.status!=='accepted')throw new Error('Your co-host seat is not active');
   const media=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-  s.isCohost=true;s.cohostStream=media;s.cohostPc=new RTCPeerConnection(liveRtcConfig);s.cohostQueues=[];s.cohostSelfMuted=false;s.cohostHostMuted=!!row.data.is_muted_by_host;window.BouncyLiveComponent?.onLocalCohostStream?.(s,media);
+  s.isCohost=true;s.cohostStream=media;sb.rpc('bouncy_get_coin_wallet').then(({data})=>{if(data){const badge=s._room?.querySelector('.live-demo-profile-coins');if(badge)badge.textContent='💎 '+Number(data.earned_coins||0).toLocaleString()}});s.cohostPc=new RTCPeerConnection(liveRtcConfig);s.cohostQueues=[];s.cohostSelfMuted=false;s.cohostHostMuted=!!row.data.is_muted_by_host;window.BouncyLiveComponent?.onLocalCohostStream?.(s,media);
   media.getTracks().forEach(t=>{if(t.kind==='audio')t.enabled=!s.cohostHostMuted;s.cohostPc.addTrack(t,media)});
   s.cohostPc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,s.hostId,'candidate',{...e.candidate.toJSON(),_peer:'cohost'})};
   s.cohostPc.onconnectionstatechange=()=>{if(s.cohostPc?.connectionState==='failed')toast('Co-host connection failed. Check your network.')};
