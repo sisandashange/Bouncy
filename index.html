@@ -373,6 +373,8 @@ body{position:fixed;inset:0}
 #sheet.search-modal .b-search-hint{padding:22px 0;color:var(--mute);font-size:14px}
 #sheet.search-modal .tile{overflow:hidden}
 
+#sheet.search-modal #sback{width:40px;height:42px;min-width:40px;flex:none;display:grid;place-items:center;padding:0;border:1px solid var(--line)!important;border-radius:12px;background:var(--soft)!important;color:var(--fg)!important;opacity:1!important;visibility:visible!important;position:relative;z-index:30;font-size:0;line-height:1}#sheet.search-modal #sback svg{display:block;width:23px;height:23px;fill:none;stroke:var(--fg);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:1;visibility:visible}
+
 /* BOUNCY social Feed: Facebook + Instagram inspired layout */
 #app:not(.watch) #trend>.b-social-head{position:sticky;top:0;z-index:5;height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid var(--line)}
 #app:not(.watch) #trend>.b-social-head>strong{font-size:25px;letter-spacing:-1.1px;font-weight:950}
@@ -641,7 +643,7 @@ document.querySelectorAll('.tabs [data-t]').forEach(b=>b.onclick=()=>{if(b.datas
 async function showUser(uid){if(me&&uid===me.id){show('me');return}
 show('user');const d=$('#user');d.replaceChildren(skel('profile'));await renderProfile(d,uid)}
 function search(pre){
-const d=el('<div class="b-search-head"><button type="button" id="sback" aria-label="Back">‹</button><div class="b-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 5 5"></path></svg><input type="search" id="sq" maxlength="40" placeholder="Search" aria-label="Search BOUNCY"><button type="button" id="sclear" aria-label="Clear" hidden>×</button></div><button type="button" id="sgo">Search</button></div><div class="b-search-tabs"><button class="on" data-tab="top">Top</button><button data-tab="people">Users</button><button data-tab="videos">Videos</button></div><div class="b-search-results" id="sres"><div class="b-search-hint">Search people, videos and hashtags</div></div>');
+const d=el('<div class="b-search-head"><button type="button" id="sback" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><div class="b-search-field"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 5 5"></path></svg><input type="search" id="sq" maxlength="40" placeholder="Search" aria-label="Search BOUNCY"><button type="button" id="sclear" aria-label="Clear" hidden>×</button></div><button type="button" id="sgo">Search</button></div><div class="b-search-tabs"><button class="on" data-tab="top">Top</button><button data-tab="people">Users</button><button data-tab="videos">Videos</button></div><div class="b-search-results" id="sres"><div class="b-search-hint">Search people, videos and hashtags</div></div>');
 const q=d.querySelector('#sq'),R=d.querySelector('#sres'),clear=d.querySelector('#sclear');let t,tab='top',users=[],clipsFound=[];
 const tabs=[...d.querySelectorAll('[data-tab]')];
 const setTab=v=>{tab=v;tabs.forEach(x=>x.classList.toggle('on',x.dataset.tab===v));render()};
