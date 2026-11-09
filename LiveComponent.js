@@ -126,7 +126,8 @@
       pause.querySelector('span').textContent = track.enabled ? 'Pause' : 'Resume';
       pause.querySelector('svg').innerHTML = track.enabled ? '<path d="M8 5v14M16 5v14"/>' : '<path d="m8 5 11 7-11 7z"/>';
     });
-    const battle = makeControl('gift', 'Battle', () => openBattlePanel(s));\n    const close = el('button', 'live-host-panel-close', 'Close Panel');
+    const battle = makeControl('gift', 'Battle', () => openBattlePanel(s));
+    const close = el('button', 'live-host-panel-close', 'Close Panel');
     close.onclick = () => { panel.remove(); s._hostPanel = null; };
     panel.append(heading, controls, close);
     s._room.append(panel);
