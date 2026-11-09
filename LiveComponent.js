@@ -223,9 +223,12 @@
     top.append(identity, right);
 
     const second = el('div', 'live-demo-sub');
+    const rankGroup = el('div', 'live-demo-rank-group');
+    const brand = el('span', 'live-demo-brand', 'BOUNCY');
     const rank = el('span', 'live-demo-rank', 'RANK — · Daily Popularity Hall');
     const goal = el('span', 'live-demo-goal', '🏆 Goal not set');
-    second.append(rank, goal);
+    rankGroup.append(brand, rank);
+    second.append(rankGroup, goal);
 
     const giftBanner = el('div', 'live-gift-banner-stack');
     const comments = el('div', 'live-comments live-floating-comments');
