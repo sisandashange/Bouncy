@@ -133,7 +133,7 @@
       b.onclick = async () => {
         const r = await sb.rpc('bouncy_host_manage_live_cohost', { p_live_id: s.id, p_cohost_id: null, p_action: 'layout_' + n });
         if (r.error) toast(r.error.message || 'Could not change layout');
-        else { s.cohostLayout = n; [...settings.querySelectorAll('button')].slice(1).forEach(x => x.classList.toggle('active', x === b)); }
+        else { s.cohostLayout = n; const count=s._cohostGrid?.querySelectorAll('.bouncy-live-guest-tile').length||1; if(s._cohostGrid)s._cohostGrid.dataset.layout=String(Math.min(n,count)); [...settings.querySelectorAll('button')].slice(1).forEach(x => x.classList.toggle('active', x === b)); }
       };
       settings.append(b);
     });
@@ -214,7 +214,8 @@
         s._cohostButton.title = value ? 'Leave Co-Host' : 'Request to Co-Host';
         s._cohostButton.onclick = value ? () => leaveCohost(s, s._cohostButton) : () => requestCohost(s, s._cohostButton);
       }
-      toast(value ? 'Co-host invitation accepted. Camera joining is not connected yet.' : 'Invitation declined');
+      if (value) { toast('Co-host invitation accepted. Connecting camera and microphone…'); window.bouncyStartCohost?.(s); }
+      else toast('Invitation declined');
     };
     accept.onclick = () => respond(true);
     decline.onclick = () => respond(false);
@@ -228,7 +229,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_cohosts', filter: 'live_id=eq.' + s.id }, async ev => {
         if (liveSession !== s || s.closing) return;
         if (s._cohostPanel) await refreshCohostPanel(s);
-        if (s.host && ev.new?.user_id && ev.old?.status === 'accepted' && ev.new.status !== 'accepted') {
+        if (s.host && ev.new?.user_id && ['kicked','left','declined'].includes(ev.new.status)) {
           window.bouncyRemoveCohost?.(s, ev.new.user_id);
         }
         if (!s.host && ev.new?.user_id === me.id) {
@@ -712,7 +713,7 @@
     s._cohostGrid.classList.toggle('visible', count > 1);
     s._room?.classList.toggle('bouncy-live-has-cohosts', count > 1);
     if (count > 1 && s._video) s._video.muted = true;
-    s._cohostGrid.dataset.layout = String(s.cohostLayout || 4);
+    s._cohostGrid.dataset.layout = String(Math.min(Number(s.cohostLayout || 4), count));
   }
 
   function removeCohostTile(s, userId) {
@@ -726,7 +727,8 @@
 
   window.BouncyLiveComponent = {
     render,
-    onCohostTrack: (s,userId,stream) => addCohostTile(s,userId,stream,'@' + (s.cohostNames?.[userId] || 'Co-host')),
+    onCohostTrack: (s,userId,stream,username) => addCohostTile(s,userId,stream,'@' + (username || s.cohostNames?.[userId] || 'Co-host')),
+    onLocalCohostStream: (s,stream) => addCohostTile(s,'self',stream,'You',true),
     onParticipantTrack: (s,streamId,stream) => {
       const entries = [...(s.participantStreams || new Map()).entries()];
       entries.forEach(([id,media],index) => addCohostTile(s,id,media,index===0?'Host':'Co-host ' + index,index===0 && s.host));
