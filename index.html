@@ -591,16 +591,21 @@ function liveOpenSheet(node){suspendWatchVideos();sheet.classList.add('live-shee
 let liveDiscoveryQueue=[],liveDiscoveryIndex=0;
 async function openLiveHub(){
  if(!me){authSheet('watch live streams');return}
- const d=liveScreen('');d.classList.add('live-discovery-screen');liveOpenSheet(d);
- const status=E('div','live-no-one','Finding live streams…');d.append(status);
  const r=await sb.from('live_streams').select('id,host_id,title,description,started_at').eq('status','live').gt('last_heartbeat_at',new Date(Date.now()-60000).toISOString()).order('started_at',{ascending:false}).limit(30);
- if(r.error){status.textContent='Could not load live streams. Close and try again.';return}
+ if(r.error){toast('Could not load live streams. Try again.');return}
  const rows=(r.data||[]).filter(x=>x.host_id!==me.id),ids=[...new Set(rows.map(x=>x.host_id))],profiles={};
  if(ids.length){const p=await sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids);(p.data||[]).forEach(x=>profiles[x.id]=x)}
  liveDiscoveryQueue=rows.map(st=>({...st,hostName:profiles[st.host_id]?.username||'BOUNCY user',hostAvatar:profiles[st.host_id]?.avatar_url||'',hostVerified:!!profiles[st.host_id]?.verified}));liveDiscoveryIndex=0;
- if(liveDiscoveryQueue.length){d.remove();await joinLiveStream(liveDiscoveryQueue[0],liveDiscoveryQueue[0].hostName);return}
- status.replaceChildren(E('h1','','No one is live'),E('p','','Be the first to start a live video.'));
- const go=E('button','','Go Live');go.className='live-go-circle';go.onclick=()=>liveComposer();status.append(go);
+ if(liveDiscoveryQueue.length){await joinLiveStream(liveDiscoveryQueue[0],liveDiscoveryQueue[0].hostName);return}
+ showNoLiveScreen();
+}
+async function showNoLiveScreen(){
+ const d=liveScreen('');d.classList.add('live-no-live-screen');
+ const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;d.append(video);
+ const closeBtn=E('button','','×');closeBtn.className='live-no-live-close';closeBtn.onclick=()=>close();
+ const center=E('div','');center.className='live-no-live-center';center.append(E('h1','','No one is live'));
+ const go=E('button','','Go Live');go.className='live-no-live-go';go.onclick=()=>liveComposer();center.append(go);d.append(closeBtn,center);liveOpenSheet(d);
+ try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:1280}},audio:false});if(!d.isConnected){stream.getTracks().forEach(t=>t.stop());return}video.srcObject=stream;d._stopLivePreview=()=>stream.getTracks().forEach(t=>t.stop());video.play().catch(()=>{})}catch(e){}
 }
 async function navigateLiveQueue(dir){
  if(!liveSession||liveSession.host)return;
@@ -659,25 +664,22 @@ async function showLiveRoom(){
  const count=E('span','','👁 0');count.className='live-view-count';
  const closeBtn=E('button','','×');closeBtn.className='live-close live-x-button';top.append(identity,count,closeBtn);
  const topRight=E('div','');topRight.className='live-top-right';
- const sound=E('button','','◖×');sound.className='live-sound-icon';sound.onclick=()=>{video.muted=!video.muted;sound.textContent=video.muted?'◖×':'◖))'};if(!s.host)topRight.append(sound);
+ const sound=E('button','','🔇');sound.className='live-sound-icon';sound.setAttribute('aria-label','Toggle sound');sound.onclick=()=>{video.muted=!video.muted;sound.textContent=video.muted?'🔇':'🔊'};if(!s.host)topRight.append(sound);
  const right=E('div','');right.className='live-right-actions';
  const action=(symbol,label,fn)=>{const b=E('button','',symbol);b.className='live-round-action';b.setAttribute('aria-label',label);b.onclick=fn;return b};
  const like=action('♥','Like',()=>sendLiveLike(s));s._likeButton=like;
  const shareFn=async()=>{try{if(navigator.share)await navigator.share({title:'BOUNCY Live',url:location.href});else{await navigator.clipboard.writeText(location.href);toast('Live link copied')}}catch(e){}};
  const share=action('↗','Share',shareFn);
- const gift=action(s.host?'⚔':'🎁',s.host?'Battle':'Gift',()=>s.host?toast('Battles are coming soon'):openLiveGiftPanel(s,comments,wrap));
+ const gift=action('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));
  right.append(like,share,gift);
  const comments=E('div','');comments.className='live-comments live-floating-comments';
  const bottom=E('div','');bottom.className='live-bottom-tiktok';
  const compose=E('div','');compose.className='live-compose live-compose-tiktok';
- const myAvatar=document.createElement('img');myAvatar.className='live-my-avatar';myAvatar.src=me?.avatar_url||me?.avatar||'';
  const ci=E('input','');ci.placeholder='Add comment...';ci.maxLength=500;
- const send=E('button','','➤');send.className='live-send-comment';compose.append(myAvatar,ci,send);bottom.append(compose);
- const bottomGift=action('🎁','Send gift',()=>openLiveGiftPanel(s,comments,wrap));
- const bottomLike=action('♥','Like',()=>sendLiveLike(s));const bottomShare=action('↗','Share',shareFn);
- bottom.append(bottomGift);if(!s.host)bottom.append(bottomLike,bottomShare);
- const earned=E('span','','💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString());earned.className='live-gift-earned-pill';
- if(s.host){bottom.append(earned);const end=E('button','','×');end.className='live-end-circle';end.onclick=()=>endLiveStream(false);bottom.append(end)}
+ const send=E('button','','');send.className='live-send-comment';send.style.display='none';compose.append(ci,send);bottom.append(compose);
+ const bottomGift=action('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));
+ const bottomLike=action('♥','Like',()=>sendLiveLike(s));
+ bottom.append(bottomGift,bottomLike);
  const big=E('div','','♥');big.className='live-double-heart';d.append(wrap,top,topRight,right,comments,bottom,big);
  liveOpenSheet(d);video.play().catch(()=>{});
  const exit=()=>s.host?endLiveStream(false):leaveLiveStream(false);closeBtn.onclick=exit;
@@ -694,7 +696,8 @@ async function showLiveRoom(){
  const renderComments=async()=>{
   const [q,g]=await Promise.all([sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id',s.id).order('created_at',{ascending:true}).limit(100),sb.from('live_gifts').select('id,sender_id,gift_id,quantity,created_at,gifts(name,emoji)').eq('live_id',s.id).order('created_at',{ascending:true}).limit(100)]);
   if(q.error&&g.error)return;comments.replaceChildren();
-  const rows=[...(q.data||[]).map(x=>({...x,k:'c'})),...(g.data||[]).map(x=>({...x,k:'g'}))].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  const uniqueGifts=[...new Map((g.data||[]).map(x=>[x.id,x])).values()];
+  const rows=[...(q.data||[]).map(x=>({...x,k:'c'})),...uniqueGifts.map(x=>({...x,k:'g'}))].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   const ids=[...new Set(rows.map(x=>x.user_id||x.sender_id).filter(Boolean))],names={};if(ids.length){const p=await sb.from('profiles').select('id,username').in('id',ids);(p.data||[]).forEach(x=>names[x.id]=x.username)}
   rows.forEach(x=>{if(x.k==='c'&&x.body==='__bouncy_live_like__'){if(!s._seenLikeIds)s._seenLikeIds=new Set();if(!s._seenLikeIds.has(x.id)){s._seenLikeIds.add(x.id);animateLiveHeart(s)}return}
    const row=E('div','');row.className='live-comment'+(x.k==='g'?' live-gift-comment':'');row.textContent=x.k==='g'?'@'+(names[x.sender_id]||'user')+' sent '+(x.gifts?.name||'Gift')+' '+(x.gifts?.emoji||'🎁'):'@'+(names[x.user_id]||'user')+': '+x.body;comments.append(row)});
@@ -712,7 +715,7 @@ async function setupLiveGifts(s,comments,wrap){
  const w=await sb.rpc('bouncy_get_coin_wallet');if(!w.error)s.coinWallet=w.data||{balance:1000,earned_coins:0};
  if(s.host){const earned=s._room?.querySelector('.live-gift-earned-pill');if(earned){earned.textContent='💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString();s.giftEarnedLabel=earned}}
  s.giftChannel=sb.channel('live-gifts-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_gifts',filter:'live_id=eq.'+s.id},async ev=>{
-  if(liveSession!==s||s.closing)return;await renderGiftAnimation(s,ev.new);const wallet=await sb.rpc('bouncy_get_coin_wallet');
+  if(liveSession!==s||s.closing)return;const wallet=await sb.rpc('bouncy_get_coin_wallet');
   if(!wallet.error){s.coinWallet=wallet.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 '+Number(s.coinWallet.earned_coins||0).toLocaleString()}
   const panel=s._giftPanel;if(panel){const bal=panel.querySelector('[data-gift-balance]');if(bal)bal.textContent='Your balance: '+Number(s.coinWallet?.balance||0).toLocaleString()+' coins'}
  }).subscribe();
@@ -785,7 +788,7 @@ function animateLiveHeart(s){if(!s?._likeButton)return;s._heartCount=s._heartCou
 
 async function hostAcceptViewer(s,viewerId,offer){let pc=s.pcs.get(viewerId);if(pc){pc.close();s.pcs.delete(viewerId)}pc=new RTCPeerConnection(liveRtcConfig);s.pcs.set(viewerId,pc);pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,viewerId,'candidate',e.candidate.toJSON())};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'||pc.connectionState==='closed'){pc.close();if(s.pcs.get(viewerId)===pc)s.pcs.delete(viewerId)}};s.stream.getTracks().forEach(t=>pc.addTrack(t,s.stream));for(const sender of pc.getSenders()){if(sender.track?.kind==='video'){try{const p=sender.getParameters();p.encodings=p.encodings?.length?p.encodings:[{}];p.encodings[0].maxBitrate=500000;p.encodings[0].maxFramerate=15;await sender.setParameters(p)}catch(e){console.warn('Live bitrate cap unavailable',e)}}}await pc.setRemoteDescription(offer);const q=s.queues.get(viewerId)||[];s.queues.delete(viewerId);for(const c of q)try{await pc.addIceCandidate(c)}catch(e){}const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendLiveSignal(s,viewerId,'answer',pc.localDescription.toJSON())}
 async function handleLiveSignal(s,x){if(!s||liveSession!==s||s.closing||x.sender_id===me.id||x.recipient_id!==me.id)return;try{if(s.host){if(x.signal_type==='offer')await hostAcceptViewer(s,x.sender_id,x.payload);else if(x.signal_type==='candidate'){const pc=s.pcs.get(x.sender_id);if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else{const q=s.queues.get(x.sender_id)||[];q.push(x.payload);s.queues.set(x.sender_id,q)}}else if(x.signal_type==='leave'){const pc=s.pcs.get(x.sender_id);pc?.close();s.pcs.delete(x.sender_id);s.queues.delete(x.sender_id)}}else{const pc=s.pc;if(x.signal_type==='answer'&&pc?.signalingState==='have-local-offer'){await pc.setRemoteDescription(x.payload);for(const c of(s.queues||[]))try{await pc.addIceCandidate(c)}catch(e){}s.queues=[];}else if(x.signal_type==='candidate'){if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else s.queues.push(x.payload)}else if(x.signal_type==='leave'){toast('Live ended');leaveLiveStream(true)}}}catch(e){console.warn('BOUNCY LIVE signal',e)}}
-async function joinLiveStream(st,hostName){if(!me)return;if(liveSession){toast('Leave your current live stream first');return}const cnt=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',st.id);if((cnt.count||0)>=LIVE_MAX_VIEWERS){toast('This free live stream has reached its viewer limit');return}const s=liveSession={host:false,id:st.id,hostId:st.host_id,title:st.title||'Live now',hostName,hostAvatar:st.hostAvatar||'',hostVerified:!!st.hostVerified,pc:null,queues:[],channel:null,commentChannel:null,closing:false};try{await subscribeLiveSignals(s);const j=await sb.from('live_viewers').upsert({stream_id:s.id,user_id:me.id,last_seen_at:new Date().toISOString()},{onConflict:'stream_id,user_id'});if(j.error)throw j.error;const pc=s.pc=new RTCPeerConnection(liveRtcConfig);pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,st.host_id,'candidate',e.candidate.toJSON())};pc.ontrack=e=>{const v=sheet.querySelector('.live-video-wrap video');if(v){if(!s.remote)s.remote=new MediaStream();if(!s.remote.getTracks().some(t=>t.id===e.track.id))s.remote.addTrack(e.track);v.srcObject=s.remote;v.play().catch(()=>{})}};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){toast('Connection failed. This network may need a relay server.');clearTimeout(s.connectionTimer)}if(pc.connectionState==='connected'){clearTimeout(s.connectionTimer);const c=sheet.querySelector('.live-view-count');if(c)c.textContent='Watching live'}};const offer=await pc.createOffer();await pc.setLocalDescription(offer);await showLiveRoom();await sendLiveSignal(s,st.host_id,'offer',pc.localDescription.toJSON());s.connectionTimer=setTimeout(()=>{if(liveSession===s&&s.pc?.connectionState!=='connected'){toast('The live stream could not connect on this network');leaveLiveStream(true);openLiveHub()}},18000);s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}catch(e){console.error('BOUNCY LIVE join',e);toast(e.message||'Could not join this live stream');await leaveLiveStream(true);openLiveHub()}}
+async function joinLiveStream(st,hostName){if(!me)return;if(liveSession){toast('Leave your current live stream first');return}const cnt=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',st.id);if((cnt.count||0)>=LIVE_MAX_VIEWERS){toast('This free live stream has reached its viewer limit');return}const s=liveSession={host:false,id:st.id,hostId:st.host_id,title:st.title||'Live now',hostName,hostAvatar:st.hostAvatar||'',hostVerified:!!st.hostVerified,pc:null,queues:[],channel:null,commentChannel:null,closing:false};try{await subscribeLiveSignals(s);const j=await sb.from('live_viewers').upsert({stream_id:s.id,user_id:me.id,last_seen_at:new Date().toISOString()},{onConflict:'stream_id,user_id'});if(j.error)throw j.error;const pc=s.pc=new RTCPeerConnection(liveRtcConfig);pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,st.host_id,'candidate',e.candidate.toJSON())};pc.ontrack=e=>{const v=sheet.querySelector('.live-video-wrap video');if(v){if(!s.remote)s.remote=new MediaStream();if(!s.remote.getTracks().some(t=>t.id===e.track.id))s.remote.addTrack(e.track);v.srcObject=s.remote;v.play().catch(()=>{})}};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){toast('Connection failed. This network may need a relay server.');clearTimeout(s.connectionTimer)}if(pc.connectionState==='connected'){clearTimeout(s.connectionTimer);const c=sheet.querySelector('.live-view-count');if(c)c.textContent='Connected'}};const offer=await pc.createOffer();await pc.setLocalDescription(offer);await showLiveRoom();await sendLiveSignal(s,st.host_id,'offer',pc.localDescription.toJSON());s.connectionTimer=setTimeout(()=>{if(liveSession===s&&s.pc?.connectionState!=='connected'){toast('The live stream could not connect on this network');leaveLiveStream(true);openLiveHub()}},18000);s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}catch(e){console.error('BOUNCY LIVE join',e);toast(e.message||'Could not join this live stream');await leaveLiveStream(true);openLiveHub()}}
 async function endLiveStream(silent=false){const s=liveSession;if(!s||!s.host)return;s.closing=true;for(const id of s.pcs.keys())await sendLiveSignal(s,id,'leave',{});s.pcs.forEach(pc=>pc.close());s.pcs.clear();s.stream.getTracks().forEach(t=>t.stop());clearInterval(s.countTimer);clearInterval(s.heartbeat);if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id);liveSession=null;close();if(!silent)toast('Your live stream has ended')}
 async function leaveLiveStream(silent=false){const s=liveSession;if(!s||s.host)return;s.closing=true;clearInterval(s.heartbeat);clearTimeout(s.connectionTimer);s.pc?.close();if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();if(s.hostId)await sendLiveSignal(s,s.hostId,'leave',{}).catch(()=>{});await sb.from('live_viewers').delete().eq('stream_id',s.id).eq('user_id',me.id);liveSession=null;close();if(!silent)toast('You left the live stream')}
 $('#liveOpen').onclick=openLiveHub;
@@ -1503,3 +1506,38 @@ deep()}
 sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){if(activeCall)endCall();if(incomingCallChannel){sb.removeChannel(incomingCallChannel);incomingCallChannel=null}if(presCh){sb.removeChannel(presCh);presCh=null;online=new Set()}me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
 </script></body></html>
+
+/* BOUNCY LIVE FINAL — one top X, one bottom row, no extra pills */
+#sheet.live-sheet .live-room-screen .live-head{display:none!important}
+#sheet.live-sheet .live-room-screen .live-topbar-tiktok{position:absolute!important;z-index:30!important;top:calc(env(safe-area-inset-top,0px) + 8px)!important;left:12px!important;right:12px!important;height:42px!important;display:flex!important;align-items:center!important;gap:8px!important;background:transparent!important}
+#sheet.live-sheet .live-room-screen .live-identity{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;flex:1!important}
+#sheet.live-sheet .live-room-screen .live-avatar{width:36px!important;height:36px!important;border:1px solid #fff!important}
+#sheet.live-sheet .live-room-screen .live-identity strong{max-width:34vw!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:13px!important;color:#fff!important;text-shadow:0 1px 5px #000!important}
+#sheet.live-sheet .live-room-screen .live-status-pill{background:#f12b42!important;color:#fff!important;border-radius:4px!important;padding:3px 6px!important;font-size:10px!important;font-weight:900!important}
+#sheet.live-sheet .live-room-screen .live-view-count{position:static!important;flex:none!important;background:#16161699!important;border:0!important;border-radius:12px!important;padding:5px 8px!important;color:#fff!important;font-size:11px!important}
+#sheet.live-sheet .live-room-screen .live-x-button{position:static!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:none!important;width:34px!important;height:34px!important;margin-left:4px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:28px!important;line-height:1!important}
+#sheet.live-sheet .live-room-screen .live-top-right{position:absolute!important;z-index:31!important;top:calc(env(safe-area-inset-top,0px) + 52px)!important;right:12px!important}
+#sheet.live-sheet .live-room-screen .live-sound-icon{width:30px!important;height:30px!important;border:0!important;border-radius:50%!important;background:#0006!important;color:#fff!important;font-size:15px!important}
+#sheet.live-sheet .live-room-screen .live-right-actions{position:absolute!important;z-index:25!important;right:12px!important;top:50%!important;transform:translateY(-50%)!important;display:flex!important;flex-direction:column!important;gap:12px!important;width:auto!important}
+#sheet.live-sheet .live-room-screen .live-round-action{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;border-radius:50%!important;border:0!important;background:#0006!important;color:#fff!important;padding:0!important;font-size:22px!important;box-shadow:none!important}
+#sheet.live-sheet .live-room-screen .live-comments{left:12px!important;right:72px!important;bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;height:auto!important;max-height:24vh!important;padding:0!important;background:transparent!important;border:0!important;overflow:hidden!important}
+#sheet.live-sheet .live-room-screen .live-comment{background:transparent!important;border:0!important;padding:3px 0!important;font-size:13px!important;text-shadow:0 1px 4px #000!important}
+#sheet.live-sheet .live-room-screen .live-compose{left:12px!important;right:116px!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;display:flex!important}
+#sheet.live-sheet .live-room-screen .live-compose input{height:42px!important;border-radius:22px!important;background:#0007!important;border:1px solid #ffffff55!important;color:#fff!important}
+#sheet.live-sheet .live-room-screen .live-bottom-tiktok{position:absolute!important;z-index:29!important;left:12px!important;right:12px!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;display:flex!important;align-items:center!important;gap:10px!important;pointer-events:none!important}
+#sheet.live-sheet .live-room-screen .live-compose{position:static!important;flex:1!important;min-width:0!important;pointer-events:auto!important}
+#sheet.live-sheet .live-room-screen .live-bottom-tiktok>.live-round-action{pointer-events:auto!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;border-radius:50%!important;background:#0007!important;border:0!important;font-size:21px!important}
+#sheet.live-sheet .live-room-screen .live-send-comment{display:none!important}
+#sheet.live-sheet .live-room-screen .live-gift-earned-pill,#sheet.live-sheet .live-room-screen .live-end-circle{display:none!important}
+#sheet.live-sheet .live-composer-screen{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;overflow:hidden!important;background:#000!important}
+#sheet.live-sheet .live-composer-screen .live-camera-preview.live-camera-full{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:100%!important;max-height:none!important;border-radius:0!important;background:#000!important;overflow:hidden!important}
+#sheet.live-sheet .live-composer-screen .live-camera-preview video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;max-height:none!important}
+#sheet.live-sheet .live-composer-screen .live-camera-bottom{position:absolute!important;left:16px!important;right:16px!important;bottom:calc(22px + env(safe-area-inset-bottom,0px))!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:16px!important;background:transparent!important}
+#sheet.live-sheet .live-composer-screen .live-camera-bottom input{width:100%!important;background:#0008!important;color:#fff!important;border:1px solid #ffffff55!important;border-radius:22px!important}
+#sheet.live-sheet .live-composer-screen .live-start-button{width:68px!important;height:68px!important;min-width:68px!important;border-radius:50%!important;align-self:center!important;background:#f12b42!important;color:#fff!important}
+#sheet.live-sheet .live-no-live-screen{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;background:#000!important;overflow:hidden!important}
+#sheet.live-sheet .live-no-live-screen>video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important}
+#sheet.live-sheet .live-no-live-close{position:absolute!important;z-index:5!important;top:calc(env(safe-area-inset-top,0px) + 12px)!important;right:14px!important;width:38px!important;height:38px!important;border:0!important;background:#0006!important;color:#fff!important;border-radius:50%!important;font-size:26px!important}
+#sheet.live-sheet .live-no-live-center{position:absolute!important;z-index:4!important;inset:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:18px!important;color:#fff!important;text-align:center!important;text-shadow:0 2px 8px #000!important;background:#0002!important}
+#sheet.live-sheet .live-no-live-center h1{font-size:25px!important;font-weight:900!important}
+#sheet.live-sheet .live-no-live-go{min-width:150px!important;height:48px!important;border-radius:24px!important;background:#f12b42!important;color:#fff!important;font-size:16px!important;font-weight:900!important}
