@@ -862,9 +862,9 @@ async function handleLiveSignal(s,x){
     s.queues?.delete(x.sender_id);s.cohostQueues?.delete(x.sender_id);
    }
   }else if(s.isCohost){
-   if(x.signal_type==='answer'&&peerKind==='cohost'&&s.cohostPc?.signalingState==='have-local-offer')await s.cohostPc.setRemoteDescription(payload);
+   if(x.signal_type==='answer'&&peerKind==='cohost'&&s.cohostPc?.signalingState==='have-local-offer'){await s.cohostPc.setRemoteDescription(payload);for(const cand of(s.cohostQueues||[]).splice(0))try{await s.cohostPc.addIceCandidate(cand)}catch(e){}}
    else if(x.signal_type==='offer'&&peerKind==='viewer'&&s.pc){
-    await s.pc.setRemoteDescription(payload);const answer=await s.pc.createAnswer();await s.pc.setLocalDescription(answer);
+    await s.pc.setRemoteDescription(payload);for(const cand of(s.queues||[]).splice(0))try{await s.pc.addIceCandidate(cand)}catch(e){}const answer=await s.pc.createAnswer();await s.pc.setLocalDescription(answer);
     await sendLiveSignal(s,s.hostId,'answer',{...s.pc.localDescription.toJSON(),_peer:'viewer'});
    }else if(x.signal_type==='candidate'){
     const pc=peerKind==='cohost'?s.cohostPc:s.pc;
@@ -874,7 +874,7 @@ async function handleLiveSignal(s,x){
   }else{
    const pc=s.pc;
    if(x.signal_type==='offer'&&peerKind==='viewer'&&pc){
-    await pc.setRemoteDescription(payload);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+    await pc.setRemoteDescription(payload);for(const cand of(s.queues||[]).splice(0))try{await pc.addIceCandidate(cand)}catch(e){}const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
     await sendLiveSignal(s,s.hostId,'answer',{...pc.localDescription.toJSON(),_peer:'viewer'});
    }else if(x.signal_type==='answer'&&peerKind==='viewer'&&pc?.signalingState==='have-local-offer'){
     await pc.setRemoteDescription(payload);for(const cand of(s.queues||[]))try{await pc.addIceCandidate(cand)}catch(e){}s.queues=[];
