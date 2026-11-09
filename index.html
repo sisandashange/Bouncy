@@ -1245,6 +1245,39 @@ const rm=E('button','flex:1;padding:10px 0',usr?'Mark resolved':'Remove');rm.cla
 const kp=E('button','flex:1;padding:10px 0',usr?'Dismiss':'Keep it up');kp.className='fol';kp.onclick=()=>act('dismiss');const bn=E('button','flex:1;padding:10px 0','Ban user');bn.className='fol';bn.onclick=async()=>{if(!confirm('Ban the person behind this? They won’t be able to log in again.'))return;const q=await sb.rpc('admin_ban_by_report',{p_report:x.report_id,p_ban:true});if(q.error){toast(/admin/.test(q.error.message)?'You can’t ban an admin':'Couldn’t ban this account');return}toast('Banned @'+q.data);draw()};row.append(rm,kp,bn);b.append(row)}
 c.append(b);d.append(c)})};
 draw()}
+function openEditStudio(file,isVideo){
+let url=URL.createObjectURL(file),rate=1,crop=false,splitMarks=[];
+const root=E('div','position:fixed;inset:0;z-index:10001;background:#050505;color:#fff;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));font-family:inherit');
+const top=E('div','height:46px;display:flex;align-items:center;justify-content:space-between;flex:none');
+const back=E('button','background:none;color:#fff;font-size:28px','‹');back.onclick=()=>{URL.revokeObjectURL(url);root.remove()};
+const sound=E('button','padding:9px 15px;border-radius:20px;background:#222;color:#fff;font-weight:700','♫ Add sound');sound.onclick=()=>toast('Choose sound from the Post screen');
+const next=E('button','padding:9px 16px;border-radius:20px;background:#FE2C55;color:#fff;font-weight:800','Next');top.append(back,sound,next);
+const stage=E('div','position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;border-radius:12px;margin:8px 0');
+const media=document.createElement(isVideo?'video':'img');media.src=url;media.style.cssText='width:100%;height:100%;object-fit:contain';if(isVideo){media.muted=true;media.controls=false;media.autoplay=true;media.loop=true;media.playsInline=true;media.play().catch(()=>{})}stage.append(media);
+const controls=E('div','display:flex;align-items:center;justify-content:space-around;padding:12px 0;flex:none');
+const story=E('button','padding:13px 18px;border:1px solid #555;border-radius:12px;background:#171717;color:#fff;font-weight:800','Your Story');story.onclick=()=>{toast('Story sharing will use the BOUNCY story uploader');};
+const edit=E('button','padding:13px 18px;border:0;border-radius:12px;background:#FE2C55;color:#fff;font-weight:800','Edit');edit.onclick=()=>showTimeline();
+controls.append(story,edit);root.append(top,stage,controls);document.body.append(root);
+const showTimeline=()=>{
+stage.replaceChildren();const wrap=E('div','width:100%;height:100%;display:flex;flex-direction:column;padding:12px;gap:14px;overflow:auto');
+const count=E('div','text-align:center;font-size:13px;color:#ddd;font-variant-numeric:tabular-nums','00:00 / 00:00');const timeline=E('div','height:76px;border-radius:10px;background:#252525;display:flex;align-items:center;padding:8px;gap:4px;overflow:hidden');
+const thumb=E('div','height:52px;flex:1;border:2px solid #FE2C55;border-radius:5px;background:linear-gradient(90deg,#444,#777,#333)');timeline.append(thumb);
+const scrub=document.createElement('input');scrub.type='range';scrub.min='0';scrub.max=isVideo&&Number.isFinite(media.duration)?String(media.duration):'1';scrub.step='.1';scrub.value='0';scrub.style.width='100%';scrub.oninput=()=>{if(isVideo){media.currentTime=Number(scrub.value);count.textContent=fmt(media.currentTime)+' / '+fmt(media.duration)}};
+const fmt=n=>{n=Math.max(0,Math.floor(n||0));return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
+const toolrow=E('div','display:grid;grid-template-columns:repeat(5,1fr);gap:6px');
+const tool=(label,fn)=>{const b=E('button','padding:11px 3px;border-radius:9px;background:#202020;color:#fff;font-size:12px;font-weight:700',label);b.onclick=fn;toolrow.append(b)};
+tool('Split',()=>{if(!isVideo){toast('Split is for videos');return}splitMarks.push(media.currentTime);toast('Split point added at '+fmt(media.currentTime))});
+tool('Replace',()=>{const pick=document.createElement('input');pick.type='file';pick.accept=isVideo?'video/*':'image/*';pick.onchange=()=>{const f=pick.files&&pick.files[0];if(!f)return;URL.revokeObjectURL(url);url=URL.createObjectURL(f);media.src=url;media.load?.();toast('Media replaced')};pick.click()});
+tool('Delete',()=>{if(confirm('Remove this clip from the edit?')){root.remove();URL.revokeObjectURL(url)}});
+tool('Speed',()=>{rate=rate===1?1.5:rate===1.5?2:0.5;if(isVideo)media.playbackRate=rate;toast('Preview speed '+rate+'×')});
+tool('Crop',()=>{crop=!crop;media.style.objectFit=crop?'cover':'contain';toast(crop?'Crop preview: Fill':'Crop preview: Fit')});
+const tabs=E('div','display:flex;justify-content:space-around;padding:12px 0;border-top:1px solid #333;color:#ddd;font-size:12px');['Edit','Sound','Text','Effects','Magic','Captions'].forEach(t=>tabs.append(E('span','padding:8px 3px',t)));
+const done=E('button','width:100%;padding:14px;border-radius:11px;background:#FE2C55;color:#fff;font-weight:800','Next: Post');done.onclick=()=>{root.remove();composePost({type:isVideo?'video':'image',file})};
+wrap.append(count,timeline,scrub,toolrow,tabs,done);stage.append(wrap);
+if(isVideo){media.pause();media.addEventListener('timeupdate',()=>{if(!scrub.matches(':active'))scrub.value=String(media.currentTime);count.textContent=fmt(media.currentTime)+' / '+fmt(media.duration)})}
+};
+next.onclick=showTimeline;
+}
 function openCamera(){
 if(gate('use the camera'))return;
 if(!navigator.mediaDevices||!window.MediaRecorder){toast('The camera isn’t supported in this browser');return}
@@ -1345,7 +1378,7 @@ const review=(blob,isVideo)=>{
 const ext=isVideo?(blob.type.includes('mp4')?'mp4':blob.type.includes('quicktime')?'mov':'webm'):'jpg';
 const file=new File([blob],'bouncy-camera.'+ext,{type:blob.type||(isVideo?'video/webm':'image/jpeg')});
 closeCam();
-composePost({type:isVideo?'video':'image',file});
+openEditStudio(file,isVideo);
 };
 const finishRecording=()=>{if(rec&&rec.state!=='inactive'){recordPaused=false;rec.stop()}};
 const setRecordClock=seconds=>{const n=Math.max(0,Math.floor(seconds));recordClock.textContent=String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')};
