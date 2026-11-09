@@ -443,3 +443,5 @@
   width:46px!important;height:46px!important;
   background:linear-gradient(135deg,#f12b55,#ff8c37)!important;border:0!important;
 }
+
+#sheet.live-sheet .b-live-room{display:block!important;}
