@@ -257,7 +257,7 @@
 
 #sheet.live-sheet .live-room-screen .bouncy-live-guest-tile video.bouncy-cohost-blur{
   z-index:1!important;object-fit:cover!important;filter:blur(16px) brightness(.58)!important;
-  transform:scale(1.08)!important;pointer-events:none!important;
+  transform:none!important;pointer-events:none!important;
 }
 #sheet.live-sheet .live-room-screen .bouncy-live-guest-tile video.bouncy-cohost-main{
   z-index:2!important;object-fit:cover!important;filter:none!important;transform:none!important;
