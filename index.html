@@ -1315,15 +1315,34 @@ bottom.append(gallery,nav);
 const ringCircumference=2*Math.PI*38;
 const timerOverlay=E('div','position:absolute;inset:0;z-index:8;display:none;align-items:center;justify-content:center;font-size:110px;font-weight:800;color:#fff;text-shadow:0 2px 16px #000;pointer-events:none');
 const review=(blob,isVideo)=>{
-const file=new File([blob],'bouncy-camera.'+(isVideo?(blob.type.includes('mp4')?'mp4':'webm'):'jpg'),{type:blob.type||(isVideo?'video/webm':'image/jpeg')});
-const d=el('<h3></h3><div id="pv"></div><div class="col" id="ac" style="margin-top:12px"></div>');
-d.querySelector('h3').textContent=isVideo?'Your video':'Your photo';
-const pv=document.createElement(isVideo?'video':'img');pv.src=URL.createObjectURL(blob);if(isVideo){pv.controls=true;pv.muted=true;pv.playsInline=true;pv.autoplay=true;pv.loop=true}else pv.alt='';pv.style.cssText='width:100%;max-height:34vh;object-fit:contain;background:#000;border-radius:12px';d.querySelector('#pv').append(pv);
-const btn=(label,fn,outline)=>{const b=E('button','margin:0',label);b.className='btn';if(outline)b.style.cssText='margin:0;background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)';b.onclick=fn;d.querySelector('#ac').append(b)};
-if(isVideo)btn('Post as a video',()=>{closeCam();close();const dt=new DataTransfer();dt.items.add(file);const fi=$('#file');fi.files=dt.files;fi.dispatchEvent(new Event('change'))});else btn('Post to Feed',()=>{closeCam();close();composePost(blob)});
-btn('Add to my story',()=>{closeCam();close();addStory(file)});
-btn('Save to phone',()=>{const a=document.createElement('a');a.href=pv.src;a.download=file.name;document.body.append(a);a.click();a.remove();toast('Saved to Downloads')},true);
-btn('Retake',()=>{close();},true);open(d);
+const ext=isVideo?(blob.type.includes('mp4')?'mp4':blob.type.includes('quicktime')?'mov':'webm'):'jpg';
+const file=new File([blob],'bouncy-camera.'+ext,{type:blob.type||(isVideo?'video/webm':'image/jpeg')});
+const previewUrl=URL.createObjectURL(blob);
+const d=el('<div class="b-camera-post" style="max-height:72vh;overflow-y:auto;padding-bottom:8px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><button id="discardCameraPost" type="button" aria-label="Discard post" style="width:38px;height:38px;border-radius:50%;background:var(--soft);font-size:24px">×</button><h3 style="margin:0;flex:1">New post</h3><span style="font-size:12px;color:var(--mute)">BOUNCY</span></div><div id="cameraPostPreview"></div><textarea id="cameraPostCaption" maxlength="150" rows="3" placeholder="Write a caption…" aria-label="Write a caption" style="margin-top:12px;min-height:82px;pointer-events:auto;position:relative;z-index:20"></textarea><div style="display:flex;gap:8px;margin-top:9px"><button type="button" id="cameraTag" class="fol">＋ Tag people</button><button type="button" id="cameraHash" class="fol">＋ Add #</button></div><label style="display:block;font-weight:800;margin-top:14px;font-size:14px" for="cameraPrivacy">Who can view</label><select id="cameraPrivacy" style="width:100%;margin-top:7px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg);font:inherit"><option value="everyone">Everyone</option><option value="friends" disabled>Friends (not available yet)</option><option value="only_me" disabled>Only me (not available yet)</option></select><p style="font-size:12px;line-height:1.4;color:var(--mute);margin:7px 0 0">The current BOUNCY database has no video or post privacy field, so this composer only publishes to Everyone. I have not made Friends or Only me appear to work when they cannot be enforced.</p><button type="button" id="publishCameraPost" class="btn" style="width:100%;margin-top:16px">Post</button></div>');
+const pv=document.createElement(isVideo?'video':'img');pv.src=previewUrl;pv.style.cssText='display:block;width:100%;max-height:30vh;object-fit:contain;background:#000;border-radius:14px';if(isVideo){pv.controls=true;pv.muted=true;pv.playsInline=true;pv.loop=true}else pv.alt='Photo to post';d.querySelector('#cameraPostPreview').append(pv);
+const caption=d.querySelector('#cameraPostCaption'),publish=d.querySelector('#publishCameraPost');
+d.querySelector('#cameraTag').onclick=()=>{const who=prompt('Enter a username to tag (without @):');if(who&&who.trim())caption.value=(caption.value.trim()+' @'+who.trim().replace('@','').split(' ').join('')).trim().slice(0,150);caption.focus()};
+d.querySelector('#cameraHash').onclick=()=>{const tag=prompt('Enter a hashtag (without #):');if(tag&&tag.trim())caption.value=(caption.value.trim()+' #'+tag.trim().replace('#','').split(' ').join('')).trim().slice(0,150);caption.focus()};
+d.querySelector('#discardCameraPost').onclick=()=>{if(!confirm('Discard this post?'))return;close();URL.revokeObjectURL(previewUrl)};
+publish.onclick=async()=>{
+if(!blob||!blob.size){toast(isVideo?'No video to post':'No photo to post');return}
+publish.disabled=true;publish.textContent='Posting…';
+const fail=m=>{toast(m);publish.disabled=false;publish.textContent='Post'};
+const path=me.id+'/'+(isVideo?'camera-':'post-')+crypto.randomUUID()+'.'+ext;
+const up=await sb.storage.from('videos').upload(path,blob,{contentType:blob.type||(isVideo?'video/webm':'image/jpeg')});
+if(up.error)return fail(isVideo?'Video upload failed. Try again.':'Photo upload failed. Try again.');
+if(isVideo){
+let thumbnailPath=null;const thumb=await cover(file);if(thumb){const cp=me.id+'/cover-'+crypto.randomUUID()+'.jpg';const cu=await sb.storage.from('videos').upload(cp,thumb,{contentType:'image/jpeg'});if(!cu.error)thumbnailPath=cp}
+const ins=await sb.from('videos').insert({owner_id:me.id,caption:caption.value.trim(),storage_path:path,thumbnail_path:thumbnailPath});
+if(ins.error){await sb.storage.from('videos').remove([path]);if(thumbnailPath)await sb.storage.from('videos').remove([thumbnailPath]);return fail('Couldn’t publish the video. Try again.')}
+close();URL.revokeObjectURL(previewUrl);closeCam();toast('Posted');await load();show('feed');feed.scrollTop=0;
+}else{
+const ins=await sb.from('posts').insert({owner_id:me.id,body:caption.value.trim(),image_path:path});
+if(ins.error){await sb.storage.from('videos').remove([path]);return fail('Couldn’t publish the photo. Try again.')}
+close();URL.revokeObjectURL(previewUrl);closeCam();ftab='posts';show('trend');toast('Posted');
+}
+};
+open(d);
 };
 const finishRecording=()=>{if(rec&&rec.state!=='inactive')rec.stop()};
 const startRecording=async()=>{
