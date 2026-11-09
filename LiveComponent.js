@@ -642,7 +642,7 @@
       if (liveSession !== s || s.closing) return;
       const [q, g] = await Promise.all([
         sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id', s.id).order('created_at', { ascending: true }).limit(100),
-        sb.from('live_gifts').select('id,sender_id,gift_id,quantity,created_at,gifts(name,emoji)').eq('live_id', s.id).order('created_at', { ascending: true }).limit(100)
+        sb.from('live_gifts').select('id,sender_id,recipient_id,gift_id,quantity,created_at,gifts(name,emoji)').eq('live_id', s.id).order('created_at', { ascending: true }).limit(100)
       ]);
       if (q.error && g.error) return;
       comments.replaceChildren();
