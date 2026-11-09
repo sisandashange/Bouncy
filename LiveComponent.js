@@ -218,6 +218,31 @@
     s._battlePanel=panel;
   }
 
+
+  function watchBattleInvites(s) {
+    if (!s || s.host || !me?.id) return;
+    const channel=sb.channel('bouncy-battle-invites-'+s.id+'-'+me.id)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'live_battle_invites',filter:'invitee_id=eq.'+me.id},payload=>{
+        const invite=payload.new;
+        if(!invite?.id || s._battleInvitePanel) return;
+        const panel=el('section','live-demo-host-panel');
+        panel.append(el('strong','','CO-HOST / BATTLE INVITATION'));
+        panel.append(el('p','','The live host invited you to join a BOUNCY battle. Accepting confirms your player place; multi-person video is still being connected.'));
+        const accept=el('button','live-host-panel-close','Accept invitation');
+        const decline=el('button','live-host-panel-close','Decline');
+        const respond=async value=>{
+          accept.disabled=true;decline.disabled=true;
+          const r=await sb.rpc('bouncy_respond_live_battle_invite',{p_invite_id:invite.id,p_accept:value});
+          if(r.error){accept.disabled=false;decline.disabled=false;toast(r.error.message||'Could not respond to invitation');return}
+          panel.remove();s._battleInvitePanel=null;
+          toast(value?'Battle invitation accepted':'Invitation declined');
+        };
+        accept.onclick=()=>respond(true);decline.onclick=()=>respond(false);
+        panel.append(accept,decline);s._room.append(panel);s._battleInvitePanel=panel;
+      }).subscribe();
+    s.battleInviteChannel=channel;
+  }
+
   async function render() {
     const s = liveSession;
     if (!s) return;
@@ -331,6 +356,7 @@
 
     room.append(stage, heartLayer, top, second, giftBanner, comments, bottom);
     liveOpenSheet(room);
+    if (!s.host) watchBattleInvites(s);
     video.play().catch(() => {});
 
     let lastTap = 0;
