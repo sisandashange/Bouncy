@@ -97,9 +97,13 @@
 #sheet.live-sheet .live-room-screen .live-demo-brand{display:inline-flex!important;align-items:center!important;padding:4px 7px!important;border-radius:8px!important;background:#fff!important;color:#080808!important;font-size:9px!important;font-weight:1000!important;letter-spacing:.08em!important;text-shadow:none!important}
 
 
-/* Live camera framing: show the full camera image without cover-cropping */
+/* Live camera framing: fill portrait screen and crop landscape camera feeds */
 #sheet.live-sheet .live-room-screen .live-stage video{
-  object-fit:contain!important;
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
   object-position:center center!important;
   background:#000!important;
 }
