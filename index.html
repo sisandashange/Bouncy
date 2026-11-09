@@ -890,6 +890,8 @@ window.bouncyStopCohost=async function(s,reason='Co-host seat ended'){
  if(!s)return;
  try{if(s.cohostPc){await sendLiveSignal(s,s.hostId,'leave',{_peer:'cohost'}).catch(()=>{});s.cohostPc.close();s.cohostPc=null}}catch(e){}
  s.cohostStream?.getTracks().forEach(t=>t.stop());s.cohostStream=null;s.isCohost=false;
+ window.BouncyLiveComponent?.removeCohostTile?.(s,'self');
+ sb.rpc('bouncy_get_coin_wallet').then(({data})=>{const badge=s._room?.querySelector('.live-demo-profile-coins');if(data&&badge)badge.textContent='💎 '+Number(data.balance||0).toLocaleString()});
  s._room?.querySelector('.bouncy-cohost-mic-toggle')?.remove();
  if(reason)toast(reason);
 };
