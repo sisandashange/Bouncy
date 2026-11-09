@@ -445,3 +445,27 @@
 }
 
 #sheet.live-sheet .b-live-room{display:block!important;}
+
+
+/* BOUNCY LIVE creation / camera preview */
+#sheet.live-sheet .b-live-setup{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;display:block!important;overflow:hidden!important;background:#000!important;color:#fff!important;z-index:1000!important}
+#sheet.live-sheet .b-live-setup-stage{position:absolute;inset:0;overflow:hidden;background:#090909}
+#sheet.live-sheet .b-live-setup-bg{position:absolute;inset:-5%;width:110%;height:110%;object-fit:cover;filter:blur(24px) brightness(.45);transform:scale(1.08)}
+#sheet.live-sheet .b-live-setup-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:#111}
+#sheet.live-sheet .b-live-setup-stage:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#0008 0%,transparent 35%,#0002 55%,#000c 100%)}
+#sheet.live-sheet .b-live-setup-top{position:absolute;z-index:5;top:calc(env(safe-area-inset-top,0px) + 10px);left:13px;right:13px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+#sheet.live-sheet .b-live-setup-top>strong{font-size:15px;font-weight:900;text-shadow:0 2px 8px #000}
+#sheet.live-sheet .b-live-setup-close,#sheet.live-sheet .b-live-setup-tool{width:40px;height:40px;display:grid;place-items:center;border:1px solid #ffffff45;border-radius:50%;background:#1119;color:#fff;font-size:24px;backdrop-filter:blur(14px)}
+#sheet.live-sheet .b-live-setup-actions{display:flex;gap:8px}
+#sheet.live-sheet .b-live-setup-tool{font-size:20px}
+#sheet.live-sheet .b-live-setup-tool.active{background:#e52f38;border-color:#e52f38}
+#sheet.live-sheet .b-live-setup-panel{position:absolute;z-index:6;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:19px 16px 16px;border:1px solid #ffffff24;border-radius:22px;background:rgba(15,16,20,.84);backdrop-filter:blur(22px);box-shadow:0 12px 40px #0008}
+#sheet.live-sheet .b-live-setup-eyebrow{font-size:9px;font-weight:950;letter-spacing:.18em;color:#ff6971}
+#sheet.live-sheet .b-live-setup-panel h2{margin:6px 0 13px;font-size:20px;line-height:1.15;font-weight:900;color:#fff}
+#sheet.live-sheet .b-live-setup-title{width:100%;height:46px;padding:0 14px;border:1px solid #ffffff2c;border-radius:12px;outline:none;background:#ffffff12;color:#fff;font-size:13px}
+#sheet.live-sheet .b-live-setup-title::placeholder{color:#c5c5c5}
+#sheet.live-sheet .b-live-setup-note{margin:10px 0 13px;color:#ffffffb8;font-size:10px;line-height:1.4}
+#sheet.live-sheet .b-live-setup-start{width:100%;height:48px;border:0;border-radius:999px;background:#e52f38;color:#fff;font-size:14px;font-weight:950;letter-spacing:.02em}
+#sheet.live-sheet .b-live-setup-start:disabled{opacity:.65}
+#sheet.live-sheet .b-live-setup-message{min-height:14px;margin:8px 0 0;color:#ffd6d8;font-size:11px;text-align:center}
+@media(min-width:700px){#sheet.live-sheet .b-live-setup{max-width:480px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important}}
