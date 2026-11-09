@@ -486,6 +486,24 @@ body{position:fixed;inset:0}
 .b-reaction-picker button{width:36px;height:38px;display:grid;place-items:center;border-radius:50%;font-size:25px;line-height:1;transition:transform .12s}
 .b-reaction-picker button:active{transform:scale(1.3)}
 @keyframes bReactionIn{from{opacity:0;transform:translateY(7px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* WhatsApp-style full-screen status composer */
+#sheet.b-status-editor{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;max-height:100dvh!important;max-width:none!important;transform:none!important;border:0!important;border-radius:0!important;padding:0!important;margin:0!important;background:#080808!important;color:#fff!important;--fg:#fff;--bg:#080808;--mute:#c8c8c8;--line:#333;box-shadow:none!important;overflow:hidden!important;z-index:10001!important;display:flex!important;flex-direction:column!important}
+#sheet.b-status-editor::before{display:none!important}
+#sheet.b-status-editor>.b-status-editor{height:100%;min-height:0;display:flex;flex-direction:column;background:#080808;color:#fff}
+.b-status-top{height:58px;flex:none;display:flex;align-items:center;gap:16px;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 8px;background:#080808}
+.b-status-top button{width:38px;height:38px;border-radius:50%;font-size:30px;line-height:1;color:#fff;background:#242424}
+.b-status-top b{font-size:17px;font-weight:750;flex:1}.b-status-top span{font-size:12px;color:#bbb}
+.b-status-stage{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;background:#111}
+.b-status-media{display:block;width:100%;height:100%;object-fit:contain;background:#111}
+.b-status-bottom{position:relative;flex:none;display:flex;align-items:center;gap:10px;padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px));background:#080808}
+.b-status-caption{flex:1;min-width:0}
+#sheet.b-status-editor #sc{width:100%;height:46px;border:0!important;border-radius:24px!important;padding:0 17px!important;background:#303030!important;color:#fff!important;font-size:15px}
+#sheet.b-status-editor #sc::placeholder{color:#ddd}
+.b-status-audience{position:absolute;left:18px;bottom:calc(66px + env(safe-area-inset-bottom,0px));font-size:11px;color:#eee;text-shadow:0 1px 5px #000;pointer-events:none}
+.b-status-send{width:52px;height:52px;flex:none;border-radius:50%;display:grid;place-items:center;background:#00a884!important;color:#fff!important;font-size:23px;font-weight:900;box-shadow:0 2px 8px #0008}
+.b-status-send:disabled{opacity:.65}
+
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
@@ -521,8 +539,8 @@ const feed=$('#feed'),sheet=$('#sheet'),shade=$('#shade');
 let me=null,clips=[],tt;
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('o');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('o'),2200)}
 function el(h){const d=document.createElement('div');d.innerHTML=h;return d}
-function open(node){const isSearch=!!node.querySelector('#sq'),isTikTokComments=node.classList.contains('b-comments-tiktok'),isFacebookComments=node.classList.contains('b-comments-facebook');sheet.replaceChildren(node);sheet.classList.toggle('editor-modal',!!node.querySelector('#pb'));sheet.classList.toggle('search-modal',isSearch);sheet.classList.toggle('b-comments-tiktok',isTikTokComments);sheet.classList.toggle('b-comments-facebook',isFacebookComments);if(isSearch){sheet.style.setProperty('z-index','9999','important');sheet.style.setProperty('pointer-events','auto','important');shade.style.setProperty('pointer-events','none','important')}sheet.classList.add('o');shade.classList.add('o')}
-function close(){const au=document.getElementById('auth');if(au)au.remove();if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o','search-modal','editor-modal','b-comments-tiktok','b-comments-facebook');shade.classList.remove('o');sheet.style.removeProperty('z-index');sheet.style.removeProperty('pointer-events');shade.style.removeProperty('pointer-events');sheet.querySelectorAll('video').forEach(v=>v.pause())}
+function open(node){const isSearch=!!node.querySelector('#sq'),isTikTokComments=node.classList.contains('b-comments-tiktok'),isFacebookComments=node.classList.contains('b-comments-facebook'),isStatus=node.classList.contains('b-status-editor');sheet.replaceChildren(node);sheet.classList.toggle('editor-modal',!!node.querySelector('#pb'));sheet.classList.toggle('search-modal',isSearch);sheet.classList.toggle('b-comments-tiktok',isTikTokComments);sheet.classList.toggle('b-comments-facebook',isFacebookComments);sheet.classList.toggle('b-status-editor',isStatus);if(isSearch){sheet.style.setProperty('z-index','9999','important');sheet.style.setProperty('pointer-events','auto','important');shade.style.setProperty('pointer-events','none','important')}sheet.classList.add('o');shade.classList.add('o')}
+function close(){const au=document.getElementById('auth');if(au)au.remove();if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o','search-modal','editor-modal','b-comments-tiktok','b-comments-facebook','b-status-editor');shade.classList.remove('o');sheet.style.removeProperty('z-index');sheet.style.removeProperty('pointer-events');shade.style.removeProperty('pointer-events');sheet.querySelectorAll('video').forEach(v=>v.pause())}
 shade.onclick=close;
 const vt=new Map(),seen=new Set();
 const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){if(e.isIntersecting){if(!ds||v.dataset.u){v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});if(soundOn&&!blocked){blocked=true;sndUI();toast('Tap the screen to turn sound on')}})}}else v.pause()}
@@ -905,13 +923,15 @@ play()}
 function addStory(pre){if(gate('add a story'))return;const fi=document.createElement('input');fi.type='file';fi.accept='image/*,video/*';
 const run=async f=>{const isV=f.type.startsWith('video');if(isV&&f.size>52428800){toast('Videos must be under 50 MB');return}
 let blob=f;if(!isV){blob=await shrink(f,1080);if(!blob){toast('That image can’t be read');return}}
-const d=el('<h3>New story</h3><div id="pvw"></div><p class="sub" style="margin:8px 0 0">Visible to people who follow you for 24 hours.</p><div class="row"><input type="text" id="sc" maxlength="100" placeholder="Add a caption" aria-label="Caption"><button class="btn" id="ss">Share</button></div>');
-const pv=document.createElement(isV?'video':'img');pv.src=URL.createObjectURL(blob);if(isV){pv.controls=true;pv.muted=true;pv.playsInline=true}pv.style.cssText='width:100%;max-height:34vh;object-fit:contain;background:#000;border-radius:12px';d.querySelector('#pvw').append(pv);
-d.querySelector('#ss').onclick=async()=>{const b=d.querySelector('#ss');b.disabled=true;b.textContent='Sharing…';const fail=m=>{toast(m);b.disabled=false;b.textContent='Share'};
+const d=el('<div class="b-status-editor"><div class="b-status-top"><button id="sx" aria-label="Back">×</button><b>New status</b><span>24h</span></div><div class="b-status-stage" id="pvw"></div><div class="b-status-bottom"><div class="b-status-caption"><input type="text" id="sc" maxlength="100" placeholder="Add a caption…" aria-label="Add a caption"></div><div class="b-status-audience">◉ &nbsp; Visible to your followers for 24 hours</div><button class="b-status-send" id="ss" aria-label="Share status">➤</button></div></div>');
+d.classList.add('b-status-editor');const pv=document.createElement(isV?'video':'img');pv.src=URL.createObjectURL(blob);pv.className='b-status-media';pv.alt='Status preview';if(isV){pv.controls=false;pv.muted=true;pv.playsInline=true;pv.autoplay=true;pv.loop=true}d.querySelector('#pvw').append(pv);
+d.querySelector('#sx').onclick=()=>close();
+d.querySelector('#ss').onclick=async()=>{const b=d.querySelector('#ss');b.disabled=true;b.textContent='…';const fail=m=>{toast(m);b.disabled=false;b.textContent='➤'};
 const ext=isV?((f.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'')||'mp4'):'jpg',path=me.id+'/story-'+crypto.randomUUID()+'.'+ext;
 const up=await sb.storage.from('videos').upload(path,blob,{contentType:isV?(f.type||'video/mp4'):'image/jpeg'});if(up.error)return fail('Couldn’t upload. Use a photo, or an MP4, MOV or WebM video under 50 MB.');
-const r=await sb.from('stories').insert({owner_id:me.id,media_path:path,media_type:isV?'video':'image',caption:d.querySelector('#sc').value.trim()});if(r.error)return fail('Couldn’t share your story');
-close();toast('Story shared');if(!$('#trend').classList.contains('hide'))drawTrend()};open(d)};fi.onchange=()=>{if(fi.files[0])run(fi.files[0])};if(pre)run(pre);else fi.click()}
+const r=await sb.from('stories').insert({owner_id:me.id,media_path:path,media_type:isV?'video':'image',caption:d.querySelector('#sc').value.trim()});if(r.error)return fail('Couldn’t share your status');
+close();toast('Status shared');if(!$('#trend').classList.contains('hide'))drawTrend()};open(d)};fi.onchange=()=>{if(fi.files[0])run(fi.files[0])};if(pre)run(pre);else fi.click()}
+
 let ds=false;try{const s=localStorage.getItem('bouncy-data'),cn=navigator.connection;ds=s?s=='on':!!(cn&&(cn.saveData||/2g/.test(cn.effectiveType||'')))}catch(e){}
 function setTheme(k){document.documentElement.dataset.theme=k;try{localStorage.setItem('bouncy-theme',k)}catch(e){}const dk=k=='dark'||(k=='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.querySelector('meta[name=theme-color]').content=dk?'#000000':'#ffffff'}
 setTheme(document.documentElement.dataset.theme||'light');
