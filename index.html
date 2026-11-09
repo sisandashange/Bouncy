@@ -808,17 +808,20 @@ async function hostAcceptViewer(s,viewerId,offer){
  await sendLiveSignal(s,viewerId,'answer',{...pc.localDescription.toJSON(),_peer:'viewer'});
  for(const [guestId,guestStream] of (s.cohostStreams||new Map())) await relayCohostTrackToViewers(s,guestId,guestStream);
 }
+async function renegotiateBouncyViewer(s,viewerId,pc){
+ if(!pc||pc.connectionState==='closed')return;
+ if(pc.signalingState!=='stable'){pc._bouncyNeedsRenegotiate=true;return}
+ pc._bouncyNeedsRenegotiate=false;
+ try{const offer=await pc.createOffer();await pc.setLocalDescription(offer);await sendLiveSignal(s,viewerId,'offer',{...pc.localDescription.toJSON(),_peer:'viewer'})}
+ catch(e){console.warn('BOUNCY viewer renegotiation',e)}
+}
 async function relayCohostTrackToViewers(s,userId,stream){
  for(const [viewerId,pc] of (s.pcs||new Map())){
   if(!pc||pc.connectionState==='closed')continue;
   const tracks=stream.getTracks().filter(t=>t.readyState==='live');
   let added=false;
   for(const track of tracks){if(!pc.getSenders().some(x=>x.track?.id===track.id)){pc.addTrack(track,stream);added=true}}
-  if(!added||pc.signalingState!=='stable')continue;
-  try{
-   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
-   await sendLiveSignal(s,viewerId,'offer',{...pc.localDescription.toJSON(),_peer:'viewer'});
-  }catch(err){console.warn('Co-host relay renegotiation',err)}
+  if(added)await renegotiateBouncyViewer(s,viewerId,pc);
  }
 }
 async function hostAcceptCohost(s,userId,offer){
@@ -851,7 +854,7 @@ async function handleLiveSignal(s,x){
     else await hostAcceptViewer(s,x.sender_id,payload);
    }else if(x.signal_type==='answer'){
     const pc=peerKind==='cohost'?s.cohostPcs?.get(x.sender_id):s.pcs.get(x.sender_id);
-    if(pc?.signalingState==='have-local-offer')await pc.setRemoteDescription(payload);
+    if(pc?.signalingState==='have-local-offer'){await pc.setRemoteDescription(payload);if(peerKind==='viewer'&&pc._bouncyNeedsRenegotiate)await renegotiateBouncyViewer(s,x.sender_id,pc)}
    }else if(x.signal_type==='candidate'){
     const pc=peerKind==='cohost'?s.cohostPcs?.get(x.sender_id):s.pcs.get(x.sender_id);
     const queues=peerKind==='cohost'?(s.cohostQueues||(s.cohostQueues=new Map())):s.queues;
@@ -897,7 +900,7 @@ window.bouncyRemoveCohost=async function(s,userId){
   for(const [viewerId,viewerPc] of (s.pcs||new Map())){
    let changed=false;
    for(const sender of viewerPc.getSenders()){if(stream.getTracks().some(t=>t.id===sender.track?.id)){try{viewerPc.removeTrack(sender);changed=true}catch(e){}}}
-   if(changed&&viewerPc.signalingState==='stable')try{const offer=await viewerPc.createOffer();await viewerPc.setLocalDescription(offer);await sendLiveSignal(s,viewerId,'offer',{...viewerPc.localDescription.toJSON(),_peer:'viewer'})}catch(e){console.warn('Cohost removal renegotiation',e)}
+   if(changed)await renegotiateBouncyViewer(s,viewerId,viewerPc);
   }
   stream.getTracks().forEach(t=>t.stop());s.cohostStreams.delete(userId);
  }
