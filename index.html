@@ -646,6 +646,9 @@ body{position:fixed;inset:0}
 #sheet.b-status-editor #bstatus-song-frames{display:block;width:100%;height:100%;border-radius:5px}
 #sheet.b-status-editor #bstatus-song-selected{position:absolute;top:-2px;bottom:-2px;left:0;width:100%;border:2px solid #fff;border-radius:6px;pointer-events:none;box-sizing:border-box}
 @media(max-height:650px){#sheet.b-status-editor .b-status-trim-stage{bottom:185px}#sheet.b-status-editor .b-status-song-center{bottom:175px}#sheet.b-status-editor .b-status-trim-controls{padding-top:5px}#sheet.b-status-editor .b-status-filmstrip{height:46px}}
+
+/* BOUNCY create hub */
+#sheet .b-create-hub{width:100%;padding:2px 0 8px;box-sizing:border-box}#sheet .b-create-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:2px 0 16px}#sheet .b-create-head h3{margin:0 0 5px;font-size:22px}#sheet .b-create-head p{margin:0;color:var(--mute);font-size:13px}#sheet .b-create-close{width:36px;height:36px;flex:none;border-radius:50%;background:var(--soft);color:var(--fg);font-size:24px;line-height:1}#sheet .b-create-grid{display:grid;grid-template-columns:1fr;gap:8px}#sheet .b-create-item{display:flex;align-items:center;gap:13px;width:100%;min-height:70px;padding:10px 12px;border:1px solid var(--line);border-radius:16px;background:var(--soft);color:var(--fg);text-align:left}#sheet .b-create-icon{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:13px;background:var(--bg);color:var(--fg)}#sheet .b-create-icon svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}#sheet .b-create-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}#sheet .b-create-copy strong{font-size:15px;font-weight:800}#sheet .b-create-copy small{font-size:12px;color:var(--mute);line-height:1.3}#sheet .b-create-arrow{font-size:25px;color:var(--mute);line-height:1}#sheet .b-create-foot{margin:13px 2px 0;color:var(--mute);font-size:11px;text-align:center}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
@@ -855,7 +858,7 @@ function cover(f){return new Promise(res=>{const v=document.createElement('video
 const fail=()=>{URL.revokeObjectURL(u);res(null)};v.onerror=fail;setTimeout(fail,8000);
 v.onloadeddata=()=>{v.currentTime=Math.min(1,(v.duration||2)/2)};
 v.onseeked=()=>{const w=360,hh=Math.round(w*(v.videoHeight/v.videoWidth))||640,c=document.createElement('canvas');c.width=w;c.height=hh;try{c.getContext('2d').drawImage(v,0,0,w,hh);c.toBlob(b=>{URL.revokeObjectURL(u);res(b)},'image/jpeg',.8)}catch(e){fail()}}})}
-$('#up').onclick=openCamera;
+$('#up').onclick=createSheet;
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
 const d=el('<h3>New video</h3><video controls playsinline muted></video><div class="row"><input type="text" id="cap" maxlength="150" placeholder="Write a caption" aria-label="Caption"><button class="btn" id="post">Post</button></div>');
@@ -1012,7 +1015,36 @@ if(bl){path=me.id+'/post-'+crypto.randomUUID()+'.jpg';const u=await sb.storage.f
 const r=await sb.from('posts').insert({owner_id:me.id,body:t,image_path:path});
 if(r.error)return fail('Couldn’t publish your post');
 close();ftab='posts';show('trend');toast('Posted')};open(d)}
-function createSheet(){if(gate('create'))return;const d=el('<h3>Create</h3><div class="col"></div>');[['Open camera',()=>{close();openCamera()}],['Upload a video',()=>{close();$('#file').click()}],['Write a post',()=>composePost()],['Add to story',()=>{close();addStory()}]].forEach(([l,f])=>{const b=document.createElement('button');b.className='btn';b.style.margin='0';b.textContent=l;b.onclick=f;d.lastChild.append(b)});open(d)}
+function createSheet(){
+if(gate('create'))return;
+const d=el('<div class="b-create-hub"><div class="b-create-head"><div><h3>Create on BOUNCY</h3><p>Share a moment, a video or an update.</p></div><button type="button" class="b-create-close" aria-label="Close">×</button></div><div class="b-create-grid"></div><div class="b-create-foot">Your content is shared with the BOUNCY community.</div></div>');
+const grid=d.querySelector('.b-create-grid');
+const items=[
+['video','Record a video','Use the camera, effects and timer',()=>{close();openCamera()}],
+['upload','Upload a video','Choose a video from your phone',()=>{close();$('#file').click()}],
+['photo','Photo post','Share a photo with a caption',()=>{const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.onchange=()=>{const f=fi.files&&fi.files[0];if(f)composePost(f)};fi.click();close()}],
+['text','Text post','Share an update with the community',()=>{close();composePost()}],
+['story','Add to story','Share a photo or video to your story',()=>{close();addStory()}]
+];
+const icons={
+video:'<rect x="4" y="4" width="12" height="16" rx="3"/><path d="m16 9 5-3v12l-5-3z"/>',
+upload:'<path d="M12 16V3m0 0L7 8m5-5 5 5"/><path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/>',
+photo:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>',
+text:'<path d="M4 6h16M4 12h16M4 18h10"/>',
+story:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/>'
+};
+items.forEach(([key,label,desc,action])=>{
+const b=document.createElement('button');b.type='button';b.className='b-create-item';
+const ic=document.createElement('span');ic.className='b-create-icon';ic.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+icons[key]+'</svg>';
+const copy=document.createElement('span');copy.className='b-create-copy';
+const title=document.createElement('strong');title.textContent=label;
+const sub=document.createElement('small');sub.textContent=desc;
+const arrow=document.createElement('span');arrow.className='b-create-arrow';arrow.textContent='›';
+copy.append(title,sub);b.append(ic,copy,arrow);b.onclick=action;grid.append(b);
+});
+d.querySelector('.b-create-close').onclick=close;
+open(d);
+}
 function avatar(name,url,s){const a=document.createElement('div');a.style.cssText='width:'+s+'px;height:'+s+'px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:'+Math.round(s*.4)+'px;overflow:hidden;flex:none';if(url){const i=document.createElement('img');i.src=url;i.alt='';i.style.cssText='width:100%;height:100%;object-fit:cover';a.append(i)}else a.textContent=(name||'?')[0].toUpperCase();return a}
 async function people(d){const r=await sb.from('profiles').select('id,username,avatar_url').order('created_at',{ascending:false}).limit(20);let list=(r.data||[]).filter(x=>!me||x.id!==me.id);
 if(me){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id),s=new Set((f.data||[]).map(x=>x.followed_id));list=list.filter(x=>!s.has(x.id))}
