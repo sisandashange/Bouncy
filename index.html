@@ -421,7 +421,8 @@ nav button:not(.plus).on::before{display:none}
 #sheet.live-sheet .live-gift-overlay{z-index:20}
 @media(max-width:390px){#sheet.live-sheet .live-bottom-tiktok{gap:5px}#sheet.live-sheet .live-bottom-tiktok>.live-round-action{width:34px;height:34px;min-width:34px}#sheet.live-sheet .live-identity strong{max-width:29vw}}
 
-</style></head><body>
+</style><link rel="stylesheet" href="./LiveTikTok.css">
+</head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
 <header class="bouncy-feed-header"><div class="feed-head-main"><div class="feed-brand"><i></i><span>BOUNCY</span></div><div class="feed-head-actions"><button id="liveOpen" class="feed-live-btn" type="button"><i></i> LIVE</button><button id="sr" class="feed-icon-btn" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button><button id="feedBell" class="feed-icon-btn" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button><button id="snd" aria-label="Sound" hidden></button></div></div><div class="tabs feed-tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button></div></header>
@@ -652,10 +653,10 @@ async function subscribeLiveSignals(session){return await new Promise((resolve,r
 async function sendLiveSignal(session,peer,type,payload={}){if(!session||(session.closing&&type!=='leave'))return;const r=await sb.from('live_signals').insert({stream_id:session.id,sender_id:me.id,recipient_id:peer,signal_type:type,payload});if(r.error)console.warn('Live signal error',r.error)}
 async function showLiveRoom(){
  const s=liveSession;if(!s)return;
- const d=liveScreen('');d.classList.add('live-room-screen');s._room=d;
+ const d=liveScreen('');d.classList.add('live-room-screen','live-room');s._room=d;
  const wrap=E('div','');wrap.className='live-video-wrap live-stage';s._wrap=wrap;
  const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=!s.host;video.srcObject=s.host?s.stream:null;wrap.append(video);s._video=video;
- const top=E('div','');top.className='live-topbar-tiktok';
+ const top=E('div','');top.className='live-topbar-tiktok live-top';
  const identity=E('div','');identity.className='live-identity';
  const avatar=document.createElement('img');avatar.className='live-avatar';avatar.alt='';avatar.src=s.host?(me.avatar_url||me.avatar||''):(s.hostAvatar||'');
  const who=E('strong','',s.host?'@'+me.username:'@'+(s.hostName||'user'));identity.append(avatar,who);
@@ -665,7 +666,7 @@ async function showLiveRoom(){
  const closeBtn=E('button','','×');closeBtn.className='live-close live-x-button';top.append(identity,count,closeBtn);
  const topRight=E('div','');topRight.className='live-top-right';
  const sound=E('button','','🔇');sound.className='live-sound-icon';sound.setAttribute('aria-label','Toggle sound');sound.onclick=()=>{video.muted=!video.muted;sound.textContent=video.muted?'🔇':'🔊'};if(!s.host)topRight.append(sound);
- const right=E('div','');right.className='live-right-actions';
+ const right=E('div','');right.className='live-right-actions live-right';
  const action=(symbol,label,fn)=>{const b=E('button','',symbol);b.className='live-round-action';b.setAttribute('aria-label',label);b.onclick=fn;return b};
  const like=action('♥','Like',()=>sendLiveLike(s));s._likeButton=like;
  const shareFn=async()=>{try{if(navigator.share)await navigator.share({title:'BOUNCY Live',url:location.href});else{await navigator.clipboard.writeText(location.href);toast('Live link copied')}}catch(e){}};
@@ -673,7 +674,7 @@ async function showLiveRoom(){
  const gift=action('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));
  right.append(like,share,gift);
  const comments=E('div','');comments.className='live-comments live-floating-comments';
- const bottom=E('div','');bottom.className='live-bottom-tiktok';
+ const bottom=E('div','');bottom.className='live-bottom-tiktok live-bottom';
  const compose=E('div','');compose.className='live-compose live-compose-tiktok';
  const ci=E('input','');ci.placeholder='Add comment...';ci.maxLength=500;
  const send=E('button','','');send.className='live-send-comment';send.style.display='none';compose.append(ci,send);bottom.append(compose);
@@ -1506,40 +1507,3 @@ deep()}
 sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){if(activeCall)endCall();if(incomingCallChannel){sb.removeChannel(incomingCallChannel);incomingCallChannel=null}if(presCh){sb.removeChannel(presCh);presCh=null;online=new Set()}me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
 </script></body></html>
-
-/* BOUNCY LIVE FINAL — one top X, one bottom row, no extra pills */
-#sheet.live-sheet .live-room-screen .live-head{display:none!important}
-#sheet.live-sheet .live-room-screen .live-topbar-tiktok{position:absolute!important;z-index:30!important;top:calc(env(safe-area-inset-top,0px) + 8px)!important;left:12px!important;right:12px!important;height:42px!important;display:flex!important;align-items:center!important;gap:8px!important;background:transparent!important}
-#sheet.live-sheet .live-room-screen .live-identity{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;flex:1!important}
-#sheet.live-sheet .live-room-screen .live-avatar{width:36px!important;height:36px!important;border:1px solid #fff!important}
-#sheet.live-sheet .live-room-screen .live-identity strong{max-width:34vw!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:13px!important;color:#fff!important;text-shadow:0 1px 5px #000!important}
-#sheet.live-sheet .live-room-screen .live-status-pill{background:#f12b42!important;color:#fff!important;border-radius:4px!important;padding:3px 6px!important;font-size:10px!important;font-weight:900!important}
-#sheet.live-sheet .live-room-screen .live-view-count{position:static!important;flex:none!important;background:#16161699!important;border:0!important;border-radius:12px!important;padding:5px 8px!important;color:#fff!important;font-size:11px!important}
-#sheet.live-sheet .live-room-screen .live-x-button{position:static!important;display:flex!important;align-items:center!important;justify-content:center!important;flex:none!important;width:34px!important;height:34px!important;margin-left:4px!important;border:0!important;background:transparent!important;color:#fff!important;font-size:28px!important;line-height:1!important}
-#sheet.live-sheet .live-room-screen .live-top-right{position:absolute!important;z-index:31!important;top:calc(env(safe-area-inset-top,0px) + 52px)!important;right:12px!important}
-#sheet.live-sheet .live-room-screen .live-sound-icon{width:30px!important;height:30px!important;border:0!important;border-radius:50%!important;background:#0006!important;color:#fff!important;font-size:15px!important}
-#sheet.live-sheet .live-room-screen .live-right-actions{position:absolute!important;z-index:25!important;right:12px!important;top:50%!important;transform:translateY(-50%)!important;display:flex!important;flex-direction:column!important;gap:12px!important;width:auto!important}
-#sheet.live-sheet .live-room-screen .live-round-action{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;border-radius:50%!important;border:0!important;background:#0006!important;color:#fff!important;padding:0!important;font-size:22px!important;box-shadow:none!important}
-#sheet.live-sheet .live-room-screen .live-comments{left:12px!important;right:72px!important;bottom:calc(76px + env(safe-area-inset-bottom,0px))!important;height:auto!important;max-height:24vh!important;padding:0!important;background:transparent!important;border:0!important;overflow:hidden!important}
-#sheet.live-sheet .live-room-screen .live-comment{background:transparent!important;border:0!important;padding:3px 0!important;font-size:13px!important;text-shadow:0 1px 4px #000!important}
-#sheet.live-sheet .live-room-screen .live-compose{left:12px!important;right:116px!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;display:flex!important}
-#sheet.live-sheet .live-room-screen .live-compose input{height:42px!important;border-radius:22px!important;background:#0007!important;border:1px solid #ffffff55!important;color:#fff!important}
-#sheet.live-sheet .live-room-screen .live-bottom-tiktok{position:absolute!important;z-index:29!important;left:12px!important;right:12px!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;display:flex!important;align-items:center!important;gap:10px!important;pointer-events:none!important}
-#sheet.live-sheet .live-room-screen .live-compose{position:static!important;flex:1!important;min-width:0!important;pointer-events:auto!important}
-#sheet.live-sheet .live-room-screen .live-bottom-tiktok>.live-round-action{pointer-events:auto!important;width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;border-radius:50%!important;background:#0007!important;border:0!important;font-size:21px!important}
-#sheet.live-sheet .live-room-screen .live-send-comment{display:none!important}
-#sheet.live-sheet .live-room-screen .live-gift-earned-pill,#sheet.live-sheet .live-room-screen .live-end-circle{display:none!important}
-#sheet.live-sheet .live-composer-screen{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;overflow:hidden!important;background:#000!important}
-#sheet.live-sheet .live-composer-screen .live-camera-preview.live-camera-full{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:100%!important;max-height:none!important;border-radius:0!important;background:#000!important;overflow:hidden!important}
-#sheet.live-sheet .live-composer-screen .live-camera-preview video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;max-height:none!important}
-#sheet.live-sheet .live-composer-screen .live-camera-bottom{position:absolute!important;left:16px!important;right:16px!important;bottom:calc(22px + env(safe-area-inset-bottom,0px))!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:16px!important;background:transparent!important}
-#sheet.live-sheet .live-composer-screen .live-camera-bottom input{width:100%!important;background:#0008!important;color:#fff!important;border:1px solid #ffffff55!important;border-radius:22px!important}
-#sheet.live-sheet .live-composer-screen .live-start-button{width:68px!important;height:68px!important;min-width:68px!important;border-radius:50%!important;align-self:center!important;background:#f12b42!important;color:#fff!important}
-#sheet.live-sheet .live-no-live-screen{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;background:#000!important;overflow:hidden!important}
-#sheet.live-sheet .live-no-live-screen>video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important}
-#sheet.live-sheet .live-no-live-close{position:absolute!important;z-index:5!important;top:calc(env(safe-area-inset-top,0px) + 12px)!important;right:14px!important;width:38px!important;height:38px!important;border:0!important;background:#0006!important;color:#fff!important;border-radius:50%!important;font-size:26px!important}
-#sheet.live-sheet .live-no-live-center{position:absolute!important;z-index:4!important;inset:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:18px!important;color:#fff!important;text-align:center!important;text-shadow:0 2px 8px #000!important;background:#0002!important}
-#sheet.live-sheet .live-no-live-center h1{font-size:25px!important;font-weight:900!important}
-#sheet.live-sheet .live-no-live-go{min-width:150px!important;height:48px!important;border-radius:24px!important;background:#f12b42!important;color:#fff!important;font-size:16px!important;font-weight:900!important}
-
-#sheet.live-sheet .live-no-live-screen .live-head,#sheet.live-sheet .live-composer-screen .live-head{display:none!important}
