@@ -1,0 +1,4 @@
+.live-room { position: fixed; inset: 0; background: #000; z-index: 9999; }
+.live-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; }
+.live-bottom { position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; gap: 8px; }
+.live-right { position: absolute; right: 12px; top: 50%; display: flex; flex-direction: column; gap: 12px; }
