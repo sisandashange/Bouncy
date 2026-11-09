@@ -658,27 +658,59 @@ async function navigateLiveQueue(dir){
 }
 async function liveComposer(){
  if(!me)return;
- const d=liveScreen('');d.classList.add('live-composer-screen');
- const preview=E('div','');preview.className='live-camera-preview live-camera-full';
- const bgVideo=document.createElement('video');bgVideo.autoplay=true;bgVideo.playsInline=true;bgVideo.muted=true;bgVideo.className='live-camera-blur-layer';
- const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;video.className='live-camera-main-layer';preview.append(bgVideo,video);
- const top=E('div','');top.className='live-camera-top';
- const x=E('button','','×');x.className='live-camera-close';
- const flip=E('button','','↻');flip.className='live-preview-flip';
- const beauty=E('button','','✧');beauty.className='live-beauty-button';top.append(x,flip,beauty);
- const bottom=E('div','');bottom.className='live-camera-bottom';
- const input=E('input','');input.placeholder='Add a title...';input.maxLength=60;
- const start=E('button','','LIVE');start.className='live-go-circle live-start-button';
- const msg=E('p','');msg.className='live-start-message';bottom.append(input,start,msg);preview.append(top,bottom);d.append(preview);liveOpenSheet(d);
+ const d=liveScreen('');
+ d.classList.add('b-live-setup');
+ d.querySelector('.live-head')?.remove();
+
+ const preview=E('div','');
+ preview.className='b-live-setup-stage';
+ const bgVideo=document.createElement('video');
+ bgVideo.autoplay=true;bgVideo.playsInline=true;bgVideo.muted=true;
+ bgVideo.className='b-live-setup-bg';
+ const video=document.createElement('video');
+ video.autoplay=true;video.playsInline=true;video.muted=true;
+ video.className='b-live-setup-video';
+ preview.append(bgVideo,video);
+
+ const top=E('div','');
+ top.className='b-live-setup-top';
+ const x=E('button','','×');x.className='b-live-setup-close';
+ const heading=E('strong','','Create LIVE');
+ const topActions=E('div','');topActions.className='b-live-setup-actions';
+ const flip=E('button','','↻');flip.className='b-live-setup-tool';flip.title='Flip camera';
+ const beauty=E('button','','✧');beauty.className='b-live-setup-tool';beauty.title='Enhance preview';
+ topActions.append(flip,beauty);top.append(x,heading,topActions);
+
+ const panel=E('div','');panel.className='b-live-setup-panel';
+ panel.append(E('span','b-live-setup-eyebrow','BOUNCY LIVE'));
+ panel.append(E('h2','','Go LIVE to your community'));
+ const input=E('input','b-live-setup-title');
+ input.placeholder='Add a title for your LIVE…';input.maxLength=60;input.autocomplete='off';
+ panel.append(input);
+ const note=E('p','b-live-setup-note','Make sure your camera and microphone are ready before you start.');
+ const start=E('button','','Go LIVE');start.className='b-live-setup-start';
+ const msg=E('p','b-live-setup-message','');panel.append(note,start,msg);
+ preview.append(top,panel);d.append(preview);liveOpenSheet(d);
+
  let previewStream=null,facing='user',starting=false,beautyOn=false;
  const stopPreview=()=>{previewStream?.getTracks().forEach(t=>t.stop());previewStream=null;video.srcObject=null;bgVideo.srcObject=null};
- const openPreview=async()=>{try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}},audio:false});if(starting){st.getTracks().forEach(t=>t.stop());return}previewStream=st;video.srcObject=st;bgVideo.srcObject=st;video.play().catch(()=>{});bgVideo.play().catch(()=>{})}catch(e){msg.textContent='Camera unavailable. Allow camera access.'}};
+ const openPreview=async()=>{
+  try{
+   const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}},audio:false});
+   if(starting){st.getTracks().forEach(t=>t.stop());return}
+   previewStream=st;video.srcObject=st;bgVideo.srcObject=st;
+   video.play().catch(()=>{});bgVideo.play().catch(()=>{});
+  }catch(e){msg.textContent='Camera unavailable. Allow camera access to continue.'}
+ };
  x.onclick=()=>{if(!starting){stopPreview();close()}};
  flip.onclick=async()=>{if(starting)return;facing=facing==='user'?'environment':'user';stopPreview();await openPreview()};
  beauty.onclick=()=>{beautyOn=!beautyOn;video.style.filter=beautyOn?'brightness(1.08) saturate(1.12)':'none';beauty.classList.toggle('active',beautyOn)};
  await openPreview();
+
  start.onclick=async()=>{
-  if(starting)return;starting=true;start.disabled=true;let audio=null,stream=null;
+  if(starting)return;
+  starting=true;start.disabled=true;start.textContent='Starting…';
+  let audio=null,stream=null;
   try{
    if(!previewStream?.getVideoTracks().length)throw new Error('Allow camera access before going live.');
    audio=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
@@ -690,17 +722,36 @@ async function liveComposer(){
    let liveRow=null;
    if(existing.data){
     const age=Date.now()-new Date(existing.data.created_at||existing.data.started_at||0).getTime();
-    if(age<2*60*60*1000){liveRow=existing.data;await sb.from('live_streams').update({title,last_heartbeat_at:new Date().toISOString()}).eq('id',liveRow.id).eq('host_id',me.id);toast('Resuming your live...')}
-    else{const ended=await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',existing.data.id).eq('host_id',me.id).eq('status','live');if(ended.error)throw new Error('Could not close your previous live. Please try again.')}
+    if(age<2*60*60*1000){
+     liveRow=existing.data;
+     await sb.from('live_streams').update({title,last_heartbeat_at:new Date().toISOString()}).eq('id',liveRow.id).eq('host_id',me.id);
+     toast('Resuming your live...');
+    }else{
+     const ended=await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',existing.data.id).eq('host_id',me.id).eq('status','live');
+     if(ended.error)throw new Error('Could not close your previous live. Please try again.');
+    }
    }
    if(!liveRow){
     const ins=await sb.from('live_streams').insert({host_id:me.id,title,description:'',status:'live',room_name:'bouncy-'+crypto.randomUUID(),last_heartbeat_at:new Date().toISOString()}).select('id,host_id,title,started_at,room_name').single();
-    if(ins.error){const retry=await sb.from('live_streams').select('id,host_id,title,room_name,created_at,started_at').eq('host_id',me.id).eq('status','live').order('created_at',{ascending:false}).limit(1).maybeSingle();if(!retry.data)throw new Error('You already have a live running. Please try again to resume it.');liveRow=retry.data;toast('Resuming your live...')}
-    else liveRow=ins.data;
+    if(ins.error){
+     const retry=await sb.from('live_streams').select('id,host_id,title,room_name,created_at,started_at').eq('host_id',me.id).eq('status','live').order('created_at',{ascending:false}).limit(1).maybeSingle();
+     if(!retry.data)throw new Error('You already have a live running. Please try again to resume it.');
+     liveRow=retry.data;toast('Resuming your live...');
+    }else liveRow=ins.data;
    }
-   previewStream=null;audio=null;liveSession={host:true,id:liveRow.id,title:liveRow.title||title,roomName:liveRow.room_name,stream,pcs:new Map(),queues:new Map(),channel:null,closing:false,facing};
+   previewStream=null;audio=null;
+   liveSession={host:true,id:liveRow.id,title:liveRow.title||title,roomName:liveRow.room_name,stream,pcs:new Map(),queues:new Map(),channel:null,closing:false,facing};
    await subscribeLiveSignals(liveSession);await showLiveRoom();
-  }catch(e){stream?.getTracks().forEach(t=>t.stop());audio?.getTracks().forEach(t=>t.stop());if(liveSession?.host){const f=liveSession;liveSession=null;f.stream?.getTracks().forEach(t=>t.stop());if(f.channel)sb.removeChannel(f.channel);await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',f.id).eq('host_id',me.id)}msg.textContent=e.message||'Could not start live.';start.disabled=false;starting=false}
+  }catch(e){
+   stream?.getTracks().forEach(t=>t.stop());audio?.getTracks().forEach(t=>t.stop());
+   if(liveSession?.host){
+    const f=liveSession;liveSession=null;f.stream?.getTracks().forEach(t=>t.stop());
+    if(f.channel)sb.removeChannel(f.channel);
+    await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',f.id).eq('host_id',me.id);
+   }
+   msg.textContent=e.message||'Could not start LIVE.';
+   start.disabled=false;start.textContent='Go LIVE';starting=false;
+  }
  };
  d._stopLivePreview=stopPreview;
 }
