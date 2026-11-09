@@ -329,6 +329,30 @@ body{position:fixed;inset:0}
 #app:not(.watch) #trend .b-post>div:last-child button{border-top:1px solid var(--line)}
 #app:not(.watch) #trend .b-post>div:last-child button:first-child{border-left:0}
 #app:not(.watch) #trend .b-post>div:last-child button:last-child{border-right:0}
+
+/* BOUNCY: focused editor and search dialogs (not bottom sheets) */
+#sheet.editor-modal,#sheet.search-modal{
+  left:50%;right:auto;top:50%;bottom:auto;
+  width:min(calc(100% - 28px),410px);
+  max-height:min(82dvh,720px);height:auto;
+  transform:translate(-50%,-50%);
+  border:1px solid var(--line);border-radius:24px;
+  padding:22px 18px 18px;
+  box-shadow:0 24px 80px rgba(0,0,0,.28);overflow:hidden;
+}
+#sheet.editor-modal>div,#sheet.search-modal>div{width:100%;min-width:0}
+#sheet.editor-modal::before,#sheet.search-modal::before{display:none}
+#sheet.editor-modal h3,#sheet.search-modal h3{font-size:23px;margin:0 0 16px}
+#sheet.editor-modal textarea{min-height:150px;max-height:34dvh;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--soft);font-size:16px;line-height:1.5}
+#sheet.editor-modal .row{gap:10px;margin-top:16px}
+#sheet.editor-modal .row button{flex:1}
+#sheet.editor-modal #pg{background:#ff3040;color:#fff;border:0}
+#sheet.editor-modal #pa{background:var(--soft)!important;border:1px solid var(--line)!important}
+#sheet.search-modal .row{margin:0 0 14px!important}
+#sheet.search-modal #sq{height:48px;border:1px solid var(--line);border-radius:14px;background:var(--soft);padding:0 14px}
+#sheet.search-modal .list{max-height:58dvh;min-height:90px;overflow-y:auto}
+#sheet.editor-modal #pv{max-height:28dvh!important;object-fit:contain;background:var(--soft)}
+@media(max-width:360px){#sheet.editor-modal,#sheet.search-modal{width:calc(100% - 20px);padding:18px 14px 14px}}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
@@ -364,7 +388,7 @@ const feed=$('#feed'),sheet=$('#sheet'),shade=$('#shade');
 let me=null,clips=[],tt;
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('o');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('o'),2200)}
 function el(h){const d=document.createElement('div');d.innerHTML=h;return d}
-function open(node){sheet.replaceChildren(node);sheet.classList.add('o');shade.classList.add('o')}
+function open(node){sheet.replaceChildren(node);sheet.classList.toggle('editor-modal',!!node.querySelector('#pb'));sheet.classList.toggle('search-modal',!!node.querySelector('#sq'));sheet.classList.add('o');shade.classList.add('o')}
 function close(){const au=document.getElementById('auth');if(au)au.remove();if(rc){const f=rc;rc=null;f()}sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
 shade.onclick=close;
 const vt=new Map(),seen=new Set();
