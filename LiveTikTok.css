@@ -168,3 +168,24 @@
   z-index:20!important;
 }
 #sheet.live-sheet .live-room-screen .live-demo-host-panel .live-host-zoom[hidden]{display:none!important}
+
+
+/* BOUNCY Co-Host controls */
+#sheet.live-sheet .live-room-screen .live-demo-cohost-request{background:linear-gradient(135deg,#f12b55,#a82b69)!important;color:#fff!important;font-size:20px!important;font-weight:900!important}
+#sheet.live-sheet .live-room-screen .live-demo-cohost-request.requested{background:#34343b!important;color:#ffd6e0!important}
+#sheet.live-sheet .live-room-screen .live-demo-cohost-request:disabled{opacity:.8!important}
+#sheet.live-sheet .live-room-screen .live-cohost-panel{max-height:min(68vh,620px)!important;overflow-y:auto!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-settings{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-settings button,#sheet.live-sheet .live-room-screen .bouncy-cohost-invite button{min-height:38px!important;padding:7px 8px!important;border:1px solid #ffffff24!important;border-radius:12px!important;background:#292a33!important;color:#fff!important;font-size:10px!important;font-weight:850!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-settings button.active{background:#512537!important;border-color:#f12b55!important;color:#ffd5e0!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-invite{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:7px!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-invite input{min-width:0!important;height:40px!important;padding:0 12px!important;border:1px solid #ffffff30!important;border-radius:12px!important;background:#202128!important;color:#fff!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-invite small{grid-column:1/-1!important;color:#c9c9d0!important;font-size:10px!important;line-height:1.4!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-list{display:flex!important;flex-direction:column!important;gap:7px!important;max-height:24vh!important;overflow-y:auto!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:9px!important;border:1px solid #ffffff18!important;border-radius:13px!important;background:#202128!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-info{display:flex!important;flex-direction:column!important;gap:4px!important;min-width:0!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-info strong{font-size:11px!important;overflow-wrap:anywhere!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-info small{font-size:9px!important;color:#bfc0c8!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-actions{display:flex!important;flex-wrap:wrap!important;justify-content:flex-end!important;gap:5px!important}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-actions button{min-height:32px!important;padding:6px 8px!important;border:1px solid #ffffff20!important;border-radius:10px!important;background:#353640!important;color:#fff!important;font-size:9px!important}
+@media(max-width:360px){#sheet.live-sheet .live-room-screen .bouncy-cohost-settings{grid-template-columns:repeat(2,minmax(0,1fr))!important}#sheet.live-sheet .live-room-screen .bouncy-cohost-row{align-items:flex-start!important;flex-direction:column!important}#sheet.live-sheet .live-room-screen .bouncy-cohost-actions{width:100%!important}}
