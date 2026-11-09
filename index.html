@@ -676,7 +676,7 @@ async function openLiveGiftPanel(s,comments,wrap){
  if(s._giftPanel){s._giftPanel.remove();s._giftPanel=null;return}
  const [wallet,catalog]=await Promise.all([
   sb.rpc('bouncy_get_coin_wallet'),
-  sb.from('gifts').select('id,name,emoji,coin_cost,animation_type').order('coin_cost',{ascending:true})
+  sb.from('gifts').select('id,name,emoji,coin_cost,animation_type').in('id',['rose','heart','fire','crown','lion','diamond']).order('coin_cost',{ascending:true})
  ]);
  if(wallet.error){toast(wallet.error.message||'Could not load your coin wallet');return}
  if(catalog.error||!catalog.data?.length){toast('Gift catalogue could not load');return}
