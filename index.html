@@ -919,7 +919,7 @@ window.bouncyStartCohost=async function(s){
   s.cohostPc.onconnectionstatechange=()=>{if(s.cohostPc?.connectionState==='failed')toast('Co-host connection failed. Check your network.')};
   const offer=await s.cohostPc.createOffer();await s.cohostPc.setLocalDescription(offer);
   await sendLiveSignal(s,s.hostId,'offer',{...s.cohostPc.localDescription.toJSON(),_peer:'cohost'});
-  const control=document.createElement('button');control.className='bouncy-cohost-mic-toggle';control.textContent='Mic on';
+  const control=document.createElement('button');control.className='bouncy-cohost-mic-toggle';control.textContent=s.cohostHostMuted?'Muted by host':'Mic on';control.disabled=s.cohostHostMuted;
   control.onclick=()=>{const t=media.getAudioTracks()[0];if(!t)return;s.cohostSelfMuted=!s.cohostSelfMuted;t.enabled=!s.cohostSelfMuted&&!s.cohostHostMuted;control.textContent=s.cohostSelfMuted?'Mic off':'Mic on';control.disabled=s.cohostHostMuted};
   s._room?.append(control);
   toast('Connecting your camera and microphone…');
