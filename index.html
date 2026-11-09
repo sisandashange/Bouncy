@@ -858,7 +858,7 @@ function cover(f){return new Promise(res=>{const v=document.createElement('video
 const fail=()=>{URL.revokeObjectURL(u);res(null)};v.onerror=fail;setTimeout(fail,8000);
 v.onloadeddata=()=>{v.currentTime=Math.min(1,(v.duration||2)/2)};
 v.onseeked=()=>{const w=360,hh=Math.round(w*(v.videoHeight/v.videoWidth))||640,c=document.createElement('canvas');c.width=w;c.height=hh;try{c.getContext('2d').drawImage(v,0,0,w,hh);c.toBlob(b=>{URL.revokeObjectURL(u);res(b)},'image/jpeg',.8)}catch(e){fail()}}})}
-$('#up').onclick=openCamera;
+const plusButton=$('#up');plusButton.type='button';plusButton.setAttribute('aria-label','Create on BOUNCY');plusButton.style.cssText+=';position:relative;z-index:20;pointer-events:auto;touch-action:manipulation';plusButton.onclick=e=>{e.preventDefault();e.stopPropagation();createSheet()};
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
 const d=el('<h3>New video</h3><video controls playsinline muted></video><div class="row"><input type="text" id="cap" maxlength="150" placeholder="Write a caption" aria-label="Caption"><button class="btn" id="post">Post</button></div>');
