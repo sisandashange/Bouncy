@@ -199,13 +199,18 @@ nav button:not(.plus).on::before{display:none}
 @media(prefers-reduced-motion:reduce){#app.watch header>i{animation:none}}
 
 
-/* BOUNCY HOME — lock the app to the visible phone screen; keep scrolling inside the video feed */
+/* BOUNCY HOME — true edge-to-edge phone viewport; header and navigation float over video */
 html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
 body{position:fixed;inset:0}
-#app.watch{width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;min-height:0;overflow:hidden}
-#app.watch main{flex:1 1 0%;min-height:0;overflow:hidden}
+#app.watch{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;min-height:0;max-width:430px;margin:auto;overflow:hidden}
+#app.watch main{position:absolute;inset:0;width:100%;height:100%;flex:none;min-height:0;overflow:hidden;background:#000}
 #app.watch #feed{position:absolute;inset:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
-#app.watch .clip{height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always}
+#app.watch .clip{width:100%;height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always}
+#app.watch nav{position:absolute;left:0;right:0;bottom:0;width:100%;height:calc(62px + env(safe-area-inset-bottom,0px));min-height:62px;z-index:6}
+#app.watch .side{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+#app.watch .meta{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+#app.watch .pgb{bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+@media(max-height:680px){#app.watch .side{bottom:calc(70px + env(safe-area-inset-bottom,0px))}#app.watch .meta{bottom:calc(70px + env(safe-area-inset-bottom,0px))}}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
@@ -262,17 +267,21 @@ const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),am=Object.fr
 return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',av:am[x.owner_id],vf:vm[x.owner_id],c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count,view_count';
 let page=0,more=true,busy=false;
-async function fetchPage(){const N=ds?4:8;let rows=[];
+async function fetchPage(){const N=ds?12:24;let rows=[];
 if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);
 if(ids.length){const r=await sb.from('videos').select(COLS).in('owner_id',ids).order('created_at',{ascending:false}).range(page*N,page*N+N-1);if(r.error)throw r.error;rows=r.data}}
 else{const r=await sb.rpc('for_you_feed',{p_limit:N,p_offset:page*N});if(r.error)throw r.error;const ids=(r.data||[]).map(x=>x.id);
 if(ids.length){const v=await sb.from('videos').select(COLS).in('id',ids);if(v.error)throw v.error;const m=Object.fromEntries(v.data.map(x=>[x.id,x]));rows=ids.map(i=>m[i]).filter(Boolean)}}
+if(tab=='foryou'&&rows.length){for(let i=rows.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[rows[i],rows[j]]=[rows[j],rows[i]]}}
 page++;if(rows.length<N)more=false;return rows}
+const shownForYou=new Set();
 async function nextPage(){if(busy||!more)return[];busy=true;
-try{const rows=await fetchPage(),have=new Set(clips.map(c=>c.id)),cs=await hydrate(rows.filter(r=>!have.has(r.id)));cs.forEach(c=>{clips.push(c);feed.append(mk(c))});return cs}
+try{let rows=[],fresh=[],have=new Set(clips.map(c=>c.id));
+while(more&&!fresh.length){rows=await fetchPage();fresh=rows.filter(r=>!have.has(r.id)&&(tab!=='foryou'||!shownForYou.has(r.id)));if(!rows.length)break}
+const cs=await hydrate(fresh);cs.forEach(c=>{clips.push(c);if(tab=='foryou')shownForYou.add(c.id);feed.append(mk(c))});return cs}
 catch(e){toast('Couldn’t load videos. Check your connection.');return[]}finally{busy=false}}
-async function load(){page=0;more=true;busy=false;feed.replaceChildren();clips=[];const cs=await nextPage();
-if(!cs.length&&!feed.children.length){const e=el('<div class="empty" style="padding-top:30%">'+(tab=='following'?'Follow creators and their videos show up here.<br>':'No videos yet.<br>Be the first to post on BOUNCY.<br>')+'<button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=pickVideo;feed.append(e)}}
+async function load(){page=0;more=true;busy=false;feed.replaceChildren();clips=[];feed.scrollTop=0;const cs=await nextPage();
+if(!cs.length&&!feed.children.length){const msg=tab=='following'?'Follow creators and their videos show up here.':(shownForYou.size?'You’ve reached the end of the available unseen videos. Check back for new videos.':'No videos yet. Be the first to post on BOUNCY.');const e=el('<div class="empty" style="padding-top:30%">'+msg+'<br><button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=pickVideo;feed.append(e)}}
 async function like(c){if(gate('like videos'))return;if(navigator.vibrate)navigator.vibrate(10);const on=!c.liked;c.liked=on?1:0;c.l+=on?1:-1;sync(c);
 const r=on?await sb.from('video_likes').insert({video_id:c.id,user_id:me.id}):await sb.from('video_likes').delete().eq('video_id',c.id).eq('user_id',me.id);
 if(r.error){c.liked=on?0:1;c.l+=on?-1:1;sync(c);toast('Couldn’t save your like')}}
@@ -338,7 +347,7 @@ function tile(c,rank){const t=document.createElement('button');t.className='tile
 if(rank){const r=document.createElement('span');r.className='rk';r.textContent=rank;t.append(r)}
 const b=document.createElement('b');b.textContent='@'+c.u;const s=document.createElement('span');s.textContent=fmt(c.l)+' likes';t.append(b,s);t.onclick=()=>watch(c);return t}
 function show(v){if(!me&&(v=='me'||v=='inbox'||v=='chat')){gate(v=='me'?'see your profile':'see your inbox');return}clearInterval(poll);if(v!='chat'&&chatCh){sb.removeChannel(chatCh);chatCh=null;onPresence=null}$('#app').classList.toggle('watch',v=='feed');if(v=='feed')feedPlay(true);else document.querySelectorAll('#feed video').forEach(x=>x.pause());$('#app').classList.toggle('chatting',v=='chat'||v=='me'||v=='user');if(v!='user')prev=v;['feed','trend','me','user','inbox','chat'].forEach(k=>$('#'+k).classList.toggle('hide',k!=v));document.querySelectorAll('nav [data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v==v));moveBall(1);if(v=='trend')drawTrend();if(v=='me')drawMe();if(v=='inbox')drawInbox()}
-document.querySelectorAll('nav [data-v]').forEach(b=>b.onclick=()=>show(b.dataset.v));
+document.querySelectorAll('nav [data-v]').forEach(b=>b.onclick=()=>{const v=b.dataset.v;if(v==='feed'){show('feed');load();return}show(v)});
 async function drawTrend(){const d=$('#trend');d.replaceChildren(...el('<h2>Feed</h2>').childNodes);segs(d);if(ftab=='posts'){await drawPosts(d);return}if(ftab=='top'){await drawTop(d);return}
 const sbar=E('button','display:flex;align-items:center;gap:10px;width:calc(100% - 32px);margin:0 16px 14px;height:46px;padding:0 16px;border-radius:23px;background:var(--soft);color:var(--mute);text-align:left;font-weight:500');sbar.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';sbar.append(E('span','','Search people, videos, #hashtags'));sbar.onclick=()=>search();d.append(sbar);
 const tg=await sb.rpc('trending_hashtags',{p_days:7});
