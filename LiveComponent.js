@@ -163,6 +163,23 @@
     await refreshCohostPanel(s);
   }
 
+
+  async function leaveCohost(s, button) {
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    const r = await sb.rpc('bouncy_leave_live_cohost', { p_live_id: s.id });
+    if (r.error) {
+      toast(r.error.message || 'Could not leave co-host seat');
+      button.disabled = false;
+      return;
+    }
+    button.textContent = '＋'; button.title = 'Request to Co-Host';
+    button.classList.remove('requested');
+    button.onclick = () => requestCohost(s, button);
+    button.disabled = false;
+    toast('You left the co-host seat');
+  }
+
   async function requestCohost(s, button) {
     if (!me?.id) return toast('Sign in to request a co-host seat');
     if (!s || s.host || button.disabled) return;
@@ -212,7 +229,7 @@
           if (ev.new.status === 'invited') showCohostInvite(s, ev.new);
           const button = s._cohostButton;
           if (button) {
-            if (ev.new.status === 'accepted') { button.textContent = '✓'; button.title = 'Co-Host accepted'; button.disabled = true; }
+            if (ev.new.status === 'accepted') { button.textContent = '×'; button.title = 'Leave Co-Host'; button.disabled = false; button.onclick = () => leaveCohost(s, button); }
             else if (ev.new.status === 'declined' || ev.new.status === 'kicked' || ev.new.status === 'left') { button.textContent = '＋'; button.title = 'Request to Co-Host'; button.disabled = false; button.classList.remove('requested'); }
             else if (ev.new.status === 'requested' || ev.new.status === 'invited') { button.textContent = '…'; button.title = 'Waiting for host'; button.disabled = true; }
           }
@@ -541,7 +558,7 @@
       s._cohostButton = cohostRequest;
       const existing = await sb.from('live_cohosts').select('id,status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
       if (!existing.error && existing.data) {
-        if (existing.data.status === 'accepted') { cohostRequest.textContent = '✓'; cohostRequest.disabled = true; cohostRequest.title = 'Co-Host accepted'; }
+        if (existing.data.status === 'accepted') { cohostRequest.textContent = '×'; cohostRequest.disabled = false; cohostRequest.title = 'Leave Co-Host'; cohostRequest.onclick = () => leaveCohost(s, cohostRequest); }
         else if (existing.data.status === 'requested') { cohostRequest.textContent = '…'; cohostRequest.disabled = true; cohostRequest.title = 'Waiting for host'; }
         else if (existing.data.status === 'invited') { cohostRequest.textContent = '✉'; cohostRequest.title = 'Co-host invitation'; showCohostInvite(s, existing.data); }
       }
