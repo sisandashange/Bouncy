@@ -70,6 +70,128 @@
     setTimeout(() => heart.remove(), big ? 950 : 1900);
   }
 
+
+  async function refreshCohostPanel(s) {
+    if (!s?._cohostPanel || liveSession !== s || s.closing) return;
+    const list = s._cohostPanel.querySelector('.bouncy-cohost-list');
+    if (!list) return;
+    list.replaceChildren(el('p', '', 'Loading co-hosts…'));
+    const q = await sb.from('live_cohosts').select('id,user_id,username,avatar_url,seat_number,status,is_muted_by_host,created_at').eq('live_id', s.id).order('created_at', { ascending: true });
+    if (q.error) { list.replaceChildren(el('p', '', q.error.message || 'Could not load co-host requests')); return; }
+    list.replaceChildren();
+    const rows = q.data || [];
+    if (!rows.length) list.append(el('p', '', 'No co-host requests yet.'));
+    rows.forEach(row => {
+      const item = el('div', 'bouncy-cohost-row');
+      const info = el('div', 'bouncy-cohost-info');
+      info.append(el('strong', '', '@' + (row.username || 'user')));
+      info.append(el('small', '', row.status === 'accepted' ? 'Seat ' + row.seat_number + (row.is_muted_by_host ? ' · Host muted' : '') : row.status));
+      item.append(info);
+      const actions = el('div', 'bouncy-cohost-actions');
+      const act = (label, action) => {
+        const b = el('button', '', label);
+        b.onclick = async () => {
+          b.disabled = true;
+          const r = await sb.rpc('bouncy_host_manage_live_cohost', { p_live_id: s.id, p_cohost_id: row.id, p_action: action });
+          if (r.error) toast(r.error.message || 'Co-host action failed');
+          else await refreshCohostPanel(s);
+          b.disabled = false;
+        };
+        actions.append(b);
+      };
+      if (row.status === 'requested' || row.status === 'invited') {
+        act('Accept', 'accept'); act('Decline', 'decline');
+      } else if (row.status === 'accepted') {
+        act(row.is_muted_by_host ? 'Unmute' : 'Mute', 'mute'); act('Remove', 'kick');
+      }
+      if (actions.childNodes.length) item.append(actions);
+      list.append(item);
+    });
+  }
+
+  async function openCohostPanel(s) {
+    if (!s?.host || !me?.id) return toast('Only the live host can manage co-hosts');
+    if (s._cohostPanel) { s._cohostPanel.remove(); s._cohostPanel = null; return; }
+    const panel = el('section', 'live-demo-host-panel live-cohost-panel');
+    panel.append(el('strong', '', 'BOUNCY CO-HOSTS · MAX 4 PEOPLE'));
+    const settings = el('div', 'bouncy-cohost-settings');
+    const allow = el('button', '', s.cohostAllowRequests === false ? 'Turn requests on' : 'Turn requests off');
+    allow.onclick = async () => {
+      allow.disabled = true;
+      const action = s.cohostAllowRequests === false ? 'requests_on' : 'requests_off';
+      const r = await sb.rpc('bouncy_host_manage_live_cohost', { p_live_id: s.id, p_cohost_id: null, p_action: action });
+      if (r.error) toast(r.error.message || 'Could not update requests');
+      else { s.cohostAllowRequests = action === 'requests_on'; allow.textContent = s.cohostAllowRequests ? 'Turn requests off' : 'Turn requests on'; }
+      allow.disabled = false;
+    };
+    settings.append(allow);
+    [2,3,4].forEach(n => {
+      const b = el('button', '', n + ' seats');
+      b.classList.toggle('active', Number(s.cohostLayout || 4) === n);
+      b.onclick = async () => {
+        const r = await sb.rpc('bouncy_host_manage_live_cohost', { p_live_id: s.id, p_cohost_id: null, p_action: 'layout_' + n });
+        if (r.error) toast(r.error.message || 'Could not change layout');
+        else { s.cohostLayout = n; [...settings.querySelectorAll('button')].slice(1).forEach(x => x.classList.toggle('active', x === b)); }
+      };
+      settings.append(b);
+    });
+    const inviteWrap = el('div', 'bouncy-cohost-invite');
+    const search = el('input', '');
+    search.placeholder = 'Invite by username'; search.autocomplete = 'off'; search.maxLength = 30;
+    const invite = el('button', '', 'Invite viewer');
+    const inviteStatus = el('small', '', 'Invite someone who is currently watching this live.');
+    invite.onclick = async () => {
+      const username = search.value.trim().replace(/^@/, '');
+      if (!username) return toast('Enter a username');
+      invite.disabled = true;
+      const p = await sb.from('profiles').select('id,username').ilike('username', username).limit(2);
+      if (p.error || !p.data?.length) inviteStatus.textContent = 'Username not found.';
+      else if (p.data.length !== 1) inviteStatus.textContent = 'More than one match. Enter the exact username.';
+      else {
+        const r = await sb.rpc('bouncy_invite_live_cohost', { p_live_id: s.id, p_invitee_id: p.data[0].id });
+        inviteStatus.textContent = r.error ? (r.error.message || 'Invite failed') : 'Invitation sent to @' + p.data[0].username + '.';
+        if (!r.error) search.value = '';
+      }
+      invite.disabled = false;
+    };
+    inviteWrap.append(search, invite, inviteStatus);
+    const list = el('div', 'bouncy-cohost-list');
+    const close = el('button', 'live-host-panel-close', 'Close');
+    close.onclick = () => { panel.remove(); s._cohostPanel = null; };
+    panel.append(settings, inviteWrap, el('strong', '', 'Requests and guests'), list, close);
+    s._room.append(panel); s._cohostPanel = panel;
+    await refreshCohostPanel(s);
+  }
+
+  async function requestCohost(s, button) {
+    if (!me?.id) return toast('Sign in to request a co-host seat');
+    if (!s || s.host || button.disabled) return;
+    button.disabled = true;
+    const r = await sb.rpc('bouncy_request_live_cohost', { p_live_id: s.id });
+    if (r.error) { toast(r.error.message || 'Could not request a co-host seat'); button.textContent = 'Request to Co-Host'; button.disabled = false; return; }
+    button.textContent = 'Co-Host request sent'; button.classList.add('requested');
+    toast('Request sent to the live host');
+  }
+
+  function watchCohostChanges(s) {
+    if (!s || !me?.id || s.cohostChannel) return;
+    s.cohostChannel = sb.channel('bouncy-cohosts-' + s.id + '-' + me.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_cohosts', filter: 'live_id=eq.' + s.id }, async ev => {
+        if (liveSession !== s || s.closing) return;
+        if (s._cohostPanel) await refreshCohostPanel(s);
+        if (!s.host && ev.new?.user_id === me.id) {
+          const button = s._cohostButton;
+          if (button) {
+            if (ev.new.status === 'accepted') { button.textContent = '✓'; button.title = 'Co-Host accepted'; button.disabled = true; }
+            else if (ev.new.status === 'declined' || ev.new.status === 'kicked' || ev.new.status === 'left') { button.textContent = '＋'; button.title = 'Request to Co-Host'; button.disabled = false; button.classList.remove('requested'); }
+            else if (ev.new.status === 'requested' || ev.new.status === 'invited') { button.textContent = '…'; button.title = 'Waiting for host'; button.disabled = true; }
+          }
+          if (ev.new.status === 'accepted') toast('The host accepted your co-host request. Camera joining is not connected yet.');
+          if (ev.new.status === 'declined') toast('The host declined your co-host request');
+        }
+      }).subscribe();
+  }
+
   function openHostPanel(s) {
     if (s._hostPanel) { s._hostPanel.remove(); s._hostPanel = null; return; }
     const panel = el('section', 'live-demo-host-panel');
@@ -127,6 +249,7 @@
       pause.querySelector('svg').innerHTML = track.enabled ? '<path d="M8 5v14M16 5v14"/>' : '<path d="m8 5 11 7-11 7z"/>';
     });
     const battle = makeControl('gift', 'Battle', () => openBattlePanel(s));
+    makeControl('eye', 'Co-Host', () => openCohostPanel(s));
     const zoomWrap = el('label', 'live-host-zoom');
     const zoomTitle = el('span', '', 'Camera zoom');
     const zoomValue = el('strong', '', '1.0×');
@@ -274,6 +397,15 @@
   async function render() {
     const s = liveSession;
     if (!s) return;
+    if (s.id) {
+      const owner = await sb.from('live_streams').select('host_id,cohost_layout,cohost_allow_requests,cohost_enabled').eq('id', s.id).maybeSingle();
+      if (!owner.error && owner.data) {
+        s.hostId = owner.data.host_id;
+        s.host = !!me?.id && owner.data.host_id === me.id;
+        s.cohostLayout = Number(owner.data.cohost_layout || 4);
+        s.cohostAllowRequests = owner.data.cohost_allow_requests !== false;
+      }
+    }
     const room = liveScreen('');
     room.classList.add('live-room-screen', 'live-room');
     s._room = room;
@@ -371,6 +503,19 @@
     options.innerHTML = icon('sliders');
     options.setAttribute('aria-label', s.host ? 'Host controls' : 'Live options');
     options.onclick = () => s.host ? openHostPanel(s) : openViewerOptions(s);
+    if (!s.host) {
+      const cohostRequest = el('button', 'live-demo-dock-button live-demo-cohost-request', '＋');
+      cohostRequest.setAttribute('aria-label', 'Request to Co-Host');
+      cohostRequest.title = 'Request to Co-Host';
+      cohostRequest.onclick = () => requestCohost(s, cohostRequest);
+      s._cohostButton = cohostRequest;
+      const existing = await sb.from('live_cohosts').select('status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
+      if (!existing.error && existing.data) {
+        if (existing.data.status === 'accepted') { cohostRequest.textContent = '✓'; cohostRequest.disabled = true; cohostRequest.title = 'Co-Host accepted'; }
+        else if (existing.data.status === 'requested' || existing.data.status === 'invited') { cohostRequest.textContent = '…'; cohostRequest.disabled = true; cohostRequest.title = 'Waiting for host'; }
+      }
+      bottom.append(cohostRequest);
+    }
     const share = el('button', 'live-demo-dock-button live-demo-share', '');
     share.innerHTML = icon('share');
     share.setAttribute('aria-label', 'Share live');
@@ -388,6 +533,7 @@
 
     room.append(stage, heartLayer, top, second, giftBanner, comments, bottom);
     liveOpenSheet(room);
+    watchCohostChanges(s);
     if (!s.host) watchBattleInvites(s);
     video.play().catch(() => {});
 
