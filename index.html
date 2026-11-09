@@ -675,7 +675,7 @@ async function showLiveRoom(){
  const send=E('button','','➤');send.className='live-send-comment';compose.append(myAvatar,ci,send);bottom.append(compose);
  const bottomGift=action('🎁','Send gift',()=>openLiveGiftPanel(s,comments,wrap));
  const bottomLike=action('♥','Like',()=>sendLiveLike(s));const bottomShare=action('↗','Share',shareFn);
- bottom.append(bottomGift,bottomLike,bottomShare);
+ bottom.append(bottomGift);if(!s.host)bottom.append(bottomLike,bottomShare);
  const earned=E('span','','💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString());earned.className='live-gift-earned-pill';
  if(s.host){bottom.append(earned);const end=E('button','','×');end.className='live-end-circle';end.onclick=()=>endLiveStream(false);bottom.append(end)}
  const big=E('div','','♥');big.className='live-double-heart';d.append(wrap,top,topRight,right,comments,bottom,big);
