@@ -437,6 +437,25 @@ body{position:fixed;inset:0}
 #trend.b-top .b-top-intro{margin:0 16px 14px;padding:14px 16px;border-radius:16px;background:var(--soft);font-size:13px;line-height:1.45;color:var(--mute)}
 #trend.b-top .b-top-row{min-height:72px;padding:12px 16px;border-bottom:1px solid var(--line)}
 #trend.b-top .b-top-score{padding:7px 10px;border-radius:10px;background:var(--soft);font-size:13px}
+
+/* Mobile Feed fit and centered controls */
+#trend{width:100%;max-width:100%;min-width:0;overflow-x:hidden;box-sizing:border-box}
+#trend *{box-sizing:border-box}
+#trend .b-composer{display:grid!important;grid-template-columns:40px minmax(0,1fr) 40px!important;align-items:center!important;justify-content:stretch!important;gap:10px!important;width:calc(100% - 24px)!important;max-width:calc(100% - 24px)!important;min-width:0!important;margin:12px auto!important;padding:10px 12px!important}
+#trend .b-composer>span:nth-child(2){display:flex!important;align-items:center!important;justify-content:flex-start!important;min-width:0!important;width:100%!important;min-height:42px!important;padding:10px 14px!important;line-height:20px!important;text-align:left!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#trend .b-composer>span:last-child{width:40px!important;height:40px!important;display:grid!important;place-items:center!important;justify-self:end!important;border-radius:50%!important;flex:none!important}
+#trend .b-composer>span:first-child{width:40px!important;height:40px!important;min-width:40px!important;display:grid!important;place-items:center!important;justify-self:start!important}
+#trend .b-post{width:100%;max-width:100%;min-width:0}
+#trend .b-post-actions{width:100%;max-width:100%;display:flex!important;align-items:stretch!important;justify-content:space-around!important}
+#trend .b-post-actions button{flex:1 1 0!important;min-width:0!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;white-space:nowrap!important}
+#trend .b-post-photo{width:100%!important;max-width:100%!important}
+#trend .b-stories{width:100%;max-width:100%;overflow-x:auto!important;overflow-y:hidden;overscroll-behavior-x:contain}
+#trend .b-tabs{width:100%;max-width:100%;min-width:0}
+@media(max-width:430px){
+ #trend{left:0;right:0}
+ #trend .b-post{margin-left:0!important;margin-right:0!important;border-left:0!important;border-right:0!important;border-radius:0!important}
+ #trend .b-composer{width:calc(100% - 20px)!important;max-width:calc(100% - 20px)!important}
+}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
