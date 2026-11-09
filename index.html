@@ -6,7 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
-:root{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2;--soft:#f0f0f0;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2;--soft:#f0f0f0;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-weight:500}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -198,6 +198,14 @@ nav button:not(.plus).on::before{display:none}
 @media(max-height:680px){#app.watch .side{gap:8px;bottom:10px}#app.watch .side button{min-height:43px}#app.watch .side button svg{width:26px;height:26px}#app.watch .meta{bottom:10px}#app.watch nav{height:58px;min-height:58px}}
 @media(prefers-reduced-motion:reduce){#app.watch header>i{animation:none}}
 
+
+/* BOUNCY HOME — lock the app to the visible phone screen; keep scrolling inside the video feed */
+html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0}
+#app.watch{width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;min-height:0;overflow:hidden}
+#app.watch main{flex:1 1 0%;min-height:0;overflow:hidden}
+#app.watch #feed{position:absolute;inset:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#app.watch .clip{height:100%;min-height:100%;scroll-snap-align:start;scroll-snap-stop:always}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
