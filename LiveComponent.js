@@ -14,7 +14,7 @@ function build(){
  ui=el('section','b-live-root');ui.id='bouncy-live';
  ui.innerHTML='<div class="b-live-stage"><video class="b-live-video" autoplay playsinline></video><div class="b-live-gradient"></div></div><div class="b-live-head"><div class="b-live-host"><span class="b-live-avatar">B</span><span><b class="b-live-name">BOUNCY LIVE</b><small class="b-live-sub">Discover live creators</small></span></div><div class="b-live-head-right"><span class="b-live-count">● 0</span><button class="b-live-x">×</button></div></div><div class="b-live-effects"></div><div class="b-live-chat"></div><div class="b-live-controls"><input class="b-live-message" maxlength="300" placeholder="Say something…"><button class="b-live-send">Send</button><button class="b-live-gift">🎁</button><button class="b-live-heart">♥</button></div><div class="b-live-host-tools"><button data-do="mute">Mute</button><button data-do="flip">Flip</button><button data-do="end">End LIVE</button></div><div class="b-live-gifts" hidden><header><b>Send a gift</b><button data-do="giftclose">×</button></header><p>Coins: <b class="b-live-coins">0</b></p><div class="b-live-gift-list"></div></div><div class="b-live-toast"></div>';
  document.body.append(ui);
- ui.querySelector('.b-live-x').onclick=close;
+ ui.querySelector('.b-live-x').onclick=()=>live?.role==='host'?end():close();
  ui.querySelector('.b-live-send').onclick=sendComment;
  ui.querySelector('.b-live-message').onkeydown=e=>{if(e.key==='Enter')sendComment()};
  ui.querySelector('.b-live-gift').onclick=()=>{if(!user()){say('Log in to send gifts');return}ui.querySelector('.b-live-gifts').hidden=false;loadWallet();loadGifts()};
@@ -88,7 +88,7 @@ async function count(){
  if(ui)ui.querySelector('.b-live-count').textContent='● '+(r.count||0);
 }
 async function chatSetup(){
- const id=live.stream.id;
+ const id=live.stream.id;await loadGifts();
  const old=await db().from('live_comments').select('id,user_id,message').eq('live_id',id).order('created_at',{ascending:false}).limit(20);
  (old.data||[]).reverse().forEach(x=>showComment(x));
  if(commentCh)db().removeChannel(commentCh);
@@ -143,7 +143,7 @@ async function browse(){
  build();ui.classList.add('b-live-browse-mode');ui.querySelector('.b-live-host-tools').hidden=true;ui.querySelector('.b-live-gift').hidden=true;
  const list=el('div','b-live-browse-list'),top=el('div','b-live-browse-title');top.append(el('b','', 'LIVE on BOUNCY'));
  const start=el('button','b-live-start','＋ Go LIVE');start.onclick=()=>startForm();top.append(start);list.append(top);
- const r=await db().from('live_streams').select('id,host_id,title,room_name,started_at').eq('status','live').order('started_at',{ascending:false}).limit(30);
+ const r=await db().from('live_streams').select('id,host_id,title,room_name,started_at') .eq('status','live').gt('last_heartbeat_at',new Date(Date.now()-90000).toISOString()).order('started_at',{ascending:false}).limit(30);
  if(r.error)list.append(el('p','',r.error.message));
  else if(!r.data?.length)list.append(el('p','b-live-empty','No one is LIVE right now. Start the first stream.'));
  else{
