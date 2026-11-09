@@ -744,7 +744,7 @@
       if (!wallet.error) {
         s.coinWallet = wallet.data;
         const label = s._room?.querySelector('.live-demo-profile-coins');
-        if (label) label.textContent = '💎 ' + Number(s.host ? (wallet.data?.earned_coins || 0) : (wallet.data?.balance || 0)).toLocaleString();
+        if (label) label.textContent = '💎 ' + Number((s.host || s.isCohost) ? (wallet.data?.earned_coins || 0) : (wallet.data?.balance || 0)).toLocaleString();
       }
     }
   };
