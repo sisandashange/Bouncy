@@ -421,6 +421,18 @@ nav button:not(.plus).on::before{display:none}
 #sheet.live-sheet .live-gift-overlay{z-index:20}
 @media(max-width:390px){#sheet.live-sheet .live-bottom-tiktok{gap:5px}#sheet.live-sheet .live-bottom-tiktok>.live-round-action{width:34px;height:34px;min-width:34px}#sheet.live-sheet .live-identity strong{max-width:29vw}}
 
+
+/* BOUNCY app shell: keep the Home screen inside the device viewport.
+   The feed itself remains swipe-scrollable; the document behind it does not scroll. */
+html,body{width:100%;height:100%;min-height:0;overflow:hidden}
+body{position:fixed;inset:0}
+#app{height:100dvh;height:100svh;max-height:100dvh;max-height:100svh;min-height:0;overflow:hidden}
+#app main{flex:1 1 0;min-height:0;overflow:hidden}
+#app main>.v{overscroll-behavior:contain;touch-action:pan-y}
+@media(min-width:700px){
+  body{position:static}
+  #app{height:min(100dvh,900px);max-height:calc(100dvh - 40px);margin:20px auto}
+}
 </style><link rel="stylesheet" href="./LiveTikTok.css">
 </head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
