@@ -782,9 +782,112 @@ async function openLiveGiftPanel(s,comments,wrap){
 }
 function animateLiveHeart(s){if(!s?._likeButton)return;s._heartCount=s._heartCount||0;if(s._heartCount>=5)return;const heart=E('span','','♥');heart.className='live-float-heart';s._likeButton.append(heart);s._heartCount++;setTimeout(()=>{heart.remove();s._heartCount=Math.max(0,(s._heartCount||1)-1)},1500)}async function sendLiveLike(s){if(!s||s.closing)return;const r=await sb.from('live_comments').insert({stream_id:s.id,user_id:me.id,body:'__bouncy_live_like__'});if(r.error)toast('Like could not be sent')}
 
-async function hostAcceptViewer(s,viewerId,offer){let pc=s.pcs.get(viewerId);if(pc){pc.close();s.pcs.delete(viewerId)}pc=new RTCPeerConnection(liveRtcConfig);s.pcs.set(viewerId,pc);pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,viewerId,'candidate',e.candidate.toJSON())};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'||pc.connectionState==='closed'){pc.close();if(s.pcs.get(viewerId)===pc)s.pcs.delete(viewerId)}};s.stream.getTracks().forEach(t=>pc.addTrack(t,s.stream));for(const sender of pc.getSenders()){if(sender.track?.kind==='video'){try{const p=sender.getParameters();p.encodings=p.encodings?.length?p.encodings:[{}];p.encodings[0].maxBitrate=500000;p.encodings[0].maxFramerate=15;await sender.setParameters(p)}catch(e){console.warn('Live bitrate cap unavailable',e)}}}await pc.setRemoteDescription(offer);const q=s.queues.get(viewerId)||[];s.queues.delete(viewerId);for(const c of q)try{await pc.addIceCandidate(c)}catch(e){}const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendLiveSignal(s,viewerId,'answer',pc.localDescription.toJSON())}
-async function handleLiveSignal(s,x){if(!s||liveSession!==s||s.closing||x.sender_id===me.id||x.recipient_id!==me.id)return;try{if(s.host){if(x.signal_type==='offer')await hostAcceptViewer(s,x.sender_id,x.payload);else if(x.signal_type==='candidate'){const pc=s.pcs.get(x.sender_id);if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else{const q=s.queues.get(x.sender_id)||[];q.push(x.payload);s.queues.set(x.sender_id,q)}}else if(x.signal_type==='leave'){const pc=s.pcs.get(x.sender_id);pc?.close();s.pcs.delete(x.sender_id);s.queues.delete(x.sender_id)}}else{const pc=s.pc;if(x.signal_type==='answer'&&pc?.signalingState==='have-local-offer'){await pc.setRemoteDescription(x.payload);for(const c of(s.queues||[]))try{await pc.addIceCandidate(c)}catch(e){}s.queues=[];}else if(x.signal_type==='candidate'){if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else s.queues.push(x.payload)}else if(x.signal_type==='leave'){toast('Live ended');leaveLiveStream(true)}}}catch(e){console.warn('BOUNCY LIVE signal',e)}}
-async function joinLiveStream(st,hostName){if(!me)return;if(liveSession){toast('Leave your current live stream first');return}const cnt=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',st.id);if((cnt.count||0)>=LIVE_MAX_VIEWERS){toast('This free live stream has reached its viewer limit');return}const s=liveSession={host:false,id:st.id,hostId:st.host_id,title:st.title||'Live now',hostName,hostAvatar:st.hostAvatar||'',hostVerified:!!st.hostVerified,pc:null,queues:[],channel:null,commentChannel:null,closing:false};try{await subscribeLiveSignals(s);const j=await sb.from('live_viewers').upsert({stream_id:s.id,user_id:me.id,last_seen_at:new Date().toISOString()},{onConflict:'stream_id,user_id'});if(j.error)throw j.error;const pc=s.pc=new RTCPeerConnection(liveRtcConfig);pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,st.host_id,'candidate',e.candidate.toJSON())};pc.ontrack=e=>{const v=sheet.querySelector('.live-video-wrap video');if(v){if(!s.remote)s.remote=new MediaStream();if(!s.remote.getTracks().some(t=>t.id===e.track.id))s.remote.addTrack(e.track);v.srcObject=s.remote;v.play().catch(()=>{})}};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){toast('Connection failed. This network may need a relay server.');clearTimeout(s.connectionTimer)}if(pc.connectionState==='connected'){clearTimeout(s.connectionTimer);const c=sheet.querySelector('.live-view-count');if(c)c.textContent='Connected'}};const offer=await pc.createOffer();await pc.setLocalDescription(offer);await showLiveRoom();await sendLiveSignal(s,st.host_id,'offer',pc.localDescription.toJSON());s.connectionTimer=setTimeout(()=>{if(liveSession===s&&s.pc?.connectionState!=='connected'){toast('The live stream could not connect on this network');leaveLiveStream(true);openLiveHub()}},18000);s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}catch(e){console.error('BOUNCY LIVE join',e);toast(e.message||'Could not join this live stream');await leaveLiveStream(true);openLiveHub()}}
+async function hostAcceptViewer(s,viewerId,offer){
+ let pc=s.pcs.get(viewerId);
+ if(pc){pc.close();s.pcs.delete(viewerId)}
+ pc=new RTCPeerConnection(liveRtcConfig);s.pcs.set(viewerId,pc);
+ pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,viewerId,'candidate',{...e.candidate.toJSON(),_peer:'viewer'})};
+ pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'||pc.connectionState==='closed'){pc.close();if(s.pcs.get(viewerId)===pc)s.pcs.delete(viewerId)}};
+ s.stream.getTracks().forEach(t=>pc.addTrack(t,s.stream));
+ (s.cohostStreams||new Map()).forEach(stream=>stream.getTracks().forEach(t=>{if(t.readyState==='live')pc.addTrack(t,stream)}));
+ for(const sender of pc.getSenders()){if(sender.track?.kind==='video'){try{const p=sender.getParameters();p.encodings=p.encodings?.length?p.encodings:[{}];p.encodings[0].maxBitrate=450000;p.encodings[0].maxFramerate=15;await sender.setParameters(p)}catch(e){}}}
+ await pc.setRemoteDescription(offer);
+ const q=s.queues.get(viewerId)||[];s.queues.delete(viewerId);for(const cand of q)try{await pc.addIceCandidate(cand)}catch(e){}
+ const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+ await sendLiveSignal(s,viewerId,'answer',{...pc.localDescription.toJSON(),_peer:'viewer'});
+}
+async function relayCohostTrackToViewers(s,userId,stream){
+ for(const [viewerId,pc] of (s.pcs||new Map())){
+  if(!pc||pc.connectionState==='closed')continue;
+  const tracks=stream.getTracks().filter(t=>t.readyState==='live');
+  let added=false;
+  for(const track of tracks){if(!pc.getSenders().some(x=>x.track?.id===track.id)){pc.addTrack(track,stream);added=true}}
+  if(!added||pc.signalingState!=='stable')continue;
+  try{
+   const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+   await sendLiveSignal(s,viewerId,'offer',{...pc.localDescription.toJSON(),_peer:'viewer'});
+  }catch(err){console.warn('Co-host relay renegotiation',err)}
+ }
+}
+async function hostAcceptCohost(s,userId,offer){
+ const member=await sb.from('live_cohosts').select('id,status,is_muted_by_host').eq('live_id',s.id).eq('user_id',userId).maybeSingle();
+ if(member.error||member.data?.status!=='accepted')return;
+ let pc=s.cohostPcs?.get(userId);if(pc){pc.close();s.cohostPcs.delete(userId)}
+ if(!s.cohostPcs)s.cohostPcs=new Map();if(!s.cohostStreams)s.cohostStreams=new Map();
+ pc=new RTCPeerConnection(liveRtcConfig);s.cohostPcs.set(userId,pc);
+ pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,userId,'candidate',{...e.candidate.toJSON(),_peer:'cohost'})};
+ pc.ontrack=async e=>{
+  let stream=e.streams?.[0];if(!stream){stream=s.cohostStreams.get(userId)||new MediaStream();if(!stream.getTracks().some(t=>t.id===e.track.id))stream.addTrack(e.track)}
+  s.cohostStreams.set(userId,stream);
+  if(member.data.is_muted_by_host&&e.track.kind==='audio')e.track.enabled=false;
+  window.BouncyLiveComponent?.onCohostTrack?.(s,userId,stream);
+  await relayCohostTrackToViewers(s,userId,stream);
+ };
+ pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState)){pc.close();if(s.cohostPcs.get(userId)===pc)s.cohostPcs.delete(userId)}};
+ await pc.setRemoteDescription(offer);
+ const q=s.cohostQueues?.get(userId)||[];if(s.cohostQueues)s.cohostQueues.delete(userId);for(const cand of q)try{await pc.addIceCandidate(cand)}catch(e){}
+ const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+ await sendLiveSignal(s,userId,'answer',{...pc.localDescription.toJSON(),_peer:'cohost'});
+}
+async function handleLiveSignal(s,x){
+ if(!s||liveSession!==s||s.closing||x.sender_id===me.id||x.recipient_id!==me.id)return;
+ const payload=x.payload||{},peerKind=payload._peer||'viewer';
+ try{
+  if(s.host){
+   if(x.signal_type==='offer'){
+    if(peerKind==='cohost')await hostAcceptCohost(s,x.sender_id,payload);
+    else await hostAcceptViewer(s,x.sender_id,payload);
+   }else if(x.signal_type==='answer'){
+    const pc=peerKind==='cohost'?s.cohostPcs?.get(x.sender_id):s.pcs.get(x.sender_id);
+    if(pc?.signalingState==='have-local-offer')await pc.setRemoteDescription(payload);
+   }else if(x.signal_type==='candidate'){
+    const pc=peerKind==='cohost'?s.cohostPcs?.get(x.sender_id):s.pcs.get(x.sender_id);
+    const queues=peerKind==='cohost'?(s.cohostQueues||(s.cohostQueues=new Map())):s.queues;
+    if(pc?.remoteDescription)await pc.addIceCandidate(payload);else{const q=queues.get(x.sender_id)||[];q.push(payload);queues.set(x.sender_id,q)}
+   }else if(x.signal_type==='leave'){
+    const isGuest=!!s.cohostPcs?.has(x.sender_id),pc=isGuest?s.cohostPcs.get(x.sender_id):s.pcs.get(x.sender_id);
+    pc?.close();if(isGuest){s.cohostPcs.delete(x.sender_id);s.cohostStreams?.delete(x.sender_id)}else s.pcs.delete(x.sender_id);
+    s.queues?.delete(x.sender_id);s.cohostQueues?.delete(x.sender_id);
+   }
+  }else if(s.isCohost){
+   if(x.signal_type==='answer'&&peerKind==='cohost'&&s.cohostPc?.signalingState==='have-local-offer')await s.cohostPc.setRemoteDescription(payload);
+   else if(x.signal_type==='offer'&&peerKind==='viewer'&&s.pc){
+    await s.pc.setRemoteDescription(payload);const answer=await s.pc.createAnswer();await s.pc.setLocalDescription(answer);
+    await sendLiveSignal(s,s.hostId,'answer',{...s.pc.localDescription.toJSON(),_peer:'viewer'});
+   }else if(x.signal_type==='candidate'){
+    const pc=peerKind==='cohost'?s.cohostPc:s.pc;
+    const queues=peerKind==='cohost'?(s.cohostQueues||(s.cohostQueues=[])):s.queues;
+    if(pc?.remoteDescription)await pc.addIceCandidate(payload);else queues.push(payload);
+   }else if(x.signal_type==='leave'){toast('The host ended this live');leaveLiveStream(true)}
+  }else{
+   const pc=s.pc;
+   if(x.signal_type==='answer'&&peerKind==='viewer'&&pc?.signalingState==='have-local-offer'){
+    await pc.setRemoteDescription(payload);for(const cand of(s.queues||[]))try{await pc.addIceCandidate(cand)}catch(e){}s.queues=[];
+   }else if(x.signal_type==='candidate'&&peerKind==='viewer'){
+    if(pc?.remoteDescription)await pc.addIceCandidate(payload);else s.queues.push(payload);
+   }else if(x.signal_type==='leave'){toast('Live ended');leaveLiveStream(true)}
+  }
+ }catch(e){console.warn('BOUNCY LIVE signal',e)}
+}
+window.bouncyStartCohost=async function(s){
+ if(!s||liveSession!==s||s.closing||s.host||s.isCohost)return;
+ try{
+  const row=await sb.from('live_cohosts').select('status,is_muted_by_host').eq('live_id',s.id).eq('user_id',me.id).maybeSingle();
+  if(row.error||row.data?.status!=='accepted')throw new Error('Your co-host seat is not active');
+  const media=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  s.isCohost=true;s.cohostStream=media;s.cohostPc=new RTCPeerConnection(liveRtcConfig);s.cohostQueues=[];
+  media.getTracks().forEach(t=>{if(t.kind==='audio'&&row.data.is_muted_by_host)t.enabled=false;s.cohostPc.addTrack(t,media)});
+  s.cohostPc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,s.hostId,'candidate',{...e.candidate.toJSON(),_peer:'cohost'})};
+  s.cohostPc.onconnectionstatechange=()=>{if(s.cohostPc?.connectionState==='failed')toast('Co-host connection failed. Check your network.')};
+  const offer=await s.cohostPc.createOffer();await s.cohostPc.setLocalDescription(offer);
+  await sendLiveSignal(s,s.hostId,'offer',{...s.cohostPc.localDescription.toJSON(),_peer:'cohost'});
+  const control=document.createElement('button');control.className='bouncy-cohost-mic-toggle';control.textContent='Mic on';
+  control.onclick=()=>{const t=media.getAudioTracks()[0];if(!t)return; t.enabled=!t.enabled;control.textContent=t.enabled?'Mic on':'Mic off'};
+  s._room?.append(control);
+  toast('Connecting your camera and microphone…');
+ }catch(e){console.error('BOUNCY co-host media',e);toast(e.message||'Camera/microphone permission is required')}
+};
+async function joinLiveStream(st,hostName){if(!me)return;if(liveSession){toast('Leave your current live stream first');return}const cnt=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',st.id);if((cnt.count||0)>=LIVE_MAX_VIEWERS){toast('This free live stream has reached its viewer limit');return}const s=liveSession={host:false,id:st.id,hostId:st.host_id,title:st.title||'Live now',hostName,hostAvatar:st.hostAvatar||'',hostVerified:!!st.hostVerified,pc:null,queues:[],channel:null,commentChannel:null,closing:false};try{await subscribeLiveSignals(s);const j=await sb.from('live_viewers').upsert({stream_id:s.id,user_id:me.id,last_seen_at:new Date().toISOString()},{onConflict:'stream_id,user_id'});if(j.error)throw j.error;const pc=s.pc=new RTCPeerConnection(liveRtcConfig);pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,st.host_id,'candidate',e.candidate.toJSON())};pc.ontrack=e=>{const stream=e.streams?.[0];if(stream){s.participantStreams=s.participantStreams||new Map();s.participantStreams.set(stream.id,stream);window.BouncyLiveComponent?.onParticipantTrack?.(s,stream.id,stream)}const v=sheet.querySelector('.live-video-wrap video');if(v){if(!s.remote)s.remote=new MediaStream();if(!s.remote.getTracks().some(t=>t.id===e.track.id))s.remote.addTrack(e.track);v.srcObject=s.remote;v.play().catch(()=>{})}};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){toast('Connection failed. This network may need a relay server.');clearTimeout(s.connectionTimer)}if(pc.connectionState==='connected'){clearTimeout(s.connectionTimer);const c=sheet.querySelector('.live-view-count');if(c)c.textContent='Connected'}};const offer=await pc.createOffer();await pc.setLocalDescription(offer);await showLiveRoom();await sendLiveSignal(s,st.host_id,'offer',pc.localDescription.toJSON());s.connectionTimer=setTimeout(()=>{if(liveSession===s&&s.pc?.connectionState!=='connected'){toast('The live stream could not connect on this network');leaveLiveStream(true);openLiveHub()}},18000);s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}catch(e){console.error('BOUNCY LIVE join',e);toast(e.message||'Could not join this live stream');await leaveLiveStream(true);openLiveHub()}}
 async function endLiveStream(silent=false){const s=liveSession;if(!s||!s.host)return;if(s._ending)return s._ending;s.closing=true;try{sb.auth.getSession().then(({data})=>{const token=data?.session?.access_token;if(!token)return;fetch(SB_URL+'/rest/v1/live_streams?id=eq.'+encodeURIComponent(s.id)+'&host_id=eq.'+encodeURIComponent(me.id)+'&status=eq.live',{method:'PATCH',keepalive:true,headers:{apikey:SB_KEY,Authorization:'Bearer '+token,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:'ended',ended_at:new Date().toISOString()})}).catch(()=>{})}).catch(()=>{})}catch(e){}s._ending=(async()=>{for(const id of s.pcs.keys())await sendLiveSignal(s,id,'leave',{}).catch(()=>{});s.pcs.forEach(pc=>pc.close());s.pcs.clear();s.stream?.getTracks().forEach(t=>t.stop());clearInterval(s.countTimer);clearInterval(s.heartbeat);clearInterval(s.viewerCountTimer);clearInterval(s.giftersTimer);if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s.cohostChannel)sb.removeChannel(s.cohostChannel);if(s._cohostPanel)s._cohostPanel.remove();if(s._cohostInvitePanel)s._cohostInvitePanel.remove();if(s._giftPanel)s._giftPanel.remove();await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('host_id',me.id).eq('status','live');liveSession=null;if(sheet.classList.contains('o'))close();if(!silent)toast('Your live stream has ended')})();return s._ending}
 async function leaveLiveStream(silent=false){const s=liveSession;if(!s||s.host)return;s.closing=true;clearInterval(s.heartbeat);clearInterval(s.viewerCountTimer);clearInterval(s.giftersTimer);clearTimeout(s.connectionTimer);s.pc?.close();if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s.cohostChannel)sb.removeChannel(s.cohostChannel);if(s._cohostInvitePanel)s._cohostInvitePanel.remove();if(s._giftPanel)s._giftPanel.remove();if(s.hostId)await sendLiveSignal(s,s.hostId,'leave',{}).catch(()=>{});await sb.from('live_viewers').delete().eq('stream_id',s.id).eq('user_id',me.id);liveSession=null;close();if(!silent)toast('You left the live stream')}
 $('#liveOpen').onclick=openLiveHub;
