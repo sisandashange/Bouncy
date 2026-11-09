@@ -178,11 +178,9 @@ async function close(){
  ui?.remove();ui=null;
 }
 function launcher(){
- const existing=document.getElementById('liveOpen');
- if(existing){existing.classList.add('b-live-launch');existing.innerHTML='● LIVE';existing.setAttribute('aria-label','Open BOUNCY LIVE');existing.onclick=browse;return}
- if(document.getElementById('b-live-launch'))return;
- const b=el('button','b-live-launch','● LIVE');b.id='b-live-launch';b.onclick=browse;
- const target=document.querySelector('#app header')||document.querySelector('header')||document.querySelector('#app')||document.body;target.append(b);
+ let b=document.getElementById('liveOpen')||document.getElementById('b-live-launch');
+ if(!b){b=el('button','feed-live-btn','LIVE');b.id='liveOpen';const target=document.querySelector('#app .feed-head-actions')||document.querySelector('#app header')||document.querySelector('header')||document.body;target.prepend(b)}
+ b.classList.add('b-live-launch');b.type='button';b.onclick=e=>{e.preventDefault();browse()};
 }
 function init(){launcher();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',launcher,{once:true});window.addEventListener('pagehide',()=>{if(live?.role==='viewer'&&user())db()?.from('live_viewers').delete().eq('stream_id',live.stream.id).eq('user_id',user().id)})}
 init();
