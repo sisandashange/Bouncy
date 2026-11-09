@@ -604,7 +604,7 @@ async function showNoLiveScreen(){
  const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;d.append(video);
  const closeBtn=E('button','','×');closeBtn.className='live-no-live-close';closeBtn.onclick=()=>close();
  const center=E('div','');center.className='live-no-live-center';center.append(E('h1','','No one is live'));
- const go=E('button','','Go Live');go.className='live-no-live-go';go.onclick=()=>liveComposer();center.append(go);d.append(closeBtn,center);liveOpenSheet(d);
+ const go=E('button','','Go Live');go.className='live-no-live-go';go.onclick=()=>{d._stopLivePreview?.();liveComposer()};center.append(go);d.append(closeBtn,center);liveOpenSheet(d);
  try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:1280}},audio:false});if(!d.isConnected){stream.getTracks().forEach(t=>t.stop());return}video.srcObject=stream;d._stopLivePreview=()=>stream.getTracks().forEach(t=>t.stop());video.play().catch(()=>{})}catch(e){}
 }
 async function navigateLiveQueue(dir){
@@ -1541,3 +1541,5 @@ sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().
 #sheet.live-sheet .live-no-live-center{position:absolute!important;z-index:4!important;inset:0!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:18px!important;color:#fff!important;text-align:center!important;text-shadow:0 2px 8px #000!important;background:#0002!important}
 #sheet.live-sheet .live-no-live-center h1{font-size:25px!important;font-weight:900!important}
 #sheet.live-sheet .live-no-live-go{min-width:150px!important;height:48px!important;border-radius:24px!important;background:#f12b42!important;color:#fff!important;font-size:16px!important;font-weight:900!important}
+
+#sheet.live-sheet .live-no-live-screen .live-head,#sheet.live-sheet .live-composer-screen .live-head{display:none!important}
