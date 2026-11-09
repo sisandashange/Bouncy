@@ -1317,7 +1317,7 @@ const types=['video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opu
 const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
 const chunks=[];
 try{
-rec=new MediaRecorder(recordStream,mime?{mimeType:mime,videoBitsPerRate:3000000,videoBitsPerSecond:3000000}:{videoBitsPerSecond:3000000});
+rec=new MediaRecorder(recordStream,mime?{mimeType:mime,videoBitsPerSecond:3000000}:{videoBitsPerSecond:3000000});
 rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
 rec.onerror=()=>{toast('Recording failed');recording=false;shutterCore.style.borderRadius='50%';shutterCore.style.width=shutterCore.style.height='62px'};
 rec.onstop=()=>{if(recordTimer)clearInterval(recordTimer);recordTimer=null;recording=false;if(musicAudio){musicAudio.pause();musicAudio=null}if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null}progress.style.width='0';shutterCore.style.borderRadius='50%';shutterCore.style.width=shutterCore.style.height='62px';const blob=new Blob(chunks,{type:(mime||'video/webm').split(';')[0]});if(blob.size)review(blob,true);else toast('No video was recorded')};
