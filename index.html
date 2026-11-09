@@ -827,6 +827,11 @@ const like=document.createElement('button');like.dataset.r='1';like.type='button
 const cm=document.createElement('button');cm.type='button';cm.textContent='💬 Comment';cm.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--mute)';cm.onclick=()=>comments(p,'post');
 const sh=document.createElement('button');sh.type='button';sh.textContent='↗ Share';sh.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--mute)';sh.onclick=()=>{if(gate('share posts'))return;if(navigator.share)navigator.share({title:'BOUNCY',text:(p.c||'').slice(0,100),url:location.origin+location.pathname+'?p='+p.id}).catch(()=>{});else toast('Sharing isn’t available in this browser')};
 ac.append(like,cm,sh);c.append(ac);paint(p);return c}
+async function react(p,r){if(!RX.includes(r))r='👍';p.rx=p.rx||{};const old=p.my;
+if(old){p.rx[old]=Math.max((p.rx[old]||1)-1,0);p.n=Math.max((p.n||0)-1,0)}
+if(old!==r){p.rx[r]=(p.rx[r]||0)+1;p.n=(p.n||0)+1;p.my=r}else p.my=null;paint(p);
+const q=sb.from('post_reactions'),res=old===r?await q.delete().eq('post_id',p.id).eq('user_id',me.id):old?await q.update({reaction:r}).eq('post_id',p.id).eq('user_id',me.id):await q.insert({post_id:p.id,user_id:me.id,reaction:r});
+if(res.error){toast('Couldn’t save your reaction');drawTrend()}}
 async function delPost(p){if(!confirm('Delete this post? This can’t be undone.'))return;const r=await sb.from('posts').delete().eq('id',p.id);if(r.error){toast('Couldn’t delete the post');return}if(p.img)await sb.storage.from('videos').remove([p.img]);p.el.remove();toast('Post deleted')}
 async function drawPosts(d){await storiesRow(d);
 const cp=document.createElement('button');cp.className='b-composer';cp.style.cssText='display:flex;gap:10px;align-items:center;width:100%;padding:0 16px 12px;text-align:left';
