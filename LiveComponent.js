@@ -97,7 +97,7 @@
       try {
         const next = s.facing === 'environment' ? 'user' : 'environment';
         const fresh = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: next }, width: { ideal: 720 }, height: { ideal: 1280 } },
+          video: { facingMode: { ideal: next }, width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 0.5625 } },
           audio: false
         });
         const nextTrack = fresh.getVideoTracks()[0];
@@ -127,9 +127,26 @@
       pause.querySelector('svg').innerHTML = track.enabled ? '<path d="M8 5v14M16 5v14"/>' : '<path d="m8 5 11 7-11 7z"/>';
     });
     const battle = makeControl('gift', 'Battle', () => openBattlePanel(s));
+    const zoomWrap = el('label', 'live-host-zoom');
+    const zoomTitle = el('span', '', 'Camera zoom');
+    const zoomValue = el('strong', '', '1.0×');
+    const zoom = document.createElement('input');
+    zoom.type = 'range'; zoom.min = '0.85'; zoom.max = '2'; zoom.step = '0.05'; zoom.value = String(s._cameraZoom || 1);
+    zoom.setAttribute('aria-label', 'Camera zoom');
+    zoom.oninput = async () => {
+      const value = Number(zoom.value) || 1;
+      s._cameraZoom = value; zoomValue.textContent = value.toFixed(2).replace(/0$/, '') + '×';
+      if (s._video) s._video.style.transform = 'scale(' + value + ')';
+      const track = videoTrack();
+      try {
+        const caps = track?.getCapabilities?.();
+        if (caps?.zoom && value >= caps.zoom.min && value <= caps.zoom.max) await track.applyConstraints({ advanced: [{ zoom: value }] });
+      } catch (e) {}
+    };
+    zoomWrap.append(zoomTitle, zoom, zoomValue);
     const close = el('button', 'live-host-panel-close', 'Close Panel');
     close.onclick = () => { panel.remove(); s._hostPanel = null; };
-    panel.append(heading, controls, close);
+    panel.append(heading, controls, zoomWrap, close);
     s._room.append(panel);
     s._hostPanel = panel;
   }
