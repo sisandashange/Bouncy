@@ -702,14 +702,18 @@
     if (!tile) {
       tile = el('div', 'bouncy-live-guest-tile');
       tile.dataset.cohostKey = String(key);
+      const bg = document.createElement('video');
+      bg.autoplay = true; bg.playsInline = true; bg.muted = true; bg.className = 'bouncy-cohost-blur';
       const v = document.createElement('video');
-      v.autoplay = true; v.playsInline = true; v.muted = !!isHost;
+      v.autoplay = true; v.playsInline = true; v.muted = !!isHost; v.className = 'bouncy-cohost-main';
       const tag = el('span', 'bouncy-live-guest-label', label);
-      tile.append(v, tag); s._cohostGrid.append(tile);
+      tile.append(bg, v, tag); s._cohostGrid.append(tile);
     }
-    const v = tile.querySelector('video');
+    const bg = tile.querySelector('.bouncy-cohost-blur');
+    const v = tile.querySelector('.bouncy-cohost-main');
+    if (bg.srcObject !== stream) bg.srcObject = stream;
     if (v.srcObject !== stream) v.srcObject = stream;
-    v.muted = !!isHost; v.play().catch(() => {});
+    bg.play().catch(() => {}); v.muted = !!isHost; v.play().catch(() => {});
     tile.querySelector('.bouncy-live-guest-label').textContent = label;
     const count = s._cohostGrid.querySelectorAll('.bouncy-live-guest-tile').length;
     s._cohostGrid.classList.toggle('visible', count > 1);
