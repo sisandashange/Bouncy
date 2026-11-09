@@ -107,3 +107,32 @@
   object-position:center center!important;
   background:#000!important;
 }
+
+
+/* BOUNCY live camera framing + host zoom control */
+#sheet.live-sheet .live-room-screen .live-stage video{
+  width:100%!important;height:100%!important;object-fit:cover!important;
+  object-position:center top!important;transform:scale(1);transform-origin:center top;
+  max-height:none!important;
+}
+#sheet.live-sheet .live-composer-screen .live-camera-preview,
+#sheet.live-sheet .live-composer-screen .live-camera-full{
+  position:absolute!important;inset:0!important;width:100%!important;height:100dvh!important;
+  overflow:hidden!important;background:#000!important;
+}
+#sheet.live-sheet .live-composer-screen .live-camera-preview video,
+#sheet.live-sheet .live-composer-screen .live-camera-full video{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  max-height:none!important;object-fit:cover!important;object-position:center top!important;
+}
+#sheet.live-sheet .live-room-screen .live-demo-host-panel .live-host-zoom{
+  display:grid!important;grid-template-columns:auto minmax(90px,1fr) auto!important;
+  align-items:center!important;gap:10px!important;width:100%!important;
+  color:#fff!important;font-size:12px!important;font-weight:800!important;
+}
+#sheet.live-sheet .live-room-screen .live-demo-host-panel .live-host-zoom input{
+  width:100%!important;min-width:0!important;accent-color:#f12b55!important;
+}
+#sheet.live-sheet .live-room-screen .live-demo-host-panel .live-host-zoom strong{
+  min-width:42px!important;text-align:right!important;font-variant-numeric:tabular-nums!important;
+}
