@@ -280,7 +280,7 @@ try{let rows=[],fresh=[],have=new Set(clips.map(c=>c.id));
 while(more&&!fresh.length){rows=await fetchPage();fresh=rows.filter(r=>!have.has(r.id)&&(tab!=='foryou'||!shownForYou.has(r.id)));if(!rows.length)break}
 const cs=await hydrate(fresh);cs.forEach(c=>{clips.push(c);if(tab=='foryou')shownForYou.add(c.id);feed.append(mk(c))});return cs}
 catch(e){toast('Couldn’t load videos. Check your connection.');return[]}finally{busy=false}}
-async function load(){page=0;more=true;busy=false;feed.replaceChildren();clips=[];feed.scrollTop=0;const cs=await nextPage();
+async function load(){page=0;more=true;busy=false;if(tab==='foryou')shownForYou.clear();feed.replaceChildren();clips=[];feed.scrollTop=0;const cs=await nextPage();
 if(!cs.length&&!feed.children.length){const msg=tab=='following'?'Follow creators and their videos show up here.':(shownForYou.size?'You’ve reached the end of the available unseen videos. Check back for new videos.':'No videos yet. Be the first to post on BOUNCY.');const e=el('<div class="empty" style="padding-top:30%">'+msg+'<br><button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=pickVideo;feed.append(e)}}
 async function like(c){if(gate('like videos'))return;if(navigator.vibrate)navigator.vibrate(10);const on=!c.liked;c.liked=on?1:0;c.l+=on?1:-1;sync(c);
 const r=on?await sb.from('video_likes').insert({video_id:c.id,user_id:me.id}):await sb.from('video_likes').delete().eq('video_id',c.id).eq('user_id',me.id);
