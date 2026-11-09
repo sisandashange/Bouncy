@@ -97,7 +97,7 @@
       try {
         const next = s.facing === 'environment' ? 'user' : 'environment';
         const fresh = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: next }, width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 0.5625 } },
+          video: { facingMode: { ideal: next }, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false
         });
         const nextTrack = fresh.getVideoTracks()[0];
@@ -131,19 +131,30 @@
     const zoomTitle = el('span', '', 'Camera zoom');
     const zoomValue = el('strong', '', '1.0×');
     const zoom = document.createElement('input');
-    zoom.type = 'range'; zoom.min = '0.85'; zoom.max = '2'; zoom.step = '0.05'; zoom.value = String(s._cameraZoom || 1);
-    zoom.setAttribute('aria-label', 'Camera zoom');
-    zoom.oninput = async () => {
-      const value = Number(zoom.value) || 1;
-      s._cameraZoom = value; zoomValue.textContent = value.toFixed(2).replace(/0$/, '') + '×';
-      if (s._video) s._video.style.transform = 'scale(' + value + ')';
-      const track = videoTrack();
-      try {
-        const caps = track?.getCapabilities?.();
-        if (caps?.zoom && value >= caps.zoom.min && value <= caps.zoom.max) await track.applyConstraints({ advanced: [{ zoom: value }] });
-      } catch (e) {}
-    };
-    zoomWrap.append(zoomTitle, zoom, zoomValue);
+    const zoomTrack = videoTrack();
+    let zoomCaps = null;
+    try { zoomCaps = zoomTrack?.getCapabilities?.()?.zoom || null; } catch (e) {}
+    if (!zoomCaps || typeof zoomCaps.min !== 'number' || typeof zoomCaps.max !== 'number' || zoomCaps.max <= zoomCaps.min) zoomWrap.hidden = true;
+    else {
+      zoom.type = 'range';
+      zoom.min = String(Math.max(0.5, zoomCaps.min));
+      zoom.max = String(Math.min(2, zoomCaps.max));
+      zoom.step = String(zoomCaps.step > 0 ? zoomCaps.step : 0.05);
+      if (Number(zoom.max) <= Number(zoom.min)) zoomWrap.hidden = true;
+      const currentZoom = Number(zoomTrack.getSettings?.().zoom || 1);
+      zoom.value = String(Math.min(Number(zoom.max), Math.max(Number(zoom.min), currentZoom)));
+      zoomValue.textContent = Number(zoom.value).toFixed(2).replace(/0$/, '') + '×';
+      zoom.setAttribute('aria-label', 'Camera zoom');
+      zoom.oninput = async () => {
+        const value = Number(zoom.value);
+        try {
+          await zoomTrack.applyConstraints({ advanced: [{ zoom: value }] });
+          s._cameraZoom = value;
+          zoomValue.textContent = value.toFixed(2).replace(/0$/, '') + '×';
+        } catch (e) { toast('This camera cannot apply that zoom level'); }
+      };
+      zoomWrap.append(zoomTitle, zoom, zoomValue);
+    }
     const close = el('button', 'live-host-panel-close', 'Close Panel');
     close.onclick = () => { panel.remove(); s._hostPanel = null; };
     panel.append(heading, controls, zoomWrap, close);
@@ -268,12 +279,16 @@
     s._room = room;
 
     const stage = el('div', 'live-video-wrap live-stage');
+    const bgVideo = document.createElement('video');
+    bgVideo.autoplay = true; bgVideo.playsInline = true; bgVideo.muted = true;
+    bgVideo.className = 'live-video-blur-layer';
+    bgVideo.srcObject = s.host ? s.stream : (s.remote || null);
     const video = document.createElement('video');
-    video.autoplay = true;
-    video.playsInline = true;
-    video.muted = !!s.host;
+    video.autoplay = true; video.playsInline = true; video.muted = !!s.host;
+    video.className = 'live-video-main-layer';
     video.srcObject = s.host ? s.stream : (s.remote || null);
-    stage.append(video);
+    stage.append(bgVideo, video);
+    s._backgroundVideo = bgVideo;
     s._video = video;
 
     const heartLayer = el('div', 'live-heart-layer');
