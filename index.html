@@ -651,83 +651,13 @@ async function liveComposer(){
 }
 async function subscribeLiveSignals(session){return await new Promise((resolve,reject)=>{const ch=sb.channel('live-signals-'+session.id+'-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_signals',filter:'stream_id=eq.'+session.id},ev=>handleLiveSignal(session,ev.new));session.channel=ch;let done=false;const timer=setTimeout(()=>{if(!done){done=true;reject(new Error('Live connection timed out. Please try again.'))}},12000);ch.subscribe(status=>{if(status==='SUBSCRIBED'&&!done){done=true;clearTimeout(timer);resolve(ch)}else if((status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED')&&!done){done=true;clearTimeout(timer);reject(new Error('Could not connect to live signalling.'))}})})}
 async function sendLiveSignal(session,peer,type,payload={}){if(!session||(session.closing&&type!=='leave'))return;const r=await sb.from('live_signals').insert({stream_id:session.id,sender_id:me.id,recipient_id:peer,signal_type:type,payload});if(r.error)console.warn('Live signal error',r.error)}
-async function showLiveRoom(){
- const s=liveSession;if(!s)return;
- const d=liveScreen('');d.classList.add('live-room-screen','live-room');s._room=d;
- const wrap=E('div','');wrap.className='live-video-wrap live-stage';s._wrap=wrap;
- const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=!s.host;video.srcObject=s.host?s.stream:null;wrap.append(video);s._video=video;
- const top=E('div','');top.className='live-demo-top';
- const identity=E('div','');identity.className='live-demo-profile';
- const avatar=document.createElement('img');avatar.className='live-demo-avatar';avatar.alt='Host';avatar.src=s.host?(me.avatar_url||me.avatar||''):(s.hostAvatar||'');
- const profileText=E('div','');profileText.className='live-demo-profile-text';
- const nameLine=E('div','');nameLine.className='live-demo-name-line';
- const who=E('strong','',s.host?'@'+(me.username||'you'):'@'+(s.hostName||'user'));nameLine.append(who);
- if(s.hostVerified||s.host&&me.verified)nameLine.append(E('span','live-demo-verified','✓'));
- const liveTag=E('span','live-demo-live','LIVE');profileText.append(nameLine,liveTag);
- identity.append(avatar,profileText);
- const follow=E('button','','+ Follow');follow.className='live-demo-follow';
- if(s.host)follow.style.display='none';
- else{
-  const checkFollow=async()=>{const q=await sb.from('follows').select('followed_id').eq('follower_id',me.id).eq('followed_id',s.hostId||s.host_id||'').maybeSingle();if(!q.error&&q.data)follow.textContent='Following'};
-  if(me?.id&&(s.hostId||s.host_id))checkFollow();
-  follow.onclick=async()=>{if(!me?.id){toast('Sign in to follow this host');return}const hostId=s.hostId||s.host_id;if(!hostId)return;follow.disabled=true;const q=await sb.from('follows').select('followed_id').eq('follower_id',me.id).eq('followed_id',hostId).maybeSingle();let out;if(q.data)out=await sb.from('follows').delete().eq('follower_id',me.id).eq('followed_id',hostId);else out=await sb.from('follows').insert({follower_id:me.id,followed_id:hostId});if(out?.error)toast(out.error.message||'Could not update follow');else follow.textContent=q.data?'+ Follow':'Following';follow.disabled=false};
- }
- identity.append(follow);
- const topRight=E('div','');topRight.className='live-demo-top-right';
- const count=E('span','','👁 0');count.className='live-demo-view-count';
- const closeBtn=E('button','','×');closeBtn.className='live-close live-x-button live-demo-close';topRight.append(count,closeBtn);
- top.append(identity,topRight);
- const sub=E('div','');sub.className='live-demo-sub';
- sub.append(E('span','','BOUNCY LIVE'));
- const earned=E('span','','💎 0');earned.className='live-gift-earned-pill live-demo-earned';sub.append(earned);s.giftEarnedLabel=earned;
- const sound=E('button','','🔇');sound.className='live-sound-icon live-demo-sound';sound.setAttribute('aria-label','Toggle sound');sound.onclick=()=>{video.muted=!video.muted;sound.textContent=video.muted?'🔇':'🔊'};
- const action=(symbol,label,fn)=>{const b=E('button','',symbol);b.className='live-round-action live-demo-dock-button';b.setAttribute('aria-label',label);b.onclick=fn;return b};
- const shareFn=async()=>{try{if(navigator.share)await navigator.share({title:'BOUNCY Live',url:location.href});else{await navigator.clipboard.writeText(location.href);toast('Live link copied')}}catch(e){}};
- const comments=E('div','');comments.className='live-comments live-floating-comments';
- const bottom=E('div','');bottom.className='live-bottom-tiktok live-bottom live-demo-bottom';
- const compose=E('div','');compose.className='live-compose live-compose-tiktok';
- const ci=E('input','');ci.placeholder='Add comment...';ci.maxLength=500;
- const send=E('button','','');send.className='live-send-comment';send.style.display='none';compose.append(ci,send);bottom.append(compose);
- if(s.host){const hostTools=action('☷','Host controls',()=>{const panel=E('div','');panel.className='live-demo-host-panel';const title=E('strong','','Host controls');const mute=E('button','',s._video?.muted?'Unmute':'Mute');mute.onclick=()=>{const track=s.stream?.getAudioTracks()[0];if(track)track.enabled=!track.enabled;mute.textContent=track?.enabled?'Mute':'Unmute'};const pause=E('button','',s._video?.paused?'Resume':'Pause');pause.onclick=()=>{const track=s.stream?.getVideoTracks()[0];if(track)track.enabled=!track.enabled;pause.textContent=track?.enabled?'Pause':'Resume'};const done=E('button','','Close');done.onclick=()=>panel.remove();panel.append(title,mute,pause,done);d.append(panel)});bottom.append(hostTools)}
- else bottom.append(sound);
- const share=action('↗','Share',shareFn),gift=action('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));bottom.append(share,gift);
- const big=E('div','','♥');big.className='live-double-heart';d.append(wrap,top,topRight,sub,comments,bottom,big);
- liveOpenSheet(d);video.play().catch(()=>{});
- const exit=()=>s.host?endLiveStream(false):leaveLiveStream(false);closeBtn.onclick=exit;
- let lastTap=0,longTimer=null,longDone=false,startY=0,startX=0;
- wrap.addEventListener('pointerdown',e=>{startY=e.clientY;startX=e.clientX;longDone=false;longTimer=setTimeout(()=>{longDone=true;video.playbackRate=2},450)});
- const reset=()=>{clearTimeout(longTimer);video.playbackRate=1};
- wrap.addEventListener('pointerup',e=>{
-  reset();if(longDone)return;
-  const dy=e.clientY-startY,dx=e.clientX-startX;
-  if(Math.abs(dy)>70&&Math.abs(dy)>Math.abs(dx)){if(dy<0&&!s.host)navigateLiveQueue(1);else if(dy>0)exit();return}
-  const now=Date.now();if(now-lastTap<320){big.classList.remove('show');void big.offsetWidth;big.classList.add('show');sendLiveLike(s);lastTap=0}else{lastTap=now;setTimeout(()=>{if(Date.now()-lastTap>=300)video.paused?video.play().catch(()=>{}):video.pause()},330)}
- });
- wrap.addEventListener('pointercancel',reset);
- const renderComments=async()=>{
-  const [q,g]=await Promise.all([sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id',s.id).order('created_at',{ascending:true}).limit(100),sb.from('live_gifts').select('id,sender_id,gift_id,quantity,created_at,gifts(name,emoji)').eq('live_id',s.id).order('created_at',{ascending:true}).limit(100)]);
-  if(q.error&&g.error)return;comments.replaceChildren();
-  const uniqueGifts=[...new Map((g.data||[]).map(x=>[x.id,x])).values()];
-  const rows=[...(q.data||[]).map(x=>({...x,k:'c'})),...uniqueGifts.map(x=>({...x,k:'g'}))].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  const ids=[...new Set(rows.map(x=>x.user_id||x.sender_id).filter(Boolean))],names={};if(ids.length){const p=await sb.from('profiles').select('id,username').in('id',ids);(p.data||[]).forEach(x=>names[x.id]=x.username)}
-  rows.forEach(x=>{if(x.k==='c'&&x.body==='__bouncy_live_like__'){if(!s._seenLikeIds)s._seenLikeIds=new Set();if(!s._seenLikeIds.has(x.id)){s._seenLikeIds.add(x.id);animateLiveHeart(s)}return}
-   const row=E('div','');row.className='live-comment'+(x.k==='g'?' live-gift-comment':'');row.textContent=x.k==='g'?'@'+(names[x.sender_id]||'user')+' sent '+(x.gifts?.name||'Gift')+' '+(x.gifts?.emoji||'🎁'):'@'+(names[x.user_id]||'user')+': '+x.body;comments.append(row)});
-  comments.scrollTop=comments.scrollHeight;
- };
- await renderComments();s.commentChannel=sb.channel('live-comments-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_comments',filter:'stream_id=eq.'+s.id},renderComments).subscribe();
- await setupLiveGifts(s,comments,wrap);
- send.onclick=async()=>{const body=ci.value.trim();if(!body)return;send.disabled=true;const r=await sb.from('live_comments').insert({stream_id:s.id,user_id:me.id,body});if(r.error)toast('Comment could not be sent');else ci.value='';send.disabled=false};ci.onkeydown=e=>{if(e.key==='Enter')send.click()};
- if(s.host){
-  const refresh=async()=>{if(liveSession!==s)return;await sb.from('live_viewers').delete().eq('stream_id',s.id).lt('last_seen_at',new Date(Date.now()-45000).toISOString());const c=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',s.id);count.textContent='👁 '+(c.count||0)};
-  if(!s.channel)await subscribeLiveSignals(s);await refresh();s.countTimer=setInterval(refresh,3000);s.viewerChannel=sb.channel('live-viewers-'+s.id).on('postgres_changes',{event:'*',schema:'public',table:'live_viewers',filter:'stream_id=eq.'+s.id},refresh).subscribe();s.heartbeat=setInterval(()=>sb.from('live_streams').update({last_heartbeat_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id),20000);
- }else{count.textContent='👁 1';s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}
-}
+async function showLiveRoom(){return window.BouncyLiveComponent.render()}
 async function setupLiveGifts(s,comments,wrap){
  const w=await sb.rpc('bouncy_get_coin_wallet');if(!w.error)s.coinWallet=w.data||{balance:1000,earned_coins:0};
  if(s.host){const earned=s._room?.querySelector('.live-gift-earned-pill');if(earned){earned.textContent='💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString();s.giftEarnedLabel=earned}}
  s.giftChannel=sb.channel('live-gifts-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_gifts',filter:'live_id=eq.'+s.id},async ev=>{
   if(liveSession!==s||s.closing)return;const wallet=await sb.rpc('bouncy_get_coin_wallet');
-  if(!wallet.error){s.coinWallet=wallet.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 '+Number(s.coinWallet.earned_coins||0).toLocaleString()}
+  if(!wallet.error){s.coinWallet=wallet.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 '+Number(s.coinWallet.earned_coins||0).toLocaleString()}window.BouncyLiveComponent?.onGift(s,ev.new);
   const panel=s._giftPanel;if(panel){const bal=panel.querySelector('[data-gift-balance]');if(bal)bal.textContent='Your balance: '+Number(s.coinWallet?.balance||0).toLocaleString()+' coins'}
  }).subscribe();
 }
@@ -800,8 +730,8 @@ function animateLiveHeart(s){if(!s?._likeButton)return;s._heartCount=s._heartCou
 async function hostAcceptViewer(s,viewerId,offer){let pc=s.pcs.get(viewerId);if(pc){pc.close();s.pcs.delete(viewerId)}pc=new RTCPeerConnection(liveRtcConfig);s.pcs.set(viewerId,pc);pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,viewerId,'candidate',e.candidate.toJSON())};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'||pc.connectionState==='closed'){pc.close();if(s.pcs.get(viewerId)===pc)s.pcs.delete(viewerId)}};s.stream.getTracks().forEach(t=>pc.addTrack(t,s.stream));for(const sender of pc.getSenders()){if(sender.track?.kind==='video'){try{const p=sender.getParameters();p.encodings=p.encodings?.length?p.encodings:[{}];p.encodings[0].maxBitrate=500000;p.encodings[0].maxFramerate=15;await sender.setParameters(p)}catch(e){console.warn('Live bitrate cap unavailable',e)}}}await pc.setRemoteDescription(offer);const q=s.queues.get(viewerId)||[];s.queues.delete(viewerId);for(const c of q)try{await pc.addIceCandidate(c)}catch(e){}const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendLiveSignal(s,viewerId,'answer',pc.localDescription.toJSON())}
 async function handleLiveSignal(s,x){if(!s||liveSession!==s||s.closing||x.sender_id===me.id||x.recipient_id!==me.id)return;try{if(s.host){if(x.signal_type==='offer')await hostAcceptViewer(s,x.sender_id,x.payload);else if(x.signal_type==='candidate'){const pc=s.pcs.get(x.sender_id);if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else{const q=s.queues.get(x.sender_id)||[];q.push(x.payload);s.queues.set(x.sender_id,q)}}else if(x.signal_type==='leave'){const pc=s.pcs.get(x.sender_id);pc?.close();s.pcs.delete(x.sender_id);s.queues.delete(x.sender_id)}}else{const pc=s.pc;if(x.signal_type==='answer'&&pc?.signalingState==='have-local-offer'){await pc.setRemoteDescription(x.payload);for(const c of(s.queues||[]))try{await pc.addIceCandidate(c)}catch(e){}s.queues=[];}else if(x.signal_type==='candidate'){if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else s.queues.push(x.payload)}else if(x.signal_type==='leave'){toast('Live ended');leaveLiveStream(true)}}}catch(e){console.warn('BOUNCY LIVE signal',e)}}
 async function joinLiveStream(st,hostName){if(!me)return;if(liveSession){toast('Leave your current live stream first');return}const cnt=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',st.id);if((cnt.count||0)>=LIVE_MAX_VIEWERS){toast('This free live stream has reached its viewer limit');return}const s=liveSession={host:false,id:st.id,hostId:st.host_id,title:st.title||'Live now',hostName,hostAvatar:st.hostAvatar||'',hostVerified:!!st.hostVerified,pc:null,queues:[],channel:null,commentChannel:null,closing:false};try{await subscribeLiveSignals(s);const j=await sb.from('live_viewers').upsert({stream_id:s.id,user_id:me.id,last_seen_at:new Date().toISOString()},{onConflict:'stream_id,user_id'});if(j.error)throw j.error;const pc=s.pc=new RTCPeerConnection(liveRtcConfig);pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,st.host_id,'candidate',e.candidate.toJSON())};pc.ontrack=e=>{const v=sheet.querySelector('.live-video-wrap video');if(v){if(!s.remote)s.remote=new MediaStream();if(!s.remote.getTracks().some(t=>t.id===e.track.id))s.remote.addTrack(e.track);v.srcObject=s.remote;v.play().catch(()=>{})}};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){toast('Connection failed. This network may need a relay server.');clearTimeout(s.connectionTimer)}if(pc.connectionState==='connected'){clearTimeout(s.connectionTimer);const c=sheet.querySelector('.live-view-count');if(c)c.textContent='Connected'}};const offer=await pc.createOffer();await pc.setLocalDescription(offer);await showLiveRoom();await sendLiveSignal(s,st.host_id,'offer',pc.localDescription.toJSON());s.connectionTimer=setTimeout(()=>{if(liveSession===s&&s.pc?.connectionState!=='connected'){toast('The live stream could not connect on this network');leaveLiveStream(true);openLiveHub()}},18000);s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}catch(e){console.error('BOUNCY LIVE join',e);toast(e.message||'Could not join this live stream');await leaveLiveStream(true);openLiveHub()}}
-async function endLiveStream(silent=false){const s=liveSession;if(!s||!s.host)return;s.closing=true;for(const id of s.pcs.keys())await sendLiveSignal(s,id,'leave',{});s.pcs.forEach(pc=>pc.close());s.pcs.clear();s.stream.getTracks().forEach(t=>t.stop());clearInterval(s.countTimer);clearInterval(s.heartbeat);if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id);liveSession=null;close();if(!silent)toast('Your live stream has ended')}
-async function leaveLiveStream(silent=false){const s=liveSession;if(!s||s.host)return;s.closing=true;clearInterval(s.heartbeat);clearTimeout(s.connectionTimer);s.pc?.close();if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();if(s.hostId)await sendLiveSignal(s,s.hostId,'leave',{}).catch(()=>{});await sb.from('live_viewers').delete().eq('stream_id',s.id).eq('user_id',me.id);liveSession=null;close();if(!silent)toast('You left the live stream')}
+async function endLiveStream(silent=false){const s=liveSession;if(!s||!s.host)return;s.closing=true;for(const id of s.pcs.keys())await sendLiveSignal(s,id,'leave',{});s.pcs.forEach(pc=>pc.close());s.pcs.clear();s.stream.getTracks().forEach(t=>t.stop());clearInterval(s.countTimer);clearInterval(s.heartbeat);clearInterval(s.viewerCountTimer);clearInterval(s.giftersTimer);if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id);liveSession=null;close();if(!silent)toast('Your live stream has ended')}
+async function leaveLiveStream(silent=false){const s=liveSession;if(!s||s.host)return;s.closing=true;clearInterval(s.heartbeat);clearInterval(s.viewerCountTimer);clearInterval(s.giftersTimer);clearTimeout(s.connectionTimer);s.pc?.close();if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();if(s.hostId)await sendLiveSignal(s,s.hostId,'leave',{}).catch(()=>{});await sb.from('live_viewers').delete().eq('stream_id',s.id).eq('user_id',me.id);liveSession=null;close();if(!silent)toast('You left the live stream')}
 $('#liveOpen').onclick=openLiveHub;
 
 const IC={grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',doc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',heart:'<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',add:'<circle cx="10" cy="8" r="4"/><path d="M3 21c1-5 13-5 14 0M19 8v6M16 11h6"/>',back:'<path d="M15 5l-7 7 7 7"/>',share:'<path d="M12 15V3m0 0L7 8m5-5 5 5M5 13v8h14v-8"/>',dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'};
@@ -1516,4 +1446,4 @@ if(!recovering)close();show('feed');await load();unread();
 deep()}
 sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){if(activeCall)endCall();if(incomingCallChannel){sb.removeChannel(incomingCallChannel);incomingCallChannel=null}if(presCh){sb.removeChannel(presCh);presCh=null;online=new Set()}me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
-</script></body></html>
+</script><script src="./LiveComponent.js"></script></body></html>
