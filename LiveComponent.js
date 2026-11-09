@@ -468,8 +468,11 @@
   async function render() {
     const s = liveSession;
     if (!s) return;
+
     if (s.id) {
-      const owner = await sb.from('live_streams').select('host_id,cohost_layout,cohost_allow_requests,cohost_enabled').eq('id', s.id).maybeSingle();
+      const owner = await sb.from('live_streams')
+        .select('host_id,cohost_layout,cohost_allow_requests,cohost_enabled')
+        .eq('id', s.id).maybeSingle();
       if (!owner.error && owner.data) {
         s.hostId = owner.data.host_id;
         s.host = !!me?.id && owner.data.host_id === me.id;
@@ -477,154 +480,230 @@
         s.cohostAllowRequests = owner.data.cohost_allow_requests !== false;
       }
     }
+
     const room = liveScreen('');
-    room.classList.add('live-room-screen', 'live-room');
+    room.classList.remove('live-room-screen', 'live-room');
+    room.classList.add('b-live-room');
+    room.querySelector('.live-head')?.remove();
     s._room = room;
 
-    const stage = el('div', 'live-video-wrap live-stage');
-    const bgVideo = document.createElement('video');
-    bgVideo.autoplay = true; bgVideo.playsInline = true; bgVideo.muted = true;
-    bgVideo.className = 'live-video-blur-layer';
-    bgVideo.srcObject = s.host ? s.stream : (s.remote || null);
+    const stage = el('div', 'b-live-stage');
+    const background = document.createElement('video');
+    background.autoplay = true;
+    background.playsInline = true;
+    background.muted = true;
+    background.className = 'b-live-video-bg';
+    background.srcObject = s.host ? s.stream : (s.remote || null);
+
     const video = document.createElement('video');
-    video.autoplay = true; video.playsInline = true; video.muted = !!s.host;
-    video.className = 'live-video-main-layer';
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = !!s.host;
+    video.className = 'b-live-video';
     video.srcObject = s.host ? s.stream : (s.remote || null);
-    stage.append(bgVideo, video);
-    const guestGrid = el('div', 'bouncy-live-guest-grid');
-    stage.append(guestGrid);
+
+    const guestGrid = el('div', 'bouncy-live-guest-grid b-live-guest-grid');
+    stage.append(background, video, guestGrid);
     s._cohostGrid = guestGrid;
-    s._backgroundVideo = bgVideo;
+    s._backgroundVideo = background;
     s._video = video;
+    s._wrap = stage;
 
-    const heartLayer = el('div', 'live-heart-layer');
-    s._heartLayer = heartLayer;
+    const hearts = el('div', 'b-live-hearts');
+    s._heartLayer = hearts;
 
-    const top = el('div', 'live-demo-top');
-    const identity = el('div', 'live-demo-profile');
-    const avatar = el('img', 'live-demo-avatar');
-    avatar.alt = 'Host avatar';
-    avatar.src = s.host ? (me.avatar || me.avatar_url || '') : (s.hostAvatar || '');
-    const profileText = el('div', 'live-demo-profile-text');
-    const nameLine = el('div', 'live-demo-name-line');
-    nameLine.append(el('strong', '', '@' + (s.host ? (me.username || 'user') : (s.hostName || 'user'))));
-    if (s.hostVerified || (s.host && me.verified)) nameLine.append(el('span', 'live-demo-verified', '✓'));
-    profileText.append(nameLine, el('span', 'live-demo-live', 'LIVE'));
-    identity.append(avatar, profileText);
+    const top = el('div', 'b-live-top');
+    const profile = el('div', 'b-live-profile');
+    const avatar = el('img', 'b-live-avatar');
+    avatar.alt = 'Host profile';
+    avatar.src = s.host
+      ? (me.avatar || me.avatar_url || '')
+      : (s.hostAvatar || '');
+    const profileMeta = el('div', 'b-live-profile-meta');
+    const username = s.host ? (me.username || 'user') : (s.hostName || 'user');
+    const name = el('strong', 'b-live-username', '@' + username);
+    const liveTag = el('span', 'b-live-tag', 'LIVE');
+    profileMeta.append(name, liveTag);
+    profile.append(avatar, profileMeta);
 
-    const wallet = await sb.rpc('bouncy_get_coin_wallet');
-    if (!wallet.error) s.coinWallet = wallet.data || { balance: 0, earned_coins: 0 };
-    const coinValue = Number(s.host ? s.coinWallet?.earned_coins : s.coinWallet?.balance) || 0;
-    const coins = el('span', 'live-demo-profile-coins', '💎 ' + coinValue.toLocaleString());
-    identity.append(coins);
-
-    const follow = el('button', 'live-demo-follow', '+ Follow');
-    if (s.host) follow.hidden = true;
-    else {
+    const follow = el('button', 'b-live-follow', '+ Follow');
+    if (s.host) {
+      follow.hidden = true;
+    } else {
       const hostId = s.hostId || s.host_id;
-      const check = async () => {
-        const q = await sb.from('follows').select('followed_id').eq('follower_id', me.id).eq('followed_id', hostId).maybeSingle();
-        if (!q.error && q.data) { follow.textContent = 'Following'; follow.classList.add('following'); }
+      const syncFollow = async () => {
+        if (!hostId || !me?.id) return;
+        const q = await sb.from('follows').select('followed_id')
+          .eq('follower_id', me.id).eq('followed_id', hostId).maybeSingle();
+        if (!q.error && q.data) {
+          follow.textContent = 'Following';
+          follow.classList.add('is-following');
+        }
       };
-      if (hostId && me?.id) check();
+      syncFollow();
       follow.onclick = async () => {
-        if (!me?.id || !hostId) return toast('Sign in to follow this host');
+        if (!me?.id || !hostId || follow.disabled) return;
         follow.disabled = true;
-        const q = await sb.from('follows').select('followed_id').eq('follower_id', me.id).eq('followed_id', hostId).maybeSingle();
-        let result;
-        if (q.error) { toast('Could not check follow status'); follow.disabled = false; return; }
-        if (q.data) result = await sb.from('follows').delete().eq('follower_id', me.id).eq('followed_id', hostId);
-        else result = await sb.from('follows').insert({ follower_id: me.id, followed_id: hostId });
+        const q = await sb.from('follows').select('followed_id')
+          .eq('follower_id', me.id).eq('followed_id', hostId).maybeSingle();
+        if (q.error) {
+          toast('Could not check follow status');
+          follow.disabled = false;
+          return;
+        }
+        const result = q.data
+          ? await sb.from('follows').delete().eq('follower_id', me.id).eq('followed_id', hostId)
+          : await sb.from('follows').insert({ follower_id: me.id, followed_id: hostId });
         if (result.error) toast(result.error.message || 'Could not update follow');
-        else { follow.textContent = q.data ? '+ Follow' : 'Following'; follow.classList.toggle('following', !q.data); }
+        else {
+          follow.textContent = q.data ? '+ Follow' : 'Following';
+          follow.classList.toggle('is-following', !q.data);
+        }
         follow.disabled = false;
       };
     }
-    identity.append(follow);
+    profile.append(follow);
 
-    const right = el('div', 'live-demo-top-right');
-    const gifters = el('div', 'live-demo-gifters');
-    s._gifters = gifters;
-    const viewerCount = el('span', 'live-demo-view-count', '👁 —');
+    const topRight = el('div', 'b-live-top-right');
+    const viewerCount = el('span', 'b-live-viewers', '◉ —');
     s._viewerCount = viewerCount;
-    const close = el('button', 'live-demo-close', '×');
-    close.setAttribute('aria-label', s.host ? 'End live stream' : 'Leave live stream');
+    const close = el('button', 'b-live-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', s.host ? 'End LIVE' : 'Leave LIVE');
     close.onclick = () => s.host ? endLiveStream(false) : leaveLiveStream(false);
-    right.append(gifters, viewerCount, close);
-    top.append(identity, right);
+    topRight.append(viewerCount, close);
+    top.append(profile, topRight);
 
-    const second = el('div', 'live-demo-sub');
-    const rankGroup = el('div', 'live-demo-rank-group');
-    const brand = el('span', 'live-demo-brand', 'BOUNCY');
-    const rank = el('span', 'live-demo-rank', 'RANK — · Daily Popularity Hall');
-    const goal = el('span', 'live-demo-goal', '🏆 Goal not set');
-    rankGroup.append(brand, rank);
-    second.append(rankGroup, goal);
+    const streamInfo = el('div', 'b-live-stream-info');
+    const streamTitle = el('strong', 'b-live-title', s.title || 'Live now');
+    const brand = el('span', 'b-live-brand', 'BOUNCY LIVE');
+    streamInfo.append(streamTitle, brand);
 
-    const giftBanner = el('div', 'live-gift-banner-stack');
-    const comments = el('div', 'live-comments live-floating-comments');
-    const bottom = el('div', 'live-bottom-tiktok live-bottom live-demo-bottom');
-    const compose = el('div', 'live-compose live-compose-tiktok');
-    const input = el('input', '');
-    input.placeholder = 'Add comment...';
-    input.maxLength = 500;
-    const send = el('button', 'live-send-comment', 'Send');
-    send.hidden = true;
-    compose.append(input, send);
-    bottom.append(compose);
+    const activity = el('div', 'b-live-activity');
+    const giftLeaders = el('div', 'b-live-gifters');
+    s._gifters = giftLeaders;
+    const coinValue = Number(s.host ? s.coinWallet?.earned_coins : s.coinWallet?.balance) || 0;
+    const coins = el('span', 'b-live-coins', '💎 ' + coinValue.toLocaleString());
+    activity.append(giftLeaders, coins);
 
-    const options = el('button', 'live-demo-dock-button live-demo-options', '');
-    options.innerHTML = icon('sliders');
-    options.setAttribute('aria-label', s.host ? 'Host controls' : 'Live options');
-    options.onclick = () => s.host ? openHostPanel(s) : openViewerOptions(s);
-    if (!s.host) {
-      const cohostRequest = el('button', 'live-demo-dock-button live-demo-cohost-request', '＋');
-      cohostRequest.setAttribute('aria-label', 'Request to Co-Host');
-      cohostRequest.title = 'Request to Co-Host';
-      cohostRequest.onclick = () => requestCohost(s, cohostRequest);
-      s._cohostButton = cohostRequest;
-      const existing = await sb.from('live_cohosts').select('id,status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
-      if (!existing.error && existing.data) {
-        if (existing.data.status === 'accepted') { cohostRequest.textContent = '×'; cohostRequest.disabled = false; cohostRequest.title = 'Leave Co-Host'; cohostRequest.onclick = () => leaveCohost(s, cohostRequest); }
-        else if (existing.data.status === 'requested') { cohostRequest.textContent = '…'; cohostRequest.disabled = true; cohostRequest.title = 'Waiting for host'; }
-        else if (existing.data.status === 'invited') { cohostRequest.textContent = '✉'; cohostRequest.title = 'Co-host invitation'; showCohostInvite(s, existing.data); }
-      }
-      bottom.append(cohostRequest);
-    }
-    const share = el('button', 'live-demo-dock-button live-demo-share', '');
-    share.innerHTML = icon('share');
-    share.setAttribute('aria-label', 'Share live');
-    share.onclick = async () => {
-      try {
-        if (navigator.share) await navigator.share({ title: 'BOUNCY Live', url: location.href });
-        else { await navigator.clipboard.writeText(location.href); toast('Live link copied'); }
-      } catch (e) {}
+    const giftBanner = el('div', 'b-live-gift-banners');
+    s._giftBanner = giftBanner;
+
+    const comments = el('div', 'b-live-comments');
+    s._comments = comments;
+
+    const actionRail = el('div', 'b-live-action-rail');
+    const makeRailButton = (className, symbol, label, action) => {
+      const button = el('button', 'b-live-rail-button ' + className);
+      button.type = 'button';
+      const glyph = el('span', 'b-live-rail-glyph', symbol);
+      const caption = el('small', '', label);
+      button.append(glyph, caption);
+      button.onclick = action;
+      actionRail.append(button);
+      return button;
     };
-    const gift = el('button', 'live-demo-dock-button live-demo-gift', '');
-    gift.innerHTML = icon('gift');
-    gift.setAttribute('aria-label', 'Send gift');
-    gift.onclick = () => openLiveGiftPanel(s, comments, stage);
-    bottom.append(options, share, gift);
 
-    room.append(stage, heartLayer, top, second, giftBanner, comments, bottom);
+    const giftButton = makeRailButton('b-live-gift-button', '🎁', 'Gift', () => openLiveGiftPanel(s, comments, stage));
+    const likeButton = makeRailButton('b-live-like-button', '♥', 'Like', () => {
+      spawnHeart(s, stage.clientWidth * 0.78, stage.clientHeight * 0.68, true);
+      sendLiveLike(s);
+    });
+    s._likeButton = likeButton;
+    let cohostButton = null;
+    if (!s.host) {
+      cohostButton = makeRailButton('b-live-cohost-button', '＋', 'Guest', () => requestCohost(s, cohostButton));
+      s._cohostButton = cohostButton;
+      const existing = await sb.from('live_cohosts').select('id,status')
+        .eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
+      if (!existing.error && existing.data) {
+        if (existing.data.status === 'accepted') {
+          cohostButton.querySelector('.b-live-rail-glyph').textContent = '×';
+          cohostButton.querySelector('small').textContent = 'Leave';
+          cohostButton.onclick = () => leaveCohost(s, cohostButton);
+        } else if (existing.data.status === 'requested') {
+          cohostButton.querySelector('.b-live-rail-glyph').textContent = '…';
+          cohostButton.querySelector('small').textContent = 'Pending';
+          cohostButton.disabled = true;
+        } else if (existing.data.status === 'invited') {
+          cohostButton.querySelector('.b-live-rail-glyph').textContent = '✉';
+          cohostButton.querySelector('small').textContent = 'Invite';
+          showCohostInvite(s, existing.data);
+        }
+      }
+    } else {
+      makeRailButton('b-live-battle-button', '⚔', 'Battle', () => openBattlePanel(s));
+      makeRailButton('b-live-guests-button', '▦', 'Guests', () => openCohostPanel(s));
+    }
+
+    const shareButton = makeRailButton('b-live-share-button', '↗', 'Share', async () => {
+      try {
+        if (navigator.share) await navigator.share({ title: 'BOUNCY LIVE', url: location.href });
+        else {
+          await navigator.clipboard.writeText(location.href);
+          toast('Live link copied');
+        }
+      } catch (e) {}
+    });
+
+    const moreButton = makeRailButton('b-live-more-button', '•••', 'More', () => {
+      if (s.host) openHostPanel(s);
+      else openViewerOptions(s);
+    });
+
+    const bottom = el('div', 'b-live-bottom');
+    const compose = el('form', 'b-live-compose');
+    const input = el('input', 'b-live-input');
+    input.type = 'text';
+    input.placeholder = 'Say something…';
+    input.maxLength = 500;
+    input.autocomplete = 'off';
+    input.setAttribute('aria-label', 'Write a LIVE comment');
+    const send = el('button', 'b-live-send', 'Send');
+    send.type = 'submit';
+    compose.append(input, send);
+    compose.onsubmit = async event => {
+      event.preventDefault();
+      const body = input.value.trim();
+      if (!body || send.disabled) return;
+      send.disabled = true;
+      const result = await sb.from('live_comments').insert({
+        stream_id: s.id, user_id: me.id, body
+      });
+      if (result.error) toast('Comment could not be sent: ' + result.error.message);
+      else input.value = '';
+      send.disabled = false;
+      input.focus();
+    };
+    const bottomHint = el('span', 'b-live-bottom-hint', s.host ? 'You are LIVE' : 'Tap the screen to like');
+    bottom.append(compose, bottomHint);
+
+    room.append(stage, hearts, top, streamInfo, activity, giftBanner, comments, actionRail, bottom);
     liveOpenSheet(room);
+
     watchCohostChanges(s);
     if (!s.host) watchBattleInvites(s);
     video.play().catch(() => {});
+    background.play().catch(() => {});
+
     if (!s.host) {
-      const accepted = await sb.from('live_cohosts').select('status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
-      if (!accepted.error && accepted.data?.status === 'accepted') window.bouncyStartCohost?.(s);
+      const accepted = await sb.from('live_cohosts').select('status')
+        .eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
+      if (!accepted.error && accepted.data?.status === 'accepted') {
+        window.bouncyStartCohost?.(s);
+      }
     }
     if (s.host) addCohostTile(s, 'host', s.stream, 'Host', true);
 
     let lastTap = 0;
     let singleTapTimer = null;
     stage.addEventListener('pointerup', event => {
+      if (event.target.closest('button, input, select, textarea')) return;
       const rect = stage.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const now = Date.now();
-      if (now - lastTap < 300) {
+      if (now - lastTap < 280) {
         clearTimeout(singleTapTimer);
         lastTap = 0;
         spawnHeart(s, x, y, true);
@@ -632,77 +711,87 @@
       } else {
         lastTap = now;
         singleTapTimer = setTimeout(() => {
-          spawnHeart(s, x, y, false);
-          sendLiveLike(s);
-        }, 290);
+          if (liveSession === s && !s.closing) {
+            spawnHeart(s, x, y, false);
+            sendLiveLike(s);
+          }
+        }, 285);
       }
     });
 
     const renderComments = async () => {
       if (liveSession !== s || s.closing) return;
-      const [q, g] = await Promise.all([
-        sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id', s.id).order('created_at', { ascending: true }).limit(100),
-        sb.from('live_gifts').select('id,sender_id,recipient_id,gift_id,quantity,created_at,gifts(name,emoji)').eq('live_id', s.id).order('created_at', { ascending: true }).limit(100)
+      const [commentRows, giftRows] = await Promise.all([
+        sb.from('live_comments').select('id,user_id,body,created_at')
+          .eq('stream_id', s.id).order('created_at', { ascending: true }).limit(100),
+        sb.from('live_gifts').select('id,sender_id,recipient_id,gift_id,quantity,created_at,gifts(name,emoji)')
+          .eq('live_id', s.id).order('created_at', { ascending: true }).limit(100)
       ]);
-      if (q.error && g.error) return;
+      if (commentRows.error && giftRows.error) return;
       comments.replaceChildren();
       const rows = [
-        ...(q.data || []).map(x => ({ ...x, kind: 'comment' })),
-        ...(g.data || []).map(x => ({ ...x, kind: 'gift' }))
+        ...(commentRows.data || []).map(row => ({ ...row, kind: 'comment' })),
+        ...(giftRows.data || []).map(row => ({ ...row, kind: 'gift' }))
       ].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      const ids = [...new Set(rows.map(x => x.user_id || x.sender_id).filter(Boolean))];
+      const ids = [...new Set(rows.map(row => row.user_id || row.sender_id).filter(Boolean))];
       const names = {};
       if (ids.length) {
-        const p = await sb.from('profiles').select('id,username').in('id', ids);
-        (p.data || []).forEach(x => names[x.id] = x.username);
+        const people = await sb.from('profiles').select('id,username').in('id', ids);
+        (people.data || []).forEach(person => { names[person.id] = person.username; });
       }
-      rows.forEach(x => {
-        if (x.kind === 'comment' && x.body === '__bouncy_live_like__') {
+      rows.forEach(row => {
+        if (row.kind === 'comment' && row.body === '__bouncy_live_like__') {
           if (!s._seenLikeIds) s._seenLikeIds = new Set();
-          if (!s._seenLikeIds.has(x.id)) {
-            s._seenLikeIds.add(x.id);
-            if (s._seenLikeIds.size > 250) s._seenLikeIds.delete(s._seenLikeIds.values().next().value);
-            if (x.user_id !== me.id) spawnHeart(s, stage.clientWidth * 0.72, stage.clientHeight * 0.72, false);
+          if (!s._seenLikeIds.has(row.id)) {
+            s._seenLikeIds.add(row.id);
+            if (s._seenLikeIds.size > 250) {
+              s._seenLikeIds.delete(s._seenLikeIds.values().next().value);
+            }
+            if (row.user_id !== me.id) {
+              spawnHeart(s, stage.clientWidth * 0.78, stage.clientHeight * 0.72, false);
+            }
           }
           return;
         }
-        const line = el('div', 'live-comment' + (x.kind === 'gift' ? ' live-gift-comment' : ''));
-        line.textContent = x.kind === 'gift'
-          ? '@' + (names[x.sender_id] || 'user') + ' sent ' + (x.gifts?.name || 'Gift') + ' ' + (x.gifts?.emoji || '🎁')
-          : '@' + (names[x.user_id] || 'user') + ': ' + x.body;
+        const line = el('div', 'b-live-comment' + (row.kind === 'gift' ? ' is-gift' : ''));
+        const who = row.kind === 'gift' ? (names[row.sender_id] || 'user') : (names[row.user_id] || 'user');
+        line.textContent = row.kind === 'gift'
+          ? '@' + who + ' sent ' + (row.gifts?.name || 'a Gift') + ' ' + (row.gifts?.emoji || '🎁')
+          : '@' + who + '  ' + row.body;
         comments.append(line);
       });
+      while (comments.children.length > 8) comments.firstElementChild.remove();
       comments.scrollTop = comments.scrollHeight;
     };
-    await renderComments();
-    s.commentChannel = sb.channel('live-comments-' + s.id)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_comments', filter: 'stream_id=eq.' + s.id }, renderComments)
-      .subscribe();
 
-    send.onclick = async () => {
-      const body = input.value.trim();
-      if (!body || send.disabled) return;
-      send.disabled = true;
-      const r = await sb.from('live_comments').insert({ stream_id: s.id, user_id: me.id, body });
-      if (r.error) toast('Comment could not be sent: ' + r.error.message);
-      else input.value = '';
-      send.disabled = false;
-    };
-    input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); send.click(); } };
+    await renderComments();
+    s.commentChannel = sb.channel('b-live-comments-' + s.id)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'live_comments',
+        filter: 'stream_id=eq.' + s.id
+      }, renderComments).subscribe();
 
     await setupLiveGifts(s, comments, stage);
     await refreshViewerCount(s);
     await refreshGifters(s);
     s.viewerCountTimer = setInterval(() => refreshViewerCount(s), 5000);
     s.giftersTimer = setInterval(() => refreshGifters(s), 15000);
+
     if (s.host) {
       if (!s.channel) await subscribeLiveSignals(s);
-      s.heartbeat = setInterval(() => sb.from('live_streams').update({ last_heartbeat_at: new Date().toISOString() }).eq('id', s.id).eq('host_id', me.id), 20000);
+      s.heartbeat = setInterval(() => {
+        sb.from('live_streams')
+          .update({ last_heartbeat_at: new Date().toISOString() })
+          .eq('id', s.id).eq('host_id', me.id);
+      }, 20000);
     } else {
-      s.heartbeat = setInterval(() => sb.from('live_viewers').update({ last_seen_at: new Date().toISOString() }).eq('stream_id', s.id).eq('user_id', me.id), 20000);
+      s.heartbeat = setInterval(() => {
+        sb.from('live_viewers')
+          .update({ last_seen_at: new Date().toISOString() })
+          .eq('stream_id', s.id).eq('user_id', me.id);
+      }, 20000);
     }
   }
-
 
   function addCohostTile(s, key, stream, label, isHost=false) {
     if (!s?._cohostGrid || !stream) return;
