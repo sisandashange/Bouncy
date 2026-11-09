@@ -375,6 +375,29 @@ body{position:fixed;inset:0}
 
 #sheet.search-modal #sback{width:40px;height:42px;min-width:40px;flex:none;display:grid;place-items:center;padding:0;border:1px solid var(--line)!important;border-radius:12px;background:var(--soft)!important;color:var(--fg)!important;opacity:1!important;visibility:visible!important;position:relative;z-index:30;font-size:0;line-height:1}#sheet.search-modal #sback svg{display:block;width:23px;height:23px;fill:none;stroke:var(--fg);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;opacity:1;visibility:visible}
 
+/* BOUNCY Facebook-style post and photo interactions */
+#app:not(.watch) #trend .b-post{border:0!important;border-radius:0!important;box-shadow:none!important;background:var(--bg);margin:0 0 8px!important;padding:12px 0 0!important;border-bottom:8px solid var(--soft)!important;overflow:hidden}
+#app:not(.watch) #trend .b-post-head{padding:0 14px 10px!important}
+#app:not(.watch) #trend .b-post-author b{font-size:15px;letter-spacing:-.01em}
+#app:not(.watch) #trend .b-post-author div{font-size:12px!important}
+#app:not(.watch) #trend .b-post-more{width:38px;height:38px;border-radius:50%;color:var(--mute)}
+#app:not(.watch) #trend .b-post-text{font-size:15px;line-height:1.45!important;margin:0 14px 12px!important}
+#app:not(.watch) #trend .b-post-photo{max-height:560px!important;object-fit:contain!important;background:#111!important;touch-action:manipulation}
+#app:not(.watch) #trend .b-post .b-post-stats{min-height:38px;border-top:0!important;border-bottom:1px solid var(--line);margin:0 14px;padding:9px 0!important}
+#app:not(.watch) #trend .b-post .b-post-stats span:not(:empty)::before{content:none!important}
+#app:not(.watch) #trend .b-post .b-post-actions{margin:0 10px;border:0!important}
+#app:not(.watch) #trend .b-post .b-post-actions button{min-height:46px;padding:10px 4px!important;border:0!important;border-radius:6px;font-size:14px!important;font-weight:700!important;color:var(--mute)!important}
+#app:not(.watch) #trend .b-post .b-post-actions button:first-child{color:#1877f2!important}
+#app:not(.watch) #trend .b-post .b-post-actions button:active{background:var(--soft)}
+#sheet.b-comments .cm{padding:10px 13px;margin:8px 0;border:0;border-radius:16px;background:var(--soft);line-height:1.4;overflow-wrap:anywhere}
+#sheet.b-comments .cm b{display:block;margin:0 0 3px;font-size:13px}
+#sheet.b-comments .cm button{display:inline-block;margin:7px 0 0 8px!important}
+#sheet.b-comments .row{position:sticky;bottom:0;background:var(--bg);padding-top:8px}
+#sheet.b-comments .row input{border:0;background:var(--soft);border-radius:24px}
+.b-photo-viewer{animation:bPhotoIn .18s ease-out}
+@keyframes bPhotoIn{from{opacity:0}to{opacity:1}}
+.b-photo-viewer button{cursor:pointer}
+
 /* BOUNCY social Feed: Facebook + Instagram inspired layout */
 #app:not(.watch) #trend>.b-social-head{position:sticky;top:0;z-index:5;height:58px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid var(--line)}
 #app:not(.watch) #trend>.b-social-head>strong{font-size:25px;letter-spacing:-1.1px;font-weight:950}
@@ -452,7 +475,7 @@ const pb=E('div','position:absolute;inset:0;display:grid;place-items:center;poin
 const pgb=E('div'),pfl=document.createElement('i');pgb.className='pgb';pgb.append(pfl);s.append(pgb);vv.addEventListener('timeupdate',()=>{pfl.style.width=(vv.duration?vv.currentTime/vv.duration*100:0)+'%'});c.el=s;sync(c);io.observe(s);return s}
 async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];const none=Promise.resolve({data:[]});
-const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids),me?sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id):none,me?sb.from('follows').select('followed_id').eq('follower_id',me.id):none]);
+const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username,display_name,avatar_url,verified').in('id',ids),me?sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id):none,me?sb.from('follows').select('followed_id').eq('follower_id',me.id):none]);
 const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),am=Object.fromEntries((p.data||[]).map(x=>[x.id,x.avatar_url])),vm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.verified])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
 return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',av:am[x.owner_id],vf:vm[x.owner_id],c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count,view_count';
@@ -488,7 +511,7 @@ if(n-lt<320){clearTimeout(pt);if(!c.liked)like(c);const h=document.createElement
 else if(!skipTap){clearTimeout(pt);pt=setTimeout(()=>{const v=s.querySelector('video');if(v.paused){v.dataset.u=1;v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})})}else v.pause()},320)}
 lt=n});
 async function comments(c,kind){const d=el('<h3>Comments</h3><div class="list">Loading…</div><div class="row"><input type="text" id="ci" maxlength="500" placeholder="Add a comment" aria-label="Add a comment"><button class="btn" id="cs">Send</button></div>');open(d);
-const L=d.querySelector('.list'),inp=d.querySelector('#ci');let all=[],pm={},to=null;
+d.classList.add('b-comments');const L=d.querySelector('.list'),inp=d.querySelector('#ci');let all=[],pm={},to=null;
 const draw=()=>{L.replaceChildren();if(!all.length){L.textContent='No comments yet. Say something first.';return}
 const row=(x,rp)=>{const e=document.createElement('div');e.className='cm';if(rp)e.style.marginLeft='24px';const b=document.createElement('b');b.textContent=pm[x.user_id]||'user';e.append(b,x.body);
 if(!rp){const r=document.createElement('button');r.textContent='Reply';r.style.cssText='margin-left:10px;color:var(--mute);font-size:13px;font-weight:800';r.onclick=()=>{to=x;inp.placeholder='Replying to @'+b.textContent;inp.focus()};e.append(r)}L.append(e)};
@@ -723,19 +746,28 @@ d.querySelector('#ms').onclick=send;d.querySelector('#mk').onclick=()=>recordVoi
 const RX=['👍','❤️','😂','😮','😢'];let ftab='posts';
 function segs(d){const sg=document.createElement('div');sg.className='b-tabs';sg.style.cssText='display:flex;gap:8px;padding:6px 16px 12px;position:sticky;top:58px;z-index:2;background:var(--bg)';[['posts','Posts'],['disc','Discover'],['top','Top']].forEach(([k,l])=>{const b=document.createElement('button');b.className='fol'+(ftab==k?' on':'');b.textContent=l;b.onclick=()=>{ftab=k;drawTrend()};sg.append(b)});d.append(sg)}
 function shrink(f,max){return new Promise(res=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);c.toBlob(res,'image/jpeg',.82)};im.onerror=()=>res(null);im.src=URL.createObjectURL(f)})}
-function paint(p){const s=p.el.querySelector('.sm'),top=Object.entries(p.rx).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join('');s.querySelector('span').textContent=p.n?top+' '+p.n:'';s.querySelector('i').textContent=p.cb?p.cb+(p.cb==1?' comment':' comments'):'';const b=p.el.querySelector('[data-r]');b.textContent=p.my?p.my+' Reacted':'👍 React';b.style.fontWeight=p.my?'800':'500'}
+function paint(p){const s=p.el.querySelector('.sm'),top=Object.entries(p.rx).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join('');s.querySelector('span').textContent=p.n?top+' '+p.n:'';s.querySelector('i').textContent=p.cb?p.cb+(p.cb==1?' comment':' comments'):'';const b=p.el.querySelector('[data-r]');b.textContent=p.my?p.my+' Liked':'👍 Like';b.style.fontWeight=p.my?'800':'600';b.style.color=p.my?'#1877f2':'var(--fg)'}
 function postCard(p){const c=document.createElement('article');c.className='b-post';c.style.cssText='border-bottom:8px solid var(--soft);padding:14px 0 0';p.el=c;
-const hd=document.createElement('div');hd.style.cssText='display:flex;gap:10px;align-items:center;padding:0 16px 10px';
-const av=avatar(p.u,p.av,40);av.onclick=()=>showUser(p.o);
-const nm=document.createElement('div');nm.style.cssText='flex:1;min-width:0';nm.innerHTML='<b></b><div style="color:var(--mute);font-size:12px"></div>';nm.firstChild.textContent='@'+p.u;if(p.vf)nm.firstChild.append(vbadge());nm.lastChild.textContent=ago(p.t);
-const mo=document.createElement('button');mo.textContent='⋯';mo.setAttribute('aria-label','More options');mo.style.cssText='font-size:22px;padding:4px 10px';mo.onclick=()=>{if(me&&p.o===me.id)delPost(p);else if(!gate('report posts'))report(p,'post')};
+const hd=document.createElement('div');hd.className='b-post-head';hd.style.cssText='display:flex;gap:10px;align-items:center;padding:0 16px 10px';
+const av=avatar(p.u,p.av,42);av.setAttribute('role','button');av.setAttribute('aria-label','Open @'+p.u+' profile');av.onclick=()=>showUser(p.o);
+const nm=document.createElement('div');nm.className='b-post-author';nm.style.cssText='flex:1;min-width:0';const title=E('b','',''+(p.name||'@'+p.u));if(p.vf)title.append(vbadge());const sub=E('div','color:var(--mute);font-size:12px;margin-top:3px','@'+p.u+' · '+ago(p.t));nm.append(title,sub);
+const mo=document.createElement('button');mo.textContent='⋯';mo.className='b-post-more';mo.setAttribute('aria-label','More post options');mo.style.cssText='font-size:25px;padding:4px 10px';mo.onclick=()=>{if(me&&p.o===me.id)delPost(p);else if(!gate('report posts'))report(p,'post')};
 hd.append(av,nm,mo);c.append(hd);
-if(p.c){const t=document.createElement('p');t.style.cssText='margin:0 16px 10px;line-height:1.4;white-space:pre-wrap;word-break:break-word';t.textContent=p.c;c.append(t)}
-if(p.img){const im=document.createElement('img');im.src=pub(p.img);im.alt='';im.loading='lazy';im.style.cssText='width:100%;max-height:520px;object-fit:cover;display:block;background:var(--soft)';c.append(im)}
-c.append(el('<div class="sm" style="display:flex;justify-content:space-between;padding:8px 16px;color:var(--mute);font-size:13px"><span></span><i style="font-style:normal"></i></div>').firstChild);
-const ac=document.createElement('div');ac.style.cssText='display:flex;border-top:1px solid var(--line)';
-[['r','👍 React',()=>p.my?react(p,p.my):reactPick(p)],['x','💬 Comment',()=>comments(p,'post')],['x','↗ Share',()=>{if(gate('share posts'))return;if(navigator.share)navigator.share({title:'BOUNCY',text:(p.c||'').slice(0,100),url:location.origin+location.pathname+'?p='+p.id}).catch(()=>{});else toast('Sharing isn’t available in this browser')}]].forEach(([k,l,f])=>{const b=document.createElement('button');if(k=='r')b.dataset.r=1;b.textContent=l;b.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--fg)';b.onclick=f;ac.append(b)});
+if(p.c){const t=document.createElement('p');t.className='b-post-text';t.style.cssText='margin:0 16px 12px;line-height:1.45;white-space:pre-wrap;word-break:break-word';t.textContent=p.c;c.append(t)}
+if(p.img){const im=document.createElement('img');im.src=pub(p.img);im.alt='Photo posted by @'+p.u;im.loading='lazy';im.className='b-post-photo';im.style.cssText='width:100%;max-height:560px;object-fit:cover;display:block;background:var(--soft);cursor:zoom-in';let last=0,timer=null;im.addEventListener('click',()=>{const now=Date.now();if(now-last<280){clearTimeout(timer);last=0;if(!p.my)react(p,'👍');return}last=now;timer=setTimeout(()=>{last=0;openPostPhoto(p)},285)});c.append(im)}
+const stats=el('<div class="sm b-post-stats" style="display:flex;justify-content:space-between;padding:8px 16px;color:var(--mute);font-size:13px"><span></span><i style="font-style:normal"></i></div>').firstChild;stats.querySelector('i').style.cursor='pointer';stats.querySelector('i').onclick=()=>comments(p,'post');c.append(stats);
+const ac=document.createElement('div');ac.className='b-post-actions';ac.style.cssText='display:flex;border-top:1px solid var(--line)';
+[['r','👍 Like',()=>react(p,'👍')],['x','💬 Comment',()=>comments(p,'post')],['x','↗ Share',()=>{if(gate('share posts'))return;if(navigator.share)navigator.share({title:'BOUNCY',text:(p.c||'').slice(0,100),url:location.origin+location.pathname+'?p='+p.id}).catch(()=>{});else toast('Sharing isn’t available in this browser')}]].forEach(([k,l,f])=>{const b=document.createElement('button');if(k=='r')b.dataset.r=1;b.textContent=l;b.setAttribute('aria-label',l);b.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--fg)';b.onclick=f;ac.append(b)});
 c.append(ac);paint(p);return c}
+function openPostPhoto(p){const root=$('#app'),o=E('div','position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;background:#000;color:#fff;--fg:#fff;--bg:#000');o.className='b-photo-viewer';o.setAttribute('role','dialog');o.setAttribute('aria-label','Photo viewer');
+const head=E('div','height:54px;min-height:54px;display:flex;align-items:center;gap:12px;padding:0 14px;padding-top:env(safe-area-inset-top,0px)');const back=E('button','width:42px;height:42px;border-radius:50%;font-size:30px;line-height:1;color:#fff','‹');back.setAttribute('aria-label','Close photo');const who=E('div','min-width:0;flex:1');who.append(E('b','display:block;font-size:15px',p.name||'@'+p.u),E('span','display:block;color:rgba(255,255,255,.7);font-size:12px;margin-top:2px','@'+p.u+' · '+ago(p.t)));const x=E('button','width:40px;height:40px;border-radius:50%;font-size:28px;color:#fff','×');x.setAttribute('aria-label','Close photo');head.append(back,who,x);
+const stage=E('div','flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;padding:8px 0');const im=E('img','display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain');im.src=pub(p.img);im.alt='Photo posted by @'+p.u;stage.append(im);
+const foot=E('div','flex:none;background:#fff;color:#111;padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));--fg:#111;--bg:#fff');if(p.c)foot.append(E('div','font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word;margin-bottom:10px',p.c));
+const stat=E('div','display:flex;justify-content:space-between;align-items:center;color:#65676b;font-size:13px;padding:5px 0 10px'),count=E('span','',''),cc=E('button','color:#65676b;font-size:13px','');const actions=E('div','display:flex;border-top:1px solid #e4e6eb;border-bottom:1px solid #e4e6eb'),like=E('button','flex:1;padding:12px 4px;font-weight:700;color:#444','👍 Like'),comment=E('button','flex:1;padding:12px 4px;font-weight:700;color:#444','💬 Comment');
+const update=()=>{const top=Object.entries(p.rx||{}).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]).join(' ');count.textContent=p.n?(top+' '+p.n):'Be the first to react';cc.textContent=p.cb?(p.cb+' comments'):'Comment';like.textContent=p.my?(p.my+' Liked'):'👍 Like';like.style.color=p.my?'#1877f2':'#444'};update();
+cc.onclick=()=>{closeViewer();comments(p,'post')};like.onclick=()=>react(p,'👍');comment.onclick=()=>{closeViewer();comments(p,'post')};actions.append(like,comment);stat.append(count,cc);foot.append(stat,actions);o.append(head,stage,foot);
+const closeViewer=()=>{o.remove();removeEventListener('keydown',onKey)};const onKey=e=>{if(e.key==='Escape')closeViewer()};back.onclick=closeViewer;x.onclick=closeViewer;addEventListener('keydown',onKey);root.append(o);
+const obs=p.el&&p.el.querySelector('.sm')?new MutationObserver(update):null;if(obs)obs.observe(p.el.querySelector('.sm'),{childList:true,subtree:true,characterData:true});o.addEventListener('click',e=>{if(e.target===o)closeViewer()});const originalRemove=closeViewer;o.addEventListener('DOMNodeRemoved',()=>{if(obs)obs.disconnect()},{once:true})}
 function reactPick(p){if(gate('react to posts'))return;const d=el('<h3>React</h3><div style="display:flex;justify-content:space-around"></div>');RX.forEach(r=>{const b=document.createElement('button');b.textContent=r;b.style.cssText='padding:8px;font-size:36px';b.onclick=()=>{close();react(p,r)};d.lastChild.append(b)});open(d)}
 async function react(p,r){const old=p.my;
 if(old){p.rx[old]=Math.max((p.rx[old]||1)-1,0);p.n=Math.max(p.n-1,0)}
@@ -751,7 +783,7 @@ sk.remove();if(error){d.append(el('<p class="sub" style="margin:0 16px">Couldn�
 if(!data.length){d.append(el('<div class="empty">No posts yet.<br>Share the first one.</div>'));return}
 const ids=[...new Set(data.map(x=>x.owner_id))],pm={};((await sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids)).data||[]).forEach(x=>pm[x.id]=x);
 const my={};if(me)((await sb.from('post_reactions').select('post_id,reaction').in('post_id',data.map(x=>x.id)).eq('user_id',me.id)).data||[]).forEach(x=>my[x.post_id]=x.reaction);
-data.forEach(x=>{const o=pm[x.owner_id]||{};d.append(postCard({id:x.id,o:x.owner_id,u:o.username||'user',av:o.avatar_url,vf:o.verified,c:x.body,img:x.image_path,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my:my[x.id]||null,t:x.created_at}))})}
+data.forEach(x=>{const o=pm[x.owner_id]||{};d.append(postCard({id:x.id,o:x.owner_id,u:o.username||'user',name:o.display_name||'',av:o.avatar_url,vf:o.verified,c:x.body,img:x.image_path,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my:my[x.id]||null,t:x.created_at}))})}
 function composePost(pre){if(gate('post'))return;const d=el('<h3>New post</h3><textarea id="pb" maxlength="500" rows="4" placeholder="What’s on your mind?" aria-label="Post text"></textarea><img id="pv" alt="" hidden style="width:100%;max-height:30vh;object-fit:cover;border-radius:12px;margin-top:10px"><div class="row"><button class="btn" id="pa" style="background:var(--bg);color:var(--fg);border:1.5px solid var(--fg)">Add photo</button><button class="btn" id="pg">Post</button></div>');
 const fi=document.createElement('input');fi.type='file';fi.accept='image/*';let bl=pre||null;if(pre){const pv0=d.querySelector('#pv');pv0.src=URL.createObjectURL(pre);pv0.hidden=false}
 d.querySelector('#pa').onclick=()=>fi.click();
@@ -1159,7 +1191,7 @@ function moveBall(hop){const nb=document.getElementById('nball'),nv=document.que
 addEventListener('resize',()=>moveBall(0));setTimeout(()=>moveBall(0),300);
 async function openPost(id){const r=await sb.from('posts').select('id,owner_id,body,image_path,reactions,reaction_count,comment_count,created_at').eq('id',id).single();
 if(r.error||!r.data){toast('That post isn’t available anymore');return}
-const x=r.data,o=((await sb.from('profiles').select('username,avatar_url,verified').eq('id',x.owner_id).single()).data)||{};let my=null;
+const x=r.data,o=((await sb.from('profiles').select('username,display_name,avatar_url,verified').eq('id',x.owner_id).single()).data)||{};let my=null;
 if(me){const q=await sb.from('post_reactions').select('reaction').eq('post_id',id).eq('user_id',me.id);my=q.data&&q.data[0]?q.data[0].reaction:null}
 const w=E('div','max-height:70vh;overflow-y:auto;margin:0 -16px');w.append(postCard({id:x.id,o:x.owner_id,u:o.username||'user',av:o.avatar_url,vf:o.verified,c:x.body,img:x.image_path,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my,t:x.created_at}));open(w)}
 function deep(){const dp=new URLSearchParams(location.search).get('p');if(dp&&/^[0-9a-f-]{36}$/i.test(dp)){history.replaceState(null,'',location.pathname);openPost(dp);return}const du=new URLSearchParams(location.search).get('u');if(du&&/^[0-9a-f-]{36}$/i.test(du)){history.replaceState(null,'',location.pathname);showUser(du);return}const dv=new URLSearchParams(location.search).get('v');if(dv&&/^[0-9a-f-]{36}$/i.test(dv)){history.replaceState(null,'',location.pathname);watchById(dv)}}
