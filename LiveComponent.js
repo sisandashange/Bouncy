@@ -481,6 +481,9 @@
       }
     }
 
+    const wallet = await sb.rpc('bouncy_get_coin_wallet');
+    if (!wallet.error) s.coinWallet = wallet.data || { balance: 0, earned_coins: 0 };
+
     const room = liveScreen('');
     room.classList.remove('live-room-screen', 'live-room');
     room.classList.add('b-live-room');
@@ -583,7 +586,7 @@
     const giftLeaders = el('div', 'b-live-gifters');
     s._gifters = giftLeaders;
     const coinValue = Number(s.host ? s.coinWallet?.earned_coins : s.coinWallet?.balance) || 0;
-    const coins = el('span', 'b-live-coins', '💎 ' + coinValue.toLocaleString());
+    const coins = el('span', 'b-live-coins live-gift-earned-pill', '💎 ' + coinValue.toLocaleString());
     activity.append(giftLeaders, coins);
 
     const giftBanner = el('div', 'b-live-gift-banners');
@@ -844,7 +847,7 @@
       const wallet = await sb.rpc('bouncy_get_coin_wallet');
       if (!wallet.error) {
         s.coinWallet = wallet.data;
-        const label = s._room?.querySelector('.live-demo-profile-coins');
+        const label = s._room?.querySelector('.b-live-coins, .live-demo-profile-coins');
         if (label) label.textContent = '💎 ' + Number((s.host || s.isCohost) ? (wallet.data?.earned_coins || 0) : (wallet.data?.balance || 0)).toLocaleString();
       }
     }
