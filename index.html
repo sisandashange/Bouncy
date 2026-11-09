@@ -1294,7 +1294,7 @@ const modeBtn=(label,val)=>{const b=E('button','border:0;background:transparent;
 modeBtn('10m','10m');modeBtn('60s','60s');modeBtn('15s','15s');const photoMode=modeBtn('PHOTO','photo');modeBtn('TEXT','text');photoMode.click();
 const captureRow=E('div','position:absolute;z-index:4;left:0;right:0;bottom:105px;display:flex;align-items:center;justify-content:center;gap:13px;padding:8px 10px');
 const effectButtons={};
-const effect=(label)=>{const b=E('button','flex:0 0 43px;width:43px;height:43px;border:1.5px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(0,0,0,.18);color:#fff;font-size:10px;font-weight:700;pointer-events:auto;touch-action:manipulation',label);b.onclick=()=>applyCameraEffect(label,b);effectButtons[label]=b;captureRow.append(b);return b};
+const effect=(label)=>{const b=E('button','flex:0 0 43px;width:43px;height:43px;border:1.5px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(0,0,0,.18);color:#fff;font-size:10px;font-weight:700;pointer-events:auto;touch-action:manipulation',label);b.onclick=()=>label==='More'?openMoreEffects():applyCameraEffect(label,b);effectButtons[label]=b;captureRow.append(b);return b};
 effect('Glow');effect('Tone');
 const shutter=E('button','flex:0 0 76px;width:76px;height:76px;border:5px solid #fff;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;padding:0');
 const shutterCore=E('span','display:block;width:62px;height:62px;border-radius:50%;background:#fff;transition:all .12s');shutter.append(shutterCore);captureRow.append(shutter);
