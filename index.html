@@ -515,6 +515,55 @@ body{position:fixed;inset:0}
 @media(max-height:600px){.b-status-top{height:46px}.b-status-tools{padding-top:4px}.b-status-range-label{margin:1px 0}.b-status-bottom{padding-top:6px!important;padding-bottom:calc(7px + env(safe-area-inset-bottom,0px))!important}}
 
 
+/* BOUNCY status editor: responsive Android viewport and contained controls */
+#sheet.b-status-editor{
+ position:fixed!important;inset:0!important;width:100%!important;height:100vh!important;height:100dvh!important;
+ max-height:none!important;min-height:0!important;overflow:hidden!important;box-sizing:border-box!important;
+ display:flex!important;flex-direction:column!important;padding:0!important;margin:0!important;
+}
+#sheet.b-status-editor>.b-status-editor{
+ position:relative!important;display:flex!important;flex:1 1 0!important;
+ width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;
+ box-sizing:border-box!important;overflow:hidden!important;gap:0!important;
+}
+#sheet.b-status-editor .b-status-top{
+ flex:0 0 auto!important;min-height:48px!important;height:auto!important;
+ padding-top:calc(5px + env(safe-area-inset-top,0px))!important;padding-bottom:5px!important;
+}
+#sheet.b-status-editor .b-status-stage{
+ flex:1 1 0!important;min-height:0!important;height:auto!important;width:100%!important;
+ overflow:hidden!important;display:grid!important;place-items:center!important;
+}
+#sheet.b-status-editor .b-status-media{
+ display:block!important;width:100%!important;height:100%!important;
+ object-fit:cover!important;object-position:center!important;
+}
+#sheet.b-status-editor .b-status-tools{
+ flex:0 1 auto!important;min-height:0!important;max-height:30dvh!important;
+ overflow-y:auto!important;overscroll-behavior:contain!important;
+ padding:6px 12px!important;box-sizing:border-box!important;
+}
+#sheet.b-status-editor .b-status-toolrow{min-height:25px!important}
+#sheet.b-status-editor .b-status-range-label{min-height:25px!important;margin:2px 0!important}
+#sheet.b-status-editor .b-status-range-label input{min-width:0!important;max-width:100%!important}
+#sheet.b-status-editor .b-status-bottom{
+ flex:0 0 auto!important;min-height:78px!important;box-sizing:border-box!important;
+ padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))!important;
+}
+#sheet.b-status-editor .b-status-audience{bottom:calc(58px + env(safe-area-inset-bottom,0px))!important;left:14px!important}
+#sheet.b-status-editor .b-status-send{width:46px!important;height:46px!important;min-width:46px!important;flex-basis:46px!important}
+@media(max-height:700px){
+ #sheet.b-status-editor .b-status-top{min-height:43px!important}
+ #sheet.b-status-editor .b-status-tools{max-height:34dvh!important;padding:4px 10px!important}
+ #sheet.b-status-editor .b-status-bottom{min-height:70px!important;padding-top:5px!important}
+ #sheet.b-status-editor .b-status-audience{bottom:calc(52px + env(safe-area-inset-bottom,0px))!important}
+}
+@media(max-width:380px){
+ #sheet.b-status-editor .b-status-tools{padding-left:9px!important;padding-right:9px!important}
+ #sheet.b-status-editor .b-status-toolrow{gap:6px!important;font-size:11px!important}
+ #sheet.b-status-editor .b-status-bottom{gap:7px!important;padding-left:9px!important;padding-right:9px!important}
+ #sheet.b-status-editor .b-status-send{width:43px!important;height:43px!important;min-width:43px!important;flex-basis:43px!important}
+}
 /* WhatsApp-style status media framing and clip/music controls */
 #sheet.b-status-editor>.b-status-editor{width:100vw!important;max-width:none!important;height:100dvh!important;min-height:100dvh!important}
 .b-status-stage{flex:1 1 0!important;min-height:0!important;width:100%!important;background:#000!important}
