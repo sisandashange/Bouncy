@@ -10,7 +10,12 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-weight:500}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-button:focus-visible,input:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+button:disabled{opacity:.55;cursor:wait}
+button{-webkit-tap-highlight-color:transparent}
+img,video{max-width:100%}
+@media (max-width:360px){.side{right:6px;gap:9px}.side button{width:46px;font-size:11px}.meta{left:10px;right:64px}.meta strong{font-size:16px}}
+@media (min-width:700px){#app{height:min(100dvh,900px);margin:20px auto;border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 60px rgba(0,0,0,.10)}}
 #app{max-width:430px;height:100%;margin:auto;display:flex;flex-direction:column;border-inline:1px solid var(--line);position:relative;overflow:hidden}
 header{height:52px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid var(--line);font-weight:800;font-size:22px;letter-spacing:.02em;gap:8px}
 header i{width:14px;height:14px;border-radius:50%;background:var(--fg);animation:hop 1s infinite;transform-origin:bottom}
@@ -182,6 +187,10 @@ nav button:not(.plus).on::before{display:none}
 </div>
 <script>
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+addEventListener('offline',()=>{const t=document.getElementById('toast');if(t){t.textContent='You’re offline. Some features may not work.';t.classList.add('o')}});
+addEventListener('online',()=>{const t=document.getElementById('toast');if(t){t.textContent='Connection restored';t.classList.add('o');setTimeout(()=>t.classList.remove('o'),1800)}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)document.querySelectorAll('video').forEach(v=>v.pause())});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const sh=document.getElementById('sheet'),shade=document.getElementById('shade');if(sh&&sh.classList.contains('o')){const x=document.querySelector('#sheet [data-close]');if(x)x.click();else{sh.classList.remove('o');shade.classList.remove('o')}}}});
 (()=>{const s=document.getElementById('splash');if(!s)return;const end=()=>{if(s.dataset.d)return;s.dataset.d=1;s.classList.add('out');setTimeout(()=>s.remove(),500)};s.onclick=end;
 const go=()=>{if(s.dataset.g)return;s.dataset.g=1;s.classList.add('go');setTimeout(end,4300)};
 Promise.race([document.fonts?document.fonts.load('800 62px "Bricolage Grotesque"'):Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(go,go)})();
@@ -213,19 +222,23 @@ async function hydrate(v){if(!v.length)return[];
 const ids=[...new Set(v.map(x=>x.owner_id))];const none=Promise.resolve({data:[]});
 const [p,l,f]=await Promise.all([sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids),me?sb.from('video_likes').select('video_id').in('video_id',v.map(x=>x.id)).eq('user_id',me.id):none,me?sb.from('follows').select('followed_id').eq('follower_id',me.id):none]);
 const pm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.username])),am=Object.fromEntries((p.data||[]).map(x=>[x.id,x.avatar_url])),vm=Object.fromEntries((p.data||[]).map(x=>[x.id,x.verified])),ls=new Set((l.data||[]).map(x=>x.video_id)),fs=new Set((f.data||[]).map(x=>x.followed_id));
-return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',av:am[x.owner_id],vf:vm[x.owner_id],c:x.caption,path:x.storage_path,tp:x.thumbnail_path,vw:x.view_count||0,l:x.like_count,cb:x.comment_count,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
+return v.map(x=>({id:x.id,o:x.owner_id,u:pm[x.owner_id]||'user',av:am[x.owner_id],vf:vm[x.owner_id],c:x.caption||'',path:x.storage_path,tp:x.thumbnail_path,vw:Number(x.view_count)||0,l:Number(x.like_count)||0,cb:Number(x.comment_count)||0,liked:ls.has(x.id)?1:0,fol:fs.has(x.owner_id)?1:0}))}
 const COLS='id,owner_id,caption,storage_path,thumbnail_path,like_count,comment_count,view_count';
 let page=0,more=true,busy=false;
-async function fetchPage(){const N=ds?4:8;let rows=[];
+let feedGeneration=0;
+async function fetchPage(offset=page){const N=ds?4:8;let rows=[];
 if(tab=='following'){const f=await sb.from('follows').select('followed_id').eq('follower_id',me.id);const ids=(f.data||[]).map(x=>x.followed_id);
-if(ids.length){const r=await sb.from('videos').select(COLS).in('owner_id',ids).order('created_at',{ascending:false}).range(page*N,page*N+N-1);if(r.error)throw r.error;rows=r.data}}
-else{const r=await sb.rpc('for_you_feed',{p_limit:N,p_offset:page*N});if(r.error)throw r.error;const ids=(r.data||[]).map(x=>x.id);
+if(ids.length){const r=await sb.from('videos').select(COLS).in('owner_id',ids).order('created_at',{ascending:false}).range(offset*N,offset*N+N-1);if(r.error)throw r.error;rows=r.data}}
+else{const r=await sb.rpc('for_you_feed',{p_limit:N,p_offset:offset*N});if(r.error)throw r.error;const ids=(r.data||[]).map(x=>x.id);
 if(ids.length){const v=await sb.from('videos').select(COLS).in('id',ids);if(v.error)throw v.error;const m=Object.fromEntries(v.data.map(x=>[x.id,x]));rows=ids.map(i=>m[i]).filter(Boolean)}}
-page++;if(rows.length<N)more=false;return rows}
-async function nextPage(){if(busy||!more)return[];busy=true;
-try{const rows=await fetchPage(),have=new Set(clips.map(c=>c.id)),cs=await hydrate(rows.filter(r=>!have.has(r.id)));cs.forEach(c=>{clips.push(c);feed.append(mk(c))});return cs}
-catch(e){toast('Couldn’t load videos. Check your connection.');return[]}finally{busy=false}}
-async function load(){page=0;more=true;busy=false;feed.replaceChildren();clips=[];const cs=await nextPage();
+return {rows,size:N}}
+async function nextPage(gen=feedGeneration){if(gen!==feedGeneration||busy||!more)return[];busy=true;const offset=page;
+try{const result=await fetchPage(offset);if(gen!==feedGeneration)return[];page=offset+1;if(result.rows.length<result.size)more=false;
+const have=new Set(clips.map(c=>c.id)),cs=await hydrate(result.rows.filter(r=>!have.has(r.id)));if(gen!==feedGeneration)return[];
+cs.forEach(c=>{clips.push(c);feed.append(mk(c))});return cs}
+catch(e){if(gen===feedGeneration)toast('Couldn’t load videos. Check your connection.');return[]}finally{if(gen===feedGeneration)busy=false}}
+async function load(){const gen=++feedGeneration;page=0;more=true;busy=false;feed.replaceChildren();clips=[];const cs=await nextPage(gen);
+if(gen!==feedGeneration)return;
 if(!cs.length&&!feed.children.length){const e=el('<div class="empty" style="padding-top:30%">'+(tab=='following'?'Follow creators and their videos show up here.<br>':'No videos yet.<br>Be the first to post on BOUNCY.<br>')+'<button class="btn">Upload a video</button></div>');e.querySelector('button').onclick=pickVideo;feed.append(e)}}
 async function like(c){if(gate('like videos'))return;if(navigator.vibrate)navigator.vibrate(10);const on=!c.liked;c.liked=on?1:0;c.l+=on?1:-1;sync(c);
 const r=on?await sb.from('video_likes').insert({video_id:c.id,user_id:me.id}):await sb.from('video_likes').delete().eq('video_id',c.id).eq('user_id',me.id);
@@ -365,7 +378,9 @@ v.onloadeddata=()=>{v.currentTime=Math.min(1,(v.duration||2)/2)};
 v.onseeked=()=>{const w=360,hh=Math.round(w*(v.videoHeight/v.videoWidth))||640,c=document.createElement('canvas');c.width=w;c.height=hh;try{c.getContext('2d').drawImage(v,0,0,w,hh);c.toBlob(b=>{URL.revokeObjectURL(u);res(b)},'image/jpeg',.8)}catch(e){fail()}}})}
 $('#up').onclick=openCamera;
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+if(!f.type||!f.type.startsWith('video/')){toast('Choose a video file.');return}
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
+if(f.size===0){toast('That video file is empty.');return}
 const d=el('<h3>New video</h3><video controls playsinline muted></video><div class="row"><input type="text" id="cap" maxlength="150" placeholder="Write a caption" aria-label="Caption"><button class="btn" id="post">Post</button></div>');
 d.querySelector('video').src=URL.createObjectURL(f);
 d.querySelector('#post').onclick=async()=>{const b=d.querySelector('#post');b.disabled=true;b.textContent='Posting…';
@@ -376,7 +391,7 @@ const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'vid
 if(up.error)return reset('Upload failed. Use an MP4, MOV or WebM under 50 MB.');
 const cb=await cover(f);let tp=null;if(cb){const cpath=me.id+'/cover-'+crypto.randomUUID()+'.jpg';const cu=await sb.storage.from('videos').upload(cpath,cb,{contentType:'image/jpeg'});if(!cu.error)tp=cpath}
 const ins=await sb.from('videos').insert({owner_id:me.id,caption:d.querySelector('#cap').value.trim(),storage_path:path,thumbnail_path:tp});
-if(ins.error)return reset('Couldn’t publish the video. Try again.');
+if(ins.error){await sb.storage.from('videos').remove([path].concat(tp?[tp]:[]));return reset('Couldn’t publish the video. Your upload was cleaned up; try again.')};
 close();toast('Posted');await load();show('feed');feed.scrollTop=0};
 open(d)};
 function editProfile(){const d=el('<h3>Edit profile</h3><div class="col"><button class="btn" id="ph" style="margin:0">Change photo</button><input type="text" id="eu" maxlength="30" aria-label="Username" placeholder="Username"><input type="text" id="eb" maxlength="300" aria-label="Bio" placeholder="Bio"></div><div class="row"><button class="btn" id="sv">Save</button></div><p id="em" class="sub" style="margin:10px 0 0" role="alert"></p>');
