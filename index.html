@@ -710,14 +710,14 @@ async function openLiveGiftPanel(s,comments,wrap){
   sendGift.disabled=true;
   const result=await sb.rpc('bouncy_send_live_gift',{p_live_id:s.id,p_gift_id:selected.id,p_quantity:quantity});
   if(result.error){toast(result.error.message?.includes('Not enough coins')?'Not enough coins':(result.error.message||'Gift could not be sent'));sendGift.disabled=false;return}
-  s.coinWallet={...(s.coinWallet||{}),balance:Number(result.data?.balance??s.coinWallet?.balance??0)};
+  s.coinWallet={...(s.coinWallet||{}),balance:Number(result.data?.balance??s.coinWallet?.balance??0)};const badge=s._room?.querySelector('.live-demo-profile-coins');if(badge)badge.textContent='💎 '+Number(s.host?s.coinWallet.earned_coins||0:s.coinWallet.balance||0).toLocaleString();
   updateBalance();toast('Gift sent!');sendGift.disabled=false;
  };
  free.onclick=async()=>{
   free.disabled=true;
   const result=await sb.rpc('bouncy_claim_free_coins');
   if(result.error)toast(result.error.message||'Free coins are not available yet');
-  else{s.coinWallet=result.data;updateBalance();toast('1,000 free coins added')}
+  else{s.coinWallet=result.data;const badge=s._room?.querySelector('.live-demo-profile-coins');if(badge)badge.textContent='💎 '+Number(s.host?s.coinWallet.earned_coins||0:s.coinWallet.balance||0).toLocaleString();updateBalance();toast('1,000 free coins added')}
   free.disabled=false;
  };
  updateSend();
