@@ -126,7 +126,7 @@
       pause.querySelector('span').textContent = track.enabled ? 'Pause' : 'Resume';
       pause.querySelector('svg').innerHTML = track.enabled ? '<path d="M8 5v14M16 5v14"/>' : '<path d="m8 5 11 7-11 7z"/>';
     });
-    const close = el('button', 'live-host-panel-close', 'Close Panel');
+    const battle = makeControl('gift', 'Battle', () => openBattlePanel(s));\n    const close = el('button', 'live-host-panel-close', 'Close Panel');
     close.onclick = () => { panel.remove(); s._hostPanel = null; };
     panel.append(heading, controls, close);
     s._room.append(panel);
@@ -148,6 +148,73 @@
     panel.append(sound, close);
     s._room.append(panel);
     s._viewerPanel = panel;
+  }
+
+
+  async function openBattlePanel(s) {
+    if (!s?.host || !me?.id) return toast('Only the live host can manage battles');
+    if (s._battlePanel) { s._battlePanel.remove(); s._battlePanel = null; return; }
+    const panel = el('section', 'live-demo-host-panel');
+    panel.append(el('strong', '', 'BOUNCY LIVE BATTLE'));
+    const formatLabel = el('label', '', 'Battle format');
+    const format = el('select', '');
+    [['1v1','1 vs 1'],['1v1v1','3 individual players'],['1v1v1v1','4 individual players'],['1v2','1 vs 2'],['1v3','1 vs 3'],['1v4','1 vs 4'],['2v2','2 vs 2']].forEach(([v,l]) => { const o=el('option','',l);o.value=v;format.append(o); });
+    const durationLabel = el('label', '', 'Duration');
+    const duration = el('select', '');
+    [5,10,15].forEach(v=>{const o=el('option','',v+' minutes');o.value=String(v);duration.append(o);});
+    const create = el('button','live-host-panel-close','Create battle');
+    const status = el('p','','Choose a format and duration, then create the battle.');
+    status.style.cssText='font-size:11px;line-height:1.4;margin:0;text-align:center';
+    const inviteWrap = el('div','');
+    inviteWrap.style.cssText='display:none;gap:7px;flex-direction:column';
+    const username = el('input','');
+    username.placeholder='Enter player username';
+    username.autocomplete='off';
+    username.maxLength=30;
+    username.style.cssText='width:100%;height:40px;padding:0 12px;border-radius:12px;border:1px solid #ffffff44;background:#222;color:#fff';
+    const invite = el('button','live-host-panel-close','Invite player');
+    const start = el('button','live-host-panel-close','Start battle');
+    start.style.display='none';
+    const close = el('button','live-host-panel-close','Close');
+    let battleId=null;
+    create.onclick=async()=>{
+      create.disabled=true;
+      const r=await sb.rpc('bouncy_create_live_battle',{p_live_id:s.id,p_format:format.value,p_duration_minutes:Number(duration.value)});
+      create.disabled=false;
+      if(r.error){status.textContent=r.error.message||'Could not create battle';return}
+      battleId=r.data;
+      format.disabled=true;duration.disabled=true;create.style.display='none';inviteWrap.style.display='flex';start.style.display='';
+      status.textContent='Battle created. Invite the required players. They must accept before it can start.';
+      s._battleId=battleId;
+    };
+    invite.onclick=async()=>{
+      const handle=username.value.trim().replace(/^@/,'');
+      if(!handle)return toast('Enter a username');
+      invite.disabled=true;
+      const p=await sb.from('profiles').select('id,username').ilike('username',handle).limit(2);
+      if(p.error||!p.data?.length){status.textContent='That username was not found.';invite.disabled=false;return}
+      if(p.data.length!==1){status.textContent='Username lookup was not unique. Check the exact username.';invite.disabled=false;return}
+      const r=await sb.rpc('bouncy_invite_live_battle_player',{p_battle_id:battleId,p_invitee_id:p.data[0].id});
+      invite.disabled=false;
+      if(r.error){status.textContent=r.error.message||'Could not invite player';return}
+      status.textContent='Invitation sent to @'+p.data[0].username+'. Invite the next player if needed.';
+      username.value='';
+    };
+    start.onclick=async()=>{
+      start.disabled=true;
+      const r=await sb.rpc('bouncy_start_live_battle',{p_battle_id:battleId});
+      start.disabled=false;
+      if(r.error){status.textContent=r.error.message||'Battle cannot start yet';return}
+      status.textContent='Battle started. Duration: '+duration.value+' minutes.';
+      start.style.display='none';
+      format.disabled=true;duration.disabled=true;invite.disabled=true;
+    };
+    close.onclick=()=>{panel.remove();s._battlePanel=null};
+    panel.append(formatLabel,format,durationLabel,duration,create,inviteWrap,status);
+    inviteWrap.append(username,invite);
+    panel.append(start,close);
+    s._room.append(panel);
+    s._battlePanel=panel;
   }
 
   async function render() {
