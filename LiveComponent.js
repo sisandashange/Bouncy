@@ -173,6 +173,35 @@
     toast('Request sent to the live host');
   }
 
+
+  function showCohostInvite(s, row) {
+    if (!row?.id || s._cohostInvitePanel || !s._room) return;
+    const panel = el('section', 'live-demo-host-panel bouncy-cohost-invite-panel');
+    panel.append(el('strong', '', 'CO-HOST INVITATION'));
+    panel.append(el('p', '', 'The host invited you to join this live as a co-host.'));
+    const accept = el('button', 'live-host-panel-close', 'Accept invitation');
+    const decline = el('button', 'live-host-panel-close', 'Decline');
+    const respond = async value => {
+      accept.disabled = true; decline.disabled = true;
+      const r = await sb.rpc('bouncy_respond_live_cohost_invite', { p_live_id: s.id, p_accept: value });
+      if (r.error) {
+        toast(r.error.message || 'Could not respond to invitation');
+        accept.disabled = false; decline.disabled = false; return;
+      }
+      panel.remove(); s._cohostInvitePanel = null;
+      if (s._cohostButton) {
+        s._cohostButton.textContent = value ? '✓' : '＋';
+        s._cohostButton.disabled = !!value;
+        s._cohostButton.title = value ? 'Co-Host accepted' : 'Request to Co-Host';
+      }
+      toast(value ? 'Co-host invitation accepted. Camera joining is not connected yet.' : 'Invitation declined');
+    };
+    accept.onclick = () => respond(true);
+    decline.onclick = () => respond(false);
+    panel.append(accept, decline);
+    s._room.append(panel); s._cohostInvitePanel = panel;
+  }
+
   function watchCohostChanges(s) {
     if (!s || !me?.id || s.cohostChannel) return;
     s.cohostChannel = sb.channel('bouncy-cohosts-' + s.id + '-' + me.id)
@@ -180,6 +209,7 @@
         if (liveSession !== s || s.closing) return;
         if (s._cohostPanel) await refreshCohostPanel(s);
         if (!s.host && ev.new?.user_id === me.id) {
+          if (ev.new.status === 'invited') showCohostInvite(s, ev.new);
           const button = s._cohostButton;
           if (button) {
             if (ev.new.status === 'accepted') { button.textContent = '✓'; button.title = 'Co-Host accepted'; button.disabled = true; }
@@ -509,10 +539,11 @@
       cohostRequest.title = 'Request to Co-Host';
       cohostRequest.onclick = () => requestCohost(s, cohostRequest);
       s._cohostButton = cohostRequest;
-      const existing = await sb.from('live_cohosts').select('status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
+      const existing = await sb.from('live_cohosts').select('id,status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
       if (!existing.error && existing.data) {
         if (existing.data.status === 'accepted') { cohostRequest.textContent = '✓'; cohostRequest.disabled = true; cohostRequest.title = 'Co-Host accepted'; }
-        else if (existing.data.status === 'requested' || existing.data.status === 'invited') { cohostRequest.textContent = '…'; cohostRequest.disabled = true; cohostRequest.title = 'Waiting for host'; }
+        else if (existing.data.status === 'requested') { cohostRequest.textContent = '…'; cohostRequest.disabled = true; cohostRequest.title = 'Waiting for host'; }
+        else if (existing.data.status === 'invited') { cohostRequest.textContent = '✉'; cohostRequest.title = 'Co-host invitation'; showCohostInvite(s, existing.data); }
       }
       bottom.append(cohostRequest);
     }
