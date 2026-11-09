@@ -225,6 +225,14 @@
 
   function watchCohostChanges(s) {
     if (!s || !me?.id || s.cohostChannel) return;
+    s.liveLayoutChannel = sb.channel('bouncy-live-layout-' + s.id + '-' + me.id)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'live_streams', filter: 'id=eq.' + s.id }, ev => {
+        if (liveSession !== s || s.closing || !ev.new) return;
+        s.cohostLayout = Number(ev.new.cohost_layout || 4);
+        s.cohostAllowRequests = ev.new.cohost_allow_requests !== false;
+        const count = s._cohostGrid?.querySelectorAll('.bouncy-live-guest-tile').length || 1;
+        if (s._cohostGrid) s._cohostGrid.dataset.layout = String(Math.min(s.cohostLayout, count));
+      }).subscribe();
     s.cohostChannel = sb.channel('bouncy-cohosts-' + s.id + '-' + me.id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_cohosts', filter: 'live_id=eq.' + s.id }, async ev => {
         if (liveSession !== s || s.closing) return;
