@@ -160,6 +160,44 @@ nav button:not(.plus).on::before{display:none}
 @keyframes nhop{0%{margin-top:0}35%{margin-top:-9px}100%{margin-top:0}}
 .liked svg{animation:lk .45s cubic-bezier(.34,1.8,.5,1)}
 @keyframes lk{0%{transform:scale(.55)}100%{transform:scale(1)}}
+
+/* BOUNCY HOME — refined fullscreen feed; scoped to Watch so other screens stay untouched */
+#app.watch{height:100dvh;min-height:0;max-width:430px;border:0;background:#000;color:#fff;--home-red:#ff3040}
+#app.watch main{flex:1;min-height:0;overflow:hidden;background:#000}
+#app.watch header{box-sizing:border-box;top:0;left:0;right:0;height:calc(62px + env(safe-area-inset-top,0px));padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;gap:8px;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,.18) 72%,transparent);border:0;z-index:5;color:#fff}
+#app.watch header>i{width:10px;height:10px;flex:none;background:var(--home-red);box-shadow:0 0 12px rgba(255,48,64,.45)}
+#app.watch header{font-size:21px;letter-spacing:-.035em;text-shadow:0 1px 8px #000}
+#app.watch .tabs{gap:5px;margin-left:auto}
+#app.watch .tabs button{min-height:36px;padding:7px 10px;border:0;border-radius:18px;color:rgba(255,255,255,.76);font-size:13px;font-weight:800;text-shadow:0 1px 5px #000}
+#app.watch .tabs button.on{background:rgba(255,255,255,.96);color:#111;text-shadow:none}
+#app.watch .tabs #snd,#app.watch .tabs #sr{width:36px;height:36px;min-width:36px;padding:7px;border:1px solid rgba(255,255,255,.22);border-radius:50%;background:rgba(0,0,0,.32);color:#fff;display:grid;place-items:center}
+#app.watch .tabs #snd svg,#app.watch .tabs #sr svg{width:20px;height:20px}
+#app.watch #feed{inset:0;background:#000;color:#fff;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
+#app.watch .clip{height:100%;min-height:100%;background:#000}
+#app.watch .clip.real video{object-fit:cover;object-position:center}
+#app.watch .clip.real::before{height:48%;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.12) 30%,rgba(0,0,0,.72) 100%)}
+#app.watch .clip.real::after{content:"";position:absolute;inset:0 0 auto;height:25%;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.32),transparent)}
+#app.watch .side{right:9px;bottom:16px;gap:13px;z-index:3}
+#app.watch .side button{width:48px;min-height:48px;gap:3px;color:#fff;font-size:11px;text-shadow:0 1px 5px #000}
+#app.watch .side button svg{width:29px;height:29px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
+#app.watch .side [data-a=like].liked{color:var(--home-red)}
+#app.watch .side [data-a=like].liked svg{fill:var(--home-red);stroke:var(--home-red)}
+#app.watch .meta{left:14px;right:72px;bottom:17px;z-index:3;color:#fff;text-shadow:0 1px 5px #000}
+#app.watch .meta strong{font-size:16px;letter-spacing:-.01em}
+#app.watch .meta p{font-size:14px;line-height:1.38;margin-top:7px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#app.watch .meta .sn{font-size:12px;margin-top:8px;opacity:.92}
+#app.watch .pgb{z-index:4;height:2px;background:rgba(255,255,255,.24)}
+#app.watch .pgb i{background:#fff}
+#app.watch nav{height:calc(62px + env(safe-area-inset-bottom,0px));min-height:62px;flex:none;position:relative;z-index:6;padding:4px 2px env(safe-area-inset-bottom,0px);background:#080808;border-top:1px solid rgba(255,255,255,.13);color:#fff}
+#app.watch nav button:not(.plus){color:rgba(255,255,255,.62);font-size:10px;gap:3px;padding-top:3px}
+#app.watch nav button.on:not(.plus){color:#fff}
+#app.watch nav button svg{width:23px;height:23px}
+#app.watch nav .plus span{width:43px;height:32px;border-radius:10px;background:var(--home-red);color:#fff;font-size:25px;box-shadow:0 3px 12px rgba(255,48,64,.28)}
+#app.watch #nball{display:none}
+#app.watch .empty{color:rgba(255,255,255,.72)}
+@media(max-height:680px){#app.watch .side{gap:8px;bottom:10px}#app.watch .side button{min-height:43px}#app.watch .side button svg{width:26px;height:26px}#app.watch .meta{bottom:10px}#app.watch nav{height:58px;min-height:58px}}
+@media(prefers-reduced-motion:reduce){#app.watch header>i{animation:none}}
+
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
