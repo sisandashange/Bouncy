@@ -370,7 +370,58 @@ nav button:not(.plus).on::before{display:none}
 @media(prefers-reduced-motion:reduce){#app.watch .watch-music-disc,#app.watch .sound-marquee-text{animation:none}}
 #app.watch .clip.real .meta p{position:relative;padding-right:38px}
 #app.watch .caption-more{position:absolute;right:0;bottom:0;background:linear-gradient(90deg,transparent,#000 30%);padding-left:5px}
-#app.watch .watch-music-disc{bottom:84px!important}</style></head><body>
+#app.watch .watch-music-disc{bottom:84px!important}
+/* BOUNCY LIVE — full-screen vertical creator/viewer layout */
+#sheet.live-sheet{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-height:none!important;z-index:99999!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#000!important;color:#fff!important;overflow:hidden!important}
+#sheet.live-sheet::before{display:none!important}#sheet.live-sheet .live-screen{position:absolute;inset:0;width:100%;height:100%;display:block;background:#000!important;overflow:hidden!important;padding:0;margin:0}
+#shade.o:has(+ #sheet.live-sheet){z-index:99998!important;background:#000!important;opacity:1!important}
+#sheet.live-sheet .live-head{display:none!important}
+#sheet.live-sheet .live-stage{position:absolute;inset:0;width:100%;height:100%;min-height:100%;border:0;border-radius:0;background:#000;overflow:hidden;touch-action:pan-y}
+#sheet.live-sheet .live-stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#sheet.live-sheet .live-topbar-tiktok{position:absolute;z-index:8;top:calc(env(safe-area-inset-top,0px) + 9px);left:12px;right:12px;height:42px;display:flex;align-items:center;gap:8px;pointer-events:none}
+#sheet.live-sheet .live-identity{display:flex;align-items:center;gap:7px;min-width:0;flex:1;color:#fff;text-shadow:0 1px 4px #000;font-size:13px}
+#sheet.live-sheet .live-avatar{width:36px;height:36px;min-width:36px;border-radius:50%;object-fit:cover;border:1px solid #fff}
+#sheet.live-sheet .live-identity strong{max-width:34vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sheet.live-sheet .live-verified{color:#65bdff}#sheet.live-sheet .live-status-pill{background:#ed2638;color:#fff;border-radius:5px;padding:4px 7px;font-size:10px;font-weight:900}
+#sheet.live-sheet .live-view-count{background:#0008;border-radius:99px;padding:5px 8px;font-size:11px;white-space:nowrap}
+#sheet.live-sheet .live-x-button{pointer-events:auto;width:34px;height:34px;min-width:34px;background:transparent;color:#fff;border:0;border-radius:50%;font-size:29px;font-weight:300}
+#sheet.live-sheet .live-top-right{position:absolute;z-index:9;right:12px;top:calc(env(safe-area-inset-top,0px) + 54px)}
+#sheet.live-sheet .live-sound-icon{width:30px;height:30px;border:0;border-radius:50%;background:#0007;color:#fff}
+#sheet.live-sheet .live-right-actions{position:absolute;z-index:8;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px}
+#sheet.live-sheet .live-round-action{width:44px;height:44px;min-width:44px;border-radius:50%;display:grid;place-items:center;background:#0006;color:#fff;border:1px solid #ffffff30;font-size:22px;padding:0}
+#sheet.live-sheet .live-floating-comments{position:absolute;z-index:7;left:12px;right:25%;bottom:calc(env(safe-area-inset-bottom,0px) + 78px);max-height:36vh;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow:hidden;pointer-events:none}
+#sheet.live-sheet .live-comment{max-width:100%;width:max-content;padding:7px 10px;border-radius:16px;background:#0008;color:#fff;font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+#sheet.live-sheet .live-comment.live-gift-comment{background:#ed3d87}
+#sheet.live-sheet .live-bottom-tiktok{position:absolute;z-index:9;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;align-items:center;gap:7px;min-height:46px}
+#sheet.live-sheet .live-compose-tiktok{flex:1;min-width:0;height:42px;display:flex;align-items:center;gap:7px;padding:0;background:transparent}
+#sheet.live-sheet .live-my-avatar{width:30px;height:30px;min-width:30px;border-radius:50%;object-fit:cover;background:#555}
+#sheet.live-sheet .live-compose-tiktok input{height:40px;min-width:0;flex:1;border:1px solid #ffffff40;border-radius:24px;padding:0 14px;background:#0008;color:#fff;font-size:13px}
+#sheet.live-sheet .live-compose-tiktok input::placeholder{color:#eee}
+#sheet.live-sheet .live-send-comment{width:28px;min-width:28px;background:transparent;color:#fff;font-size:19px;padding:0}
+#sheet.live-sheet .live-bottom-tiktok>.live-round-action{width:38px;height:38px;min-width:38px;font-size:19px;background:#0007}
+#sheet.live-sheet .live-gift-earned-pill{position:absolute;left:42px;bottom:52px;background:transparent;color:#fff;font-size:12px;font-weight:700;padding:0;text-shadow:0 1px 4px #000}
+#sheet.live-sheet .live-end-circle{width:38px;height:38px;min-width:38px;border-radius:50%;background:#ed2638;color:#fff;font-size:22px;padding:0}
+#sheet.live-sheet .live-double-heart{position:absolute;z-index:12;left:50%;top:52%;transform:translate(-50%,-50%) scale(.2);opacity:0;color:#fff;font-size:104px;pointer-events:none;text-shadow:0 3px 20px #0008}
+#sheet.live-sheet .live-double-heart.show{animation:liveBigHeart .8s ease-out}
+@keyframes liveBigHeart{0%{opacity:0;transform:translate(-50%,-25%) scale(.2)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-115%) scale(1)}}
+#sheet.live-sheet .live-float-heart{position:absolute;right:0;bottom:0;color:#fff;font-size:24px;animation:liveHeartRise 1.2s ease-out forwards}
+@keyframes liveHeartRise{to{opacity:0;transform:translate(-10px,-95px) scale(1.6)}}
+#sheet.live-sheet .live-no-one{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#050505;color:#fff}
+#sheet.live-sheet .live-no-one h1{font-size:26px;margin:0}#sheet.live-sheet .live-no-one p{color:#bbb;font-size:14px}
+#sheet.live-sheet .live-go-circle{width:66px;height:66px;min-width:66px;border:0;border-radius:50%;background:#ed2638;color:#fff;font-size:13px;font-weight:950;display:grid;place-items:center}
+#sheet.live-sheet .live-camera-full{position:absolute;inset:0;width:100%;height:100%;min-height:100%;border:0;border-radius:0;background:#000;overflow:hidden}
+#sheet.live-sheet .live-camera-full>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#sheet.live-sheet .live-camera-top{position:absolute;z-index:3;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px;display:flex;gap:10px}
+#sheet.live-sheet .live-camera-close,#sheet.live-sheet .live-beauty-button,#sheet.live-sheet .live-preview-flip{width:42px;height:42px;border-radius:50%;background:#0008;color:#fff;border:1px solid #ffffff44;font-size:20px;padding:0}
+#sheet.live-sheet .live-camera-bottom{position:absolute;z-index:3;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 32px);display:flex;flex-direction:column;align-items:center;gap:22px}
+#sheet.live-sheet .live-camera-bottom input{width:100%;height:46px;background:#0007;border:1px solid #ffffff44;border-radius:24px;color:#fff;padding:0 16px;font-size:15px}
+#sheet.live-sheet .live-camera-bottom input::placeholder{color:#fff}
+#sheet.live-sheet .live-start-button{width:66px;height:66px;min-width:66px;border-radius:50%;background:#ed2638;color:#fff;border:0;font-size:13px;font-weight:950;padding:0}
+#sheet.live-sheet .live-start-message{color:#fff;background:#0008;border-radius:12px;padding:5px 10px;font-size:12px;margin:0}
+#sheet.live-sheet .live-gift-overlay{z-index:20}
+@media(max-width:390px){#sheet.live-sheet .live-bottom-tiktok{gap:5px}#sheet.live-sheet .live-bottom-tiktok>.live-round-action{width:34px;height:34px;min-width:34px}#sheet.live-sheet .live-identity strong{max-width:29vw}}
+
+</style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
 <header class="bouncy-feed-header"><div class="feed-head-main"><div class="feed-brand"><i></i><span>BOUNCY</span></div><div class="feed-head-actions"><button id="liveOpen" class="feed-live-btn" type="button"><i></i> LIVE</button><button id="sr" class="feed-icon-btn" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button><button id="feedBell" class="feed-icon-btn" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button><button id="snd" aria-label="Sound" hidden></button></div></div><div class="tabs feed-tabs"><button class="on" data-t="foryou">For you</button><button data-t="following">Following</button></div></header>
@@ -537,95 +588,134 @@ const liveRtcConfig={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'st
 const LIVE_MAX_VIEWERS=4;
 function liveScreen(title){const d=E('div','');d.className='live-screen';const h=E('div','');h.className='live-head';const t=E('h3','',title);const x=E('button','','×');x.className='live-close';x.setAttribute('aria-label','Close live');x.onclick=()=>close();h.append(t,x);d.append(h);return d}
 function liveOpenSheet(node){suspendWatchVideos();sheet.classList.add('live-sheet');open(node);if([...document.querySelectorAll('#feed video')].some(v=>!v.paused))console.warn('BOUNCY video manager: Watch video still playing under Live')}
+let liveDiscoveryQueue=[],liveDiscoveryIndex=0;
 async function openLiveHub(){
  if(!me){authSheet('watch live streams');return}
- const d=liveScreen('BOUNCY Live'),head=E('div','');head.className='live-discovery-head';const go=E('button','','＋ Go Live');go.className='live-primary live-discovery-go';
- const cats=E('div','');cats.className='live-categories';['All','Music','Chatting','Gaming','Battles'].forEach((v,i)=>{const x=E('button','',v);x.className='live-category'+(!i?' active':'');x.onclick=()=>{cats.querySelectorAll('button').forEach(y=>y.classList.remove('active'));x.classList.add('active');if(i)toast(v+' lives are coming soon')};cats.append(x)});head.append(cats,go);
- const list=E('div','');list.className='live-list live-discovery-grid';d.append(head,list);liveOpenSheet(d);go.onclick=()=>liveComposer();let loading=false;
- const skeleton=()=>{list.replaceChildren();for(let i=0;i<4;i++){const x=E('div','');x.className='live-preview-card skeleton-card';x.innerHTML='<div class="live-preview-art"></div><div class="live-preview-meta"><b></b><span></span></div>';list.append(x)}};
- const refresh=async()=>{if(loading)return;loading=true;skeleton();const [r]=await Promise.all([sb.from('live_streams').select('id,host_id,title,description,started_at').eq('status','live').gt('last_heartbeat_at',new Date(Date.now()-60000).toISOString()).order('started_at',{ascending:false}).limit(30),new Promise(ok=>setTimeout(ok,1000))]);if(r.error){list.replaceChildren(E('p','live-discovery-error','Could not load live streams. Pull down to try again.'));loading=false;return}
- const rows=(r.data||[]).filter(x=>x.host_id!==me.id),ids=[...new Set(rows.map(x=>x.host_id))],profiles={};if(ids.length){const p=await sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids);(p.data||[]).forEach(x=>profiles[x.id]=x)}list.replaceChildren();
- if(rows.length){const grid=E('div','');grid.className='live-preview-grid';rows.forEach(st=>{const p=profiles[st.host_id]||{username:'BOUNCY user'},card=E('button','');card.className='live-preview-card';const art=E('div','');art.className='live-preview-art live-real-art';art.append(E('span','live-preview-badge','● LIVE'),E('span','live-preview-viewers','LIVE NOW'));const meta=E('div','');meta.className='live-preview-meta';meta.append(E('b','',st.title||'Live'),E('span','','@'+p.username));card.append(art,meta);card.onclick=()=>joinLiveStream(st,p.username);grid.append(card)});list.append(grid)}
- else{const empty=E('div','');empty.className='live-empty-state';const art=E('div','');art.className='live-empty-illustration';art.innerHTML='<span class="empty-orbit orbit-one"></span><span class="empty-orbit orbit-two"></span><b>LIVE</b><i>✦</i>';empty.append(art,E('h2','','No one is live'));const start=E('button','','Be the first to go Live');start.className='live-primary';start.onclick=()=>liveComposer();empty.append(start);const notify=E('label','');notify.className='live-notify-row';const toggle=E('input','');toggle.type='checkbox';notify.append(toggle,E('span','','Notify me when someone goes live'));toggle.onchange=()=>toast(toggle.checked?'Notifications enabled for this screen':'Notifications paused');empty.append(notify);list.append(empty);
-}loading=false};
- let y=null;list.addEventListener('touchstart',e=>{if(list.scrollTop===0)y=e.touches[0].clientY},{passive:true});list.addEventListener('touchend',e=>{if(y!==null&&e.changedTouches[0].clientY-y>70)refresh();y=null},{passive:true});await refresh();
+ const d=liveScreen('');d.classList.add('live-discovery-screen');liveOpenSheet(d);
+ const status=E('div','live-no-one','Finding live streams…');d.append(status);
+ const r=await sb.from('live_streams').select('id,host_id,title,description,started_at').eq('status','live').gt('last_heartbeat_at',new Date(Date.now()-60000).toISOString()).order('started_at',{ascending:false}).limit(30);
+ if(r.error){status.textContent='Could not load live streams. Close and try again.';return}
+ const rows=(r.data||[]).filter(x=>x.host_id!==me.id),ids=[...new Set(rows.map(x=>x.host_id))],profiles={};
+ if(ids.length){const p=await sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids);(p.data||[]).forEach(x=>profiles[x.id]=x)}
+ liveDiscoveryQueue=rows.map(st=>({...st,hostName:profiles[st.host_id]?.username||'BOUNCY user',hostAvatar:profiles[st.host_id]?.avatar_url||'',hostVerified:!!profiles[st.host_id]?.verified}));liveDiscoveryIndex=0;
+ if(liveDiscoveryQueue.length){d.remove();await joinLiveStream(liveDiscoveryQueue[0],liveDiscoveryQueue[0].hostName);return}
+ status.replaceChildren(E('h1','','No one is live'),E('p','','Be the first to start a live video.'));
+ const go=E('button','','Go Live');go.className='live-go-circle';go.onclick=()=>liveComposer();status.append(go);
+}
+async function navigateLiveQueue(dir){
+ if(!liveSession||liveSession.host)return;
+ const n=liveDiscoveryIndex+dir;
+ if(n<0){await leaveLiveStream(false);return}
+ if(n>=liveDiscoveryQueue.length){toast('You have reached the end of live streams');return}
+ const st=liveDiscoveryQueue[n];liveDiscoveryIndex=n;await leaveLiveStream(true);suspendWatchVideos();await joinLiveStream(st,st.hostName);
 }
 async function liveComposer(){
- if(!me)return;const d=liveScreen('Start a live stream');d.classList.add('live-composer-screen');const preview=E('div','');preview.className='live-camera-preview';const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;preview.append(video);const tag=E('span','','CAMERA PREVIEW');tag.className='live-preview-tag';preview.append(tag);const flip=E('button','','↻ Flip');flip.className='live-preview-flip';preview.append(flip);
- const controls=E('div','');controls.className='live-composer-controls';const input=E('input','');input.type='text';input.maxLength=60;input.placeholder='What are you going live about?';input.setAttribute('aria-label','Live stream title');const counter=E('span','','0/60');counter.className='live-title-count';const tw=E('div','');tw.className='live-title-wrap';tw.append(input,counter);input.oninput=()=>counter.textContent=input.value.length+'/60';
- const chips=E('div','');chips.className='live-title-chips';[['Chatting 🎤','Chatting'],['Music 🎵','Music'],['Gaming 🎮','Gaming'],['Just Vibes ✨','Just Vibes']].forEach(([label,value])=>{const x=E('button','',label);x.onclick=()=>{input.value=value;input.dispatchEvent(new Event('input'));input.focus()};chips.append(x)});
- const note=E('p','','Your camera and microphone will turn on');note.className='live-composer-note';const beta=E('p','','Up to 4 viewers in beta');beta.className='live-composer-beta';const start=E('button','','Start live');start.className='live-primary live-start-button';const msg=E('p','');msg.className='live-start-message';controls.append(tw,chips,note,beta,start,msg);d.append(preview,controls);liveOpenSheet(d);
- let previewStream=null,facing='user',starting=false;const stopPreview=()=>{previewStream?.getTracks().forEach(t=>t.stop());previewStream=null;video.srcObject=null};const openPreview=async()=>{try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:640,max:640},height:{ideal:480,max:480},frameRate:{ideal:15,max:15}},audio:false});if(starting){st.getTracks().forEach(t=>t.stop());return}previewStream=st;video.srcObject=st;video.play().catch(()=>{});preview.classList.remove('preview-error')}catch(e){preview.classList.add('preview-error');tag.textContent='Camera preview unavailable · check permission'}};
- flip.onclick=async()=>{if(starting)return;facing=facing==='user'?'environment':'user';stopPreview();await openPreview()};const x=d.querySelector('.live-close');if(x)x.onclick=()=>{if(starting)return;stopPreview();close()};await openPreview();
- start.onclick=async()=>{if(starting)return;starting=true;start.disabled=true;start.textContent='◌ Starting your stream…';msg.textContent='Connecting camera and microphone…';let audio=null,stream=null;try{if(!navigator.mediaDevices?.getUserMedia)throw new Error('Camera access needs HTTPS and a supported browser.');if(!previewStream?.getVideoTracks().length)await openPreview();if(!previewStream?.getVideoTracks().length)throw new Error('Allow camera access before starting Live.');audio=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});stream=new MediaStream([...previewStream.getVideoTracks(),...audio.getAudioTracks()]);const title=input.value.trim()||'Live';const ins=await sb.from('live_streams').insert({host_id:me.id,title,description:'',status:'live',room_name:'bouncy-'+crypto.randomUUID()}).select('id,host_id,title,started_at').single();if(ins.error)throw ins.error;previewStream=null;audio=null;liveSession={host:true,id:ins.data.id,title:ins.data.title,stream,pcs:new Map(),queues:new Map(),channel:null,closing:false,facing};await subscribeLiveSignals(liveSession);await showLiveRoom()}catch(e){stream?.getTracks().forEach(t=>t.stop());audio?.getTracks().forEach(t=>t.stop());if(liveSession?.host){const failed=liveSession;liveSession=null;failed.stream?.getTracks().forEach(t=>t.stop());if(failed.channel)sb.removeChannel(failed.channel);await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',failed.id).eq('host_id',me.id)}console.error('BOUNCY LIVE start',e);msg.textContent=e.message||'Could not start live stream.';start.disabled=false;start.textContent='Start live';starting=false}};d._stopLivePreview=stopPreview;
+ if(!me)return;
+ const d=liveScreen('');d.classList.add('live-composer-screen');
+ const preview=E('div','');preview.className='live-camera-preview live-camera-full';
+ const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;preview.append(video);
+ const top=E('div','');top.className='live-camera-top';
+ const x=E('button','','×');x.className='live-camera-close';
+ const flip=E('button','','↻');flip.className='live-preview-flip';
+ const beauty=E('button','','✧');beauty.className='live-beauty-button';top.append(x,flip,beauty);
+ const bottom=E('div','');bottom.className='live-camera-bottom';
+ const input=E('input','');input.placeholder='Add a title...';input.maxLength=60;
+ const start=E('button','','LIVE');start.className='live-go-circle live-start-button';
+ const msg=E('p','');msg.className='live-start-message';bottom.append(input,start,msg);preview.append(top,bottom);d.append(preview);liveOpenSheet(d);
+ let previewStream=null,facing='user',starting=false,beautyOn=false;
+ const stopPreview=()=>{previewStream?.getTracks().forEach(t=>t.stop());previewStream=null;video.srcObject=null};
+ const openPreview=async()=>{try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:720},height:{ideal:1280}},audio:false});if(starting){st.getTracks().forEach(t=>t.stop());return}previewStream=st;video.srcObject=st;video.play().catch(()=>{})}catch(e){msg.textContent='Camera unavailable. Allow camera access.'}};
+ x.onclick=()=>{if(!starting){stopPreview();close()}};
+ flip.onclick=async()=>{if(starting)return;facing=facing==='user'?'environment':'user';stopPreview();await openPreview()};
+ beauty.onclick=()=>{beautyOn=!beautyOn;video.style.filter=beautyOn?'brightness(1.08) saturate(1.12)':'none';beauty.classList.toggle('active',beautyOn)};
+ await openPreview();
+ start.onclick=async()=>{
+  if(starting)return;starting=true;start.disabled=true;let audio=null,stream=null;
+  try{
+   if(!previewStream?.getVideoTracks().length)throw new Error('Allow camera access before going live.');
+   audio=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+   stream=new MediaStream([...previewStream.getVideoTracks(),...audio.getAudioTracks()]);
+   const ins=await sb.from('live_streams').insert({host_id:me.id,title:input.value.trim()||'Live',description:'',status:'live',room_name:'bouncy-'+crypto.randomUUID()}).select('id,host_id,title,started_at').single();
+   if(ins.error)throw ins.error;
+   previewStream=null;audio=null;liveSession={host:true,id:ins.data.id,title:ins.data.title,stream,pcs:new Map(),queues:new Map(),channel:null,closing:false,facing};
+   await subscribeLiveSignals(liveSession);await showLiveRoom();
+  }catch(e){stream?.getTracks().forEach(t=>t.stop());audio?.getTracks().forEach(t=>t.stop());if(liveSession?.host){const f=liveSession;liveSession=null;f.stream?.getTracks().forEach(t=>t.stop());if(f.channel)sb.removeChannel(f.channel);await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',f.id).eq('host_id',me.id)}msg.textContent=e.message||'Could not start live.';start.disabled=false;starting=false}
+ };
+ d._stopLivePreview=stopPreview;
 }
 async function subscribeLiveSignals(session){return await new Promise((resolve,reject)=>{const ch=sb.channel('live-signals-'+session.id+'-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_signals',filter:'stream_id=eq.'+session.id},ev=>handleLiveSignal(session,ev.new));session.channel=ch;let done=false;const timer=setTimeout(()=>{if(!done){done=true;reject(new Error('Live connection timed out. Please try again.'))}},12000);ch.subscribe(status=>{if(status==='SUBSCRIBED'&&!done){done=true;clearTimeout(timer);resolve(ch)}else if((status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED')&&!done){done=true;clearTimeout(timer);reject(new Error('Could not connect to live signalling.'))}})})}
 async function sendLiveSignal(session,peer,type,payload={}){if(!session||(session.closing&&type!=='leave'))return;const r=await sb.from('live_signals').insert({stream_id:session.id,sender_id:me.id,recipient_id:peer,signal_type:type,payload});if(r.error)console.warn('Live signal error',r.error)}
 async function showLiveRoom(){
  const s=liveSession;if(!s)return;
- const d=liveScreen(s.host?'You are LIVE':'Watching LIVE');d.classList.add('live-room-screen');s._room=d;
- const wrap=E('div','');wrap.className='live-video-wrap';s._wrap=wrap;
- const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=!!s.host;video.srcObject=s.host?s.stream:null;wrap.append(video);
- const count=E('span','',s.host?'👁️ 0 watching':'👁️ 1 watching');count.className='live-view-count';
- const info=E('div','');info.className='live-info';
- const avatar=document.createElement('img');avatar.className='live-avatar';avatar.alt='';avatar.src=s.host?(me.avatar_url||me.avatar||''): (s.hostAvatar||'');if(!avatar.src)avatar.style.display='none';
- const who=E('div','');who.className='live-who';who.append(E('strong','',s.host?'@'+me.username:'@'+s.hostName));const statusPill=E('span','','● LIVE NOW');statusPill.className='live-status-pill';info.append(avatar,who,statusPill);
- const topTools=E('div','');topTools.className='live-top-tools';
- const flip=E('button','','↻ Flip');const mute=E('button','',s.host?'Mic on':'');
- if(s.host){topTools.append(flip,mute)}
- const titleLine=E('div','',s.title&&s.title.trim()?s.title.trim():'Live');titleLine.className='live-title-line';const liveTop=E('div','');liveTop.className='live-topbar';const rowOne=E('div','');rowOne.className='live-top-row live-top-row-one';const rowTwo=E('div','');rowTwo.className='live-top-row live-top-row-two';const liveHead=d.querySelector('.live-head'),closeBtn=liveHead?.querySelector('.live-close');if(closeBtn)rowOne.append(info,closeBtn);else rowOne.append(info);rowTwo.append(count,topTools);liveTop.append(rowOne,rowTwo,titleLine);
- const comments=E('div','');comments.className='live-comments';comments.textContent='Loading comments…';
- const compose=E('div','');compose.className='live-compose';const ci=E('input','');ci.type='text';ci.maxLength=500;ci.placeholder='Say something…';ci.setAttribute('aria-label','Live comment');const send=E('button','','Send');compose.append(ci,send);
- const actions=E('div','');actions.className='live-actions';
- const mkAction=(icon,label,fn)=>{const b=E('button','');b.innerHTML='<span class="action-icon">'+icon+'</span><span>'+label+'</span>';b.onclick=fn;return b};
- const like=mkAction('♥','Like',()=>sendLiveLike(s));s._likeButton=like;const share=mkAction('↗','Share',async()=>{const url=location.href;try{if(navigator.share)await navigator.share({title:'BOUNCY Live',text:'Watch @'+(s.host?me.username:s.hostName)+' live on BOUNCY',url});else{await navigator.clipboard.writeText(url);toast('Live link copied')}}catch(e){}});const gift=mkAction('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));actions.append(like,share,gift);
- const bottom=E('div','');bottom.className='live-bottom-controls';const leave=E('button','',s.host?'End live':'Leave live');leave.className='live-end-btn';bottom.append(leave);
- let soundBtn=null;if(!s.host){soundBtn=E('button','','Turn sound on');soundBtn.className='live-sound-btn';soundBtn.onclick=()=>{video.muted=!video.muted;soundBtn.textContent=video.muted?'Turn sound on':'Mute sound';video.play().catch(()=>{})};bottom.append(soundBtn)}
- d.append(wrap,liveTop,comments,compose,actions,bottom);if(!s.host)video.muted=true;liveOpenSheet(d);video.play().catch(()=>{});
- if(s.host){mute.onclick=()=>{const track=s.stream.getAudioTracks()[0];if(track){track.enabled=!track.enabled;mute.textContent=track.enabled?'Mic on':'Mic off'}};flip.onclick=async()=>{try{const old=s.stream.getVideoTracks()[0],nextFacing=s.facing==='user'?'environment':'user';const fresh=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:nextFacing},width:{ideal:640,max:640},height:{ideal:480,max:480},frameRate:{ideal:15,max:15}},audio:false});const next=fresh.getVideoTracks()[0];for(const pc of s.pcs.values()){const sender=pc.getSenders().find(x=>x.track?.kind==='video');if(sender)await sender.replaceTrack(next)}if(old){s.stream.removeTrack(old);old.stop()}s.stream.addTrack(next);s.facing=nextFacing;video.srcObject=s.stream;toast('Camera flipped')}catch(e){toast('Could not switch camera on this device')}}}
- const renderComments=async()=>{
- const [q,g]=await Promise.all([
-  sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id',s.id).order('created_at',{ascending:true}).limit(100),
-  sb.from('live_gifts').select('id,sender_id,gift_id,quantity,total_coins,created_at,gifts(name,emoji)').eq('live_id',s.id).order('created_at',{ascending:true}).limit(100)
- ]);
- if(q.error&&g.error)return;
- comments.replaceChildren();
- const rows=[...(q.data||[]).map(x=>({...x,_kind:'comment'})),...(g.data||[]).map(x=>({...x,_kind:'gift'}))].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
- const ids=[...new Set(rows.map(x=>x.user_id||x.sender_id).filter(Boolean))],names={};
- if(ids.length){const p=await sb.from('profiles').select('id,username').in('id',ids);(p.data||[]).forEach(x=>names[x.id]=x.username)}
- rows.forEach(x=>{
-  if(x._kind==='comment'&&x.body==='__bouncy_live_like__'){if(!s._seenLikeIds)s._seenLikeIds=new Set();if(!s._seenLikeIds.has(x.id)){s._seenLikeIds.add(x.id);animateLiveHeart(s)}return}
-  const row=E('div','');row.className='live-comment'+(x._kind==='gift'?' live-gift-comment':'');
-  if(x._kind==='gift'){const g=x.gifts||{};row.append(E('b','', '@'+(names[x.sender_id]||'user')),document.createTextNode(' sent '+(g.name||'Gift')+' '+(g.emoji||'🎁')+(x.quantity>1?' x'+x.quantity:'')));}
-  else row.append(E('b','', '@'+(names[x.user_id]||'user')),document.createTextNode(x.body));
-  comments.append(row);
+ const d=liveScreen('');d.classList.add('live-room-screen');s._room=d;
+ const wrap=E('div','');wrap.className='live-video-wrap live-stage';s._wrap=wrap;
+ const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=!s.host;video.srcObject=s.host?s.stream:null;wrap.append(video);s._video=video;
+ const top=E('div','');top.className='live-topbar-tiktok';
+ const identity=E('div','');identity.className='live-identity';
+ const avatar=document.createElement('img');avatar.className='live-avatar';avatar.alt='';avatar.src=s.host?(me.avatar_url||me.avatar||''):(s.hostAvatar||'');
+ const who=E('strong','',s.host?'@'+me.username:'@'+(s.hostName||'user'));identity.append(avatar,who);
+ if(s.hostVerified||s.host&&me.verified)identity.append(E('span','live-verified','✓'));
+ identity.append(E('span','live-status-pill','LIVE'));
+ const count=E('span','','👁 0');count.className='live-view-count';
+ const closeBtn=E('button','','×');closeBtn.className='live-close live-x-button';top.append(identity,count,closeBtn);
+ const topRight=E('div','');topRight.className='live-top-right';
+ const sound=E('button','','◖×');sound.className='live-sound-icon';sound.onclick=()=>{video.muted=!video.muted;sound.textContent=video.muted?'◖×':'◖))'};if(!s.host)topRight.append(sound);
+ const right=E('div','');right.className='live-right-actions';
+ const action=(symbol,label,fn)=>{const b=E('button','',symbol);b.className='live-round-action';b.setAttribute('aria-label',label);b.onclick=fn;return b};
+ const like=action('♥','Like',()=>sendLiveLike(s));s._likeButton=like;
+ const shareFn=async()=>{try{if(navigator.share)await navigator.share({title:'BOUNCY Live',url:location.href});else{await navigator.clipboard.writeText(location.href);toast('Live link copied')}}catch(e){}};
+ const share=action('↗','Share',shareFn);
+ const gift=action(s.host?'⚔':'🎁',s.host?'Battle':'Gift',()=>s.host?toast('Battles are coming soon'):openLiveGiftPanel(s,comments,wrap));
+ right.append(like,share,gift);
+ const comments=E('div','');comments.className='live-comments live-floating-comments';
+ const bottom=E('div','');bottom.className='live-bottom-tiktok';
+ const compose=E('div','');compose.className='live-compose live-compose-tiktok';
+ const myAvatar=document.createElement('img');myAvatar.className='live-my-avatar';myAvatar.src=me?.avatar_url||me?.avatar||'';
+ const ci=E('input','');ci.placeholder='Add comment...';ci.maxLength=500;
+ const send=E('button','','➤');send.className='live-send-comment';compose.append(myAvatar,ci,send);bottom.append(compose);
+ const bottomGift=action('🎁','Send gift',()=>openLiveGiftPanel(s,comments,wrap));
+ const bottomLike=action('♥','Like',()=>sendLiveLike(s));const bottomShare=action('↗','Share',shareFn);
+ bottom.append(bottomGift,bottomLike,bottomShare);
+ const earned=E('span','','💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString());earned.className='live-gift-earned-pill';
+ if(s.host){bottom.append(earned);const end=E('button','','×');end.className='live-end-circle';end.onclick=()=>endLiveStream(false);bottom.append(end)}
+ const big=E('div','','♥');big.className='live-double-heart';d.append(wrap,top,topRight,right,comments,bottom,big);
+ liveOpenSheet(d);video.play().catch(()=>{});
+ const exit=()=>s.host?endLiveStream(false):leaveLiveStream(false);closeBtn.onclick=exit;
+ let lastTap=0,longTimer=null,longDone=false,startY=0,startX=0;
+ wrap.addEventListener('pointerdown',e=>{startY=e.clientY;startX=e.clientX;longDone=false;longTimer=setTimeout(()=>{longDone=true;video.playbackRate=2},450)});
+ const reset=()=>{clearTimeout(longTimer);video.playbackRate=1};
+ wrap.addEventListener('pointerup',e=>{
+  reset();if(longDone)return;
+  const dy=e.clientY-startY,dx=e.clientX-startX;
+  if(Math.abs(dy)>70&&Math.abs(dy)>Math.abs(dx)){if(dy<0&&!s.host)navigateLiveQueue(1);else if(dy>0)exit();return}
+  const now=Date.now();if(now-lastTap<320){big.classList.remove('show');void big.offsetWidth;big.classList.add('show');sendLiveLike(s);lastTap=0}else{lastTap=now;setTimeout(()=>{if(Date.now()-lastTap>=300)video.paused?video.play().catch(()=>{}):video.pause()},330)}
  });
- if(!comments.children.length)comments.textContent='Be kind. Start the conversation.';
- comments.scrollTop=comments.scrollHeight;
-};
- await renderComments();s.commentChannel=sb.channel('live-comments-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_comments',filter:'stream_id=eq.'+s.id},()=>renderComments()).subscribe();
+ wrap.addEventListener('pointercancel',reset);
+ const renderComments=async()=>{
+  const [q,g]=await Promise.all([sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id',s.id).order('created_at',{ascending:true}).limit(100),sb.from('live_gifts').select('id,sender_id,gift_id,quantity,created_at,gifts(name,emoji)').eq('live_id',s.id).order('created_at',{ascending:true}).limit(100)]);
+  if(q.error&&g.error)return;comments.replaceChildren();
+  const rows=[...(q.data||[]).map(x=>({...x,k:'c'})),...(g.data||[]).map(x=>({...x,k:'g'}))].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  const ids=[...new Set(rows.map(x=>x.user_id||x.sender_id).filter(Boolean))],names={};if(ids.length){const p=await sb.from('profiles').select('id,username').in('id',ids);(p.data||[]).forEach(x=>names[x.id]=x.username)}
+  rows.forEach(x=>{if(x.k==='c'&&x.body==='__bouncy_live_like__'){if(!s._seenLikeIds)s._seenLikeIds=new Set();if(!s._seenLikeIds.has(x.id)){s._seenLikeIds.add(x.id);animateLiveHeart(s)}return}
+   const row=E('div','');row.className='live-comment'+(x.k==='g'?' live-gift-comment':'');row.textContent=x.k==='g'?'@'+(names[x.sender_id]||'user')+' sent '+(x.gifts?.name||'Gift')+' '+(x.gifts?.emoji||'🎁'):'@'+(names[x.user_id]||'user')+': '+x.body;comments.append(row)});
+  comments.scrollTop=comments.scrollHeight;
+ };
+ await renderComments();s.commentChannel=sb.channel('live-comments-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_comments',filter:'stream_id=eq.'+s.id},renderComments).subscribe();
  await setupLiveGifts(s,comments,wrap);
- send.onclick=async()=>{const body=ci.value.trim();if(!body)return;send.disabled=true;const q=await sb.from('live_comments').insert({stream_id:s.id,user_id:me.id,body});if(q.error)toast('Comment could not be sent');else ci.value='';send.disabled=false};ci.onkeydown=e=>{if(e.key==='Enter')send.click()};
- leave.onclick=()=>s.host?endLiveStream(false):leaveLiveStream(false);
- // X always performs the correct cleanup action; never just dismisses a live session.
- const x=d.querySelector('.live-close');if(x)x.onclick=()=>s.host?endLiveStream(false):leaveLiveStream(false);
- if(s.host){if(!s.channel)await subscribeLiveSignals(s);const refresh=async()=>{if(liveSession!==s)return;await sb.from('live_viewers').delete().eq('stream_id',s.id).lt('last_seen_at',new Date(Date.now()-45000).toISOString());const c=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',s.id);count.textContent='👁️ '+(c.count||0)+' watching'};await refresh();s.countTimer=setInterval(refresh,3000);s.viewerChannel=sb.channel('live-viewers-'+s.id).on('postgres_changes',{event:'*',schema:'public',table:'live_viewers',filter:'stream_id=eq.'+s.id},()=>refresh()).subscribe();s.heartbeat=setInterval(()=>sb.from('live_streams').update({last_heartbeat_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id),20000)}else{count.textContent='👁️ Connecting…'}
-}
-
-async function setupLiveGifts(s,comments,wrap){
- const w=await sb.rpc('bouncy_get_coin_wallet');
- if(!w.error)s.coinWallet=w.data||{balance:1000,earned_coins:0};
+ send.onclick=async()=>{const body=ci.value.trim();if(!body)return;send.disabled=true;const r=await sb.from('live_comments').insert({stream_id:s.id,user_id:me.id,body});if(r.error)toast('Comment could not be sent');else ci.value='';send.disabled=false};ci.onkeydown=e=>{if(e.key==='Enter')send.click()};
  if(s.host){
-  const earned=E('span','','💎 Earned '+Number(s.coinWallet?.earned_coins||0).toLocaleString()+' coins');earned.className='live-gift-earned-pill';s.giftEarnedLabel=earned;const row=s._room?.querySelector('.live-top-row-two');if(row)row.insertBefore(earned,row.querySelector('.live-top-tools'));
- }
- s.giftChannel=sb.channel('live-gifts-'+s.id)
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'live_gifts',filter:'live_id=eq.'+s.id},async ev=>{
-   if(liveSession!==s||s.closing)return;
-   await renderGiftAnimation(s,ev.new);
-   const w=await sb.rpc('bouncy_get_coin_wallet');
-   if(!w.error){s.coinWallet=w.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 Earned '+Number(s.coinWallet.earned_coins||0).toLocaleString()+' coins';s.giftEarnedLabel.classList.remove('earned-pop');void s.giftEarnedLabel.offsetWidth;s.giftEarnedLabel.classList.add('earned-pop')}
-   const panel=s._giftPanel;if(panel){const bal=panel.querySelector('[data-gift-balance]');if(bal)bal.textContent='Your balance: '+Number(s.coinWallet?.balance||0).toLocaleString()+' coins'}
-  }).subscribe();
+  const refresh=async()=>{if(liveSession!==s)return;await sb.from('live_viewers').delete().eq('stream_id',s.id).lt('last_seen_at',new Date(Date.now()-45000).toISOString());const c=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',s.id);count.textContent='👁 '+(c.count||0)};
+  if(!s.channel)await subscribeLiveSignals(s);await refresh();s.countTimer=setInterval(refresh,3000);s.viewerChannel=sb.channel('live-viewers-'+s.id).on('postgres_changes',{event:'*',schema:'public',table:'live_viewers',filter:'stream_id=eq.'+s.id},refresh).subscribe();s.heartbeat=setInterval(()=>sb.from('live_streams').update({last_heartbeat_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id),20000);
+ }else{count.textContent='👁 1';s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}
+}
+async function setupLiveGifts(s,comments,wrap){
+ const w=await sb.rpc('bouncy_get_coin_wallet');if(!w.error)s.coinWallet=w.data||{balance:1000,earned_coins:0};
+ if(s.host){const earned=s._room?.querySelector('.live-gift-earned-pill');if(earned){earned.textContent='💎 '+Number(s.coinWallet?.earned_coins||0).toLocaleString();s.giftEarnedLabel=earned}}
+ s.giftChannel=sb.channel('live-gifts-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_gifts',filter:'live_id=eq.'+s.id},async ev=>{
+  if(liveSession!==s||s.closing)return;await renderGiftAnimation(s,ev.new);const wallet=await sb.rpc('bouncy_get_coin_wallet');
+  if(!wallet.error){s.coinWallet=wallet.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='💎 '+Number(s.coinWallet.earned_coins||0).toLocaleString()}
+  const panel=s._giftPanel;if(panel){const bal=panel.querySelector('[data-gift-balance]');if(bal)bal.textContent='Your balance: '+Number(s.coinWallet?.balance||0).toLocaleString()+' coins'}
+ }).subscribe();
 }
 async function renderGiftAnimation(s,giftRow){
  const [gr,pr]=await Promise.all([
