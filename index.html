@@ -1309,16 +1309,18 @@ btn('Save to phone',()=>{const a=document.createElement('a');a.href=pv.src;a.dow
 btn('Retake',()=>{close();},true);open(d);
 };
 const finishRecording=()=>{if(rec&&rec.state!=='inactive')rec.stop()};
-const startRecording=()=>{
+const startRecording=async()=>{
 if(!stream||!stream.getVideoTracks().length){toast('Camera is not ready');return}
+let recordStream=stream;
+if(musicFile){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();const dest=audioCtx.createMediaStreamDestination();const micTracks=stream.getAudioTracks();if(micTracks.length)audioCtx.createMediaStreamSource(new MediaStream(micTracks)).connect(dest);musicAudio=new Audio(musicUrl);musicAudio.loop=true;audioCtx.createMediaElementSource(musicAudio).connect(dest);await audioCtx.resume();await musicAudio.play();recordStream=new MediaStream([...stream.getVideoTracks(),...dest.stream.getAudioTracks()])}catch(e){toast('Could not start selected sound');if(musicAudio){musicAudio.pause();musicAudio=null}if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null}}}
 const types=['video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
 const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
 const chunks=[];
 try{
-rec=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:3000000}:{videoBitsPerSecond:3000000});
+rec=new MediaRecorder(recordStream,mime?{mimeType:mime,videoBitsPerRate:3000000,videoBitsPerSecond:3000000}:{videoBitsPerSecond:3000000});
 rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
 rec.onerror=()=>{toast('Recording failed');recording=false;shutterCore.style.borderRadius='50%';shutterCore.style.width=shutterCore.style.height='62px'};
-rec.onstop=()=>{if(recordTimer)clearInterval(recordTimer);recordTimer=null;recording=false;progress.style.width='0';shutterCore.style.borderRadius='50%';shutterCore.style.width=shutterCore.style.height='62px';const blob=new Blob(chunks,{type:(mime||'video/webm').split(';')[0]});if(blob.size)review(blob,true);else toast('No video was recorded')};
+rec.onstop=()=>{if(recordTimer)clearInterval(recordTimer);recordTimer=null;recording=false;if(musicAudio){musicAudio.pause();musicAudio=null}if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null}progress.style.width='0';shutterCore.style.borderRadius='50%';shutterCore.style.width=shutterCore.style.height='62px';const blob=new Blob(chunks,{type:(mime||'video/webm').split(';')[0]});if(blob.size)review(blob,true);else toast('No video was recorded')};
 rec.start(500);recording=true;recordStart=Date.now();shutterCore.style.width=shutterCore.style.height='28px';shutterCore.style.borderRadius='7px';
 recordTimer=setInterval(()=>{const elapsed=(Date.now()-recordStart)/1000;progress.style.width=Math.min(100,elapsed/maxSeconds*100)+'%';if(elapsed>=maxSeconds)finishRecording()},150);
 }catch(e){toast('Could not start recording')}
