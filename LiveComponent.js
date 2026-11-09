@@ -102,7 +102,7 @@
       if (row.status === 'requested' || row.status === 'invited') {
         act('Accept', 'accept'); act('Decline', 'decline');
       } else if (row.status === 'accepted') {
-        const mutePending = el('button', '', 'Mute · media pending'); mutePending.disabled = true; actions.append(mutePending);
+        act(row.is_muted_by_host ? 'Unmute' : 'Mute', 'mute');
         act('Remove', 'kick');
       }
       if (actions.childNodes.length) item.append(actions);
@@ -115,7 +115,7 @@
     if (s._cohostPanel) { s._cohostPanel.remove(); s._cohostPanel = null; return; }
     const panel = el('section', 'live-demo-host-panel live-cohost-panel');
     panel.append(el('strong', '', 'BOUNCY CO-HOSTS · MAX 4 PEOPLE'));
-    panel.append(el('p', 'bouncy-cohost-note', 'Seat approvals and invitations are active. Guest camera/audio and multi-person video layout are still being connected.'));
+    panel.append(el('p', 'bouncy-cohost-note', 'Up to four people can share this live. Guests need camera and microphone permission to join.'));
     const settings = el('div', 'bouncy-cohost-settings');
     const allow = el('button', '', s.cohostAllowRequests === false ? 'Turn requests on' : 'Turn requests off');
     allow.onclick = async () => {
@@ -228,7 +228,17 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_cohosts', filter: 'live_id=eq.' + s.id }, async ev => {
         if (liveSession !== s || s.closing) return;
         if (s._cohostPanel) await refreshCohostPanel(s);
+        if (s.host && ev.new?.user_id && ev.old?.status === 'accepted' && ev.new.status !== 'accepted') {
+          window.bouncyRemoveCohost?.(s, ev.new.user_id);
+        }
         if (!s.host && ev.new?.user_id === me.id) {
+          if (s.isCohost && ev.new.status === 'accepted' && ev.old?.is_muted_by_host !== ev.new.is_muted_by_host) {
+            s.cohostStream?.getAudioTracks().forEach(t => t.enabled = !ev.new.is_muted_by_host);
+            toast(ev.new.is_muted_by_host ? 'The host muted your microphone' : 'The host unmuted your microphone');
+          }
+          if (ev.new.status === 'kicked' || ev.new.status === 'left' || ev.new.status === 'declined') {
+            if (s.isCohost) window.bouncyStopCohost?.(s, ev.new.status === 'kicked' ? 'The host removed you from co-host' : 'Your co-host seat ended');
+          }
           if (ev.new.status === 'invited') showCohostInvite(s, ev.new);
           const button = s._cohostButton;
           if (button) {
@@ -236,7 +246,7 @@
             else if (ev.new.status === 'declined' || ev.new.status === 'kicked' || ev.new.status === 'left') { button.textContent = '＋'; button.title = 'Request to Co-Host'; button.disabled = false; button.classList.remove('requested'); button.onclick = () => requestCohost(s, button); }
             else if (ev.new.status === 'requested' || ev.new.status === 'invited') { button.textContent = '…'; button.title = 'Waiting for host'; button.disabled = true; }
           }
-          if (ev.new.status === 'accepted') toast('The host accepted your co-host request. Camera joining is not connected yet.');
+          if (ev.new.status === 'accepted') { toast('Co-host accepted. Connecting camera and microphone…'); window.bouncyStartCohost?.(s); }
           if (ev.new.status === 'declined') toast('The host declined your co-host request');
         }
       }).subscribe();
@@ -470,6 +480,9 @@
     video.className = 'live-video-main-layer';
     video.srcObject = s.host ? s.stream : (s.remote || null);
     stage.append(bgVideo, video);
+    const guestGrid = el('div', 'bouncy-live-guest-grid');
+    stage.append(guestGrid);
+    s._cohostGrid = guestGrid;
     s._backgroundVideo = bgVideo;
     s._video = video;
 
@@ -587,6 +600,11 @@
     watchCohostChanges(s);
     if (!s.host) watchBattleInvites(s);
     video.play().catch(() => {});
+    if (!s.host) {
+      const accepted = await sb.from('live_cohosts').select('status').eq('live_id', s.id).eq('user_id', me.id).maybeSingle();
+      if (!accepted.error && accepted.data?.status === 'accepted') window.bouncyStartCohost?.(s);
+    }
+    if (s.host) addCohostTile(s, 'host', s.stream, 'Host', true);
 
     let lastTap = 0;
     let singleTapTimer = null;
@@ -674,8 +692,46 @@
     }
   }
 
+
+  function addCohostTile(s, key, stream, label, isHost=false) {
+    if (!s?._cohostGrid || !stream) return;
+    let tile = s._cohostGrid.querySelector('[data-cohost-key="' + CSS.escape(String(key)) + '"]');
+    if (!tile) {
+      tile = el('div', 'bouncy-live-guest-tile');
+      tile.dataset.cohostKey = String(key);
+      const v = document.createElement('video');
+      v.autoplay = true; v.playsInline = true; v.muted = !!isHost;
+      const tag = el('span', 'bouncy-live-guest-label', label);
+      tile.append(v, tag); s._cohostGrid.append(tile);
+    }
+    const v = tile.querySelector('video');
+    if (v.srcObject !== stream) v.srcObject = stream;
+    v.muted = !!isHost; v.play().catch(() => {});
+    tile.querySelector('.bouncy-live-guest-label').textContent = label;
+    const count = s._cohostGrid.querySelectorAll('.bouncy-live-guest-tile').length;
+    s._cohostGrid.classList.toggle('visible', count > 1);
+    s._room?.classList.toggle('bouncy-live-has-cohosts', count > 1);
+    if (count > 1 && s._video) s._video.muted = true;
+    s._cohostGrid.dataset.layout = String(s.cohostLayout || 4);
+  }
+
+  function removeCohostTile(s, userId) {
+    const tile = s?._cohostGrid?.querySelector('[data-cohost-key="' + CSS.escape(String(userId)) + '"]');
+    tile?.remove();
+    const count = s?._cohostGrid?.querySelectorAll('.bouncy-live-guest-tile').length || 0;
+    s?._cohostGrid?.classList.toggle('visible', count > 1);
+    s?._room?.classList.toggle('bouncy-live-has-cohosts', count > 1);
+    if (count <= 1 && s?._video && !s.host) s._video.muted = false;
+  }
+
   window.BouncyLiveComponent = {
     render,
+    onCohostTrack: (s,userId,stream) => addCohostTile(s,userId,stream,'@' + (s.cohostNames?.[userId] || 'Co-host')),
+    onParticipantTrack: (s,streamId,stream) => {
+      const entries = [...(s.participantStreams || new Map()).entries()];
+      entries.forEach(([id,media],index) => addCohostTile(s,id,media,index===0?'Host':'Co-host ' + index,index===0 && s.host));
+    },
+    removeCohostTile,
     onGift: async (s, giftRow) => {
       if (liveSession !== s || s.closing) return;
       await renderGiftAnimation(s, giftRow);
