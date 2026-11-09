@@ -972,11 +972,12 @@ const nm=document.createElement('div');nm.className='b-post-author';nm.style.css
 const mo=document.createElement('button');mo.textContent='⋯';mo.className='b-post-more';mo.setAttribute('aria-label','More post options');mo.style.cssText='font-size:25px;padding:4px 10px';mo.onclick=()=>{if(me&&p.o===me.id)delPost(p);else if(!gate('report posts'))report(p,'post')};
 hd.append(av,nm,mo);c.append(hd);
 if(p.c){const t=document.createElement('p');t.className='b-post-text';t.style.cssText='margin:0 16px 12px;line-height:1.45;white-space:pre-wrap;word-break:break-word';t.textContent=p.c;c.append(t)}
+if(p.location||(p.hashtags&&p.hashtags.length)){const meta=E('div','margin:0 16px 10px;color:#777;font-size:12px;line-height:1.5',(p.location?'⌖ '+p.location+'  ':'')+(p.hashtags||[]).map(x=>'#'+x).join(' '));c.append(meta)}
 if(p.img){const im=document.createElement('img');im.src=pub(p.img);im.alt='Photo posted by @'+p.u;im.loading='lazy';im.className='b-post-photo';im.style.cssText='width:100%;max-height:560px;object-fit:cover;display:block;background:var(--soft);cursor:zoom-in';let last=0,timer=null;im.addEventListener('click',()=>{const now=Date.now();if(now-last<280){clearTimeout(timer);last=0;if(!p.my&&!gate('react to posts'))react(p,'👍');return}last=now;timer=setTimeout(()=>{last=0;openPostPhoto(p)},285)});c.append(im)}
 const stats=el('<div class="sm b-post-stats" style="display:flex;justify-content:space-between;padding:8px 16px;color:var(--mute);font-size:13px"><span></span><i style="font-style:normal"></i></div>').firstChild;stats.querySelector('i').style.cursor='pointer';stats.querySelector('i').onclick=()=>comments(p,'post');c.append(stats);
 const ac=document.createElement('div');ac.className='b-post-actions';ac.style.cssText='display:flex;border-top:1px solid var(--line);position:relative';
 const like=document.createElement('button');like.dataset.r='1';like.type='button';like.textContent='👍 Like';like.setAttribute('aria-label','Like or choose a reaction');like.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--mute)';bindReactionButton(p,like,ac);
-const cm=document.createElement('button');cm.type='button';cm.textContent='💬 Comment';cm.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--mute)';cm.onclick=()=>comments(p,'post');
+const cm=document.createElement('button');cm.type='button';cm.textContent=p.allow_comments===false?'Comments off':'💬 Comment';cm.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--mute)';cm.disabled=p.allow_comments===false;cm.style.opacity=cm.disabled?'.45':'1';cm.onclick=()=>{if(p.allow_comments!==false)comments(p,'post')};
 const sh=document.createElement('button');sh.type='button';sh.textContent='↗ Share';sh.style.cssText='flex:1;padding:13px 0;font-size:14px;color:var(--mute)';sh.onclick=()=>{if(gate('share posts'))return;if(navigator.share)navigator.share({title:'BOUNCY',text:(p.c||'').slice(0,100),url:location.origin+location.pathname+'?p='+p.id}).catch(()=>{});else toast('Sharing isn’t available in this browser')};
 ac.append(like,cm,sh);c.append(ac);paint(p);return c}
 async function react(p,r){if(!RX.includes(r))r='👍';p.rx=p.rx||{};const old=p.my;
@@ -988,12 +989,19 @@ async function delPost(p){if(!confirm('Delete this post? This can’t be undone.
 async function drawPosts(d){await storiesRow(d);
 const cp=document.createElement('button');cp.className='b-composer';cp.style.cssText='display:flex;gap:10px;align-items:center;width:100%;padding:0 16px 12px;text-align:left';
 cp.append(avatar(me?me.username:'?',me&&me.avatar,40));const ph=document.createElement('span');ph.textContent='What’s on your mind?';ph.style.cssText='flex:1;border:1px solid var(--line);border-radius:22px;padding:11px 16px;color:var(--mute)';const pi=E('span','display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--soft);flex:none');pi.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>';cp.append(ph,pi);cp.onclick=()=>composePost();d.append(cp);
-const sk=skel('post');d.append(sk);const {data,error}=await sb.from('posts').select('id,owner_id,body,image_path,reactions,reaction_count,comment_count,created_at').order('created_at',{ascending:false}).limit(30);
+const sk=skel('post');d.append(sk);const {data,error}=await sb.from('posts').select('*').order('created_at',{ascending:false}).limit(60);
 sk.remove();if(error){d.append(el('<p class="sub" style="margin:0 16px">Couldn’t load posts.</p>'));return}
 if(!data.length){d.append(el('<div class="empty">No posts yet.<br>Share the first one.</div>'));return}
-const ids=[...new Set(data.map(x=>x.owner_id))],pm={};((await sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids)).data||[]).forEach(x=>pm[x.id]=x);
-const my={};if(me)((await sb.from('post_reactions').select('post_id,reaction').in('post_id',data.map(x=>x.id)).eq('user_id',me.id)).data||[]).forEach(x=>my[x.post_id]=x.reaction);
-data.forEach(x=>{const o=pm[x.owner_id]||{};d.append(postCard({id:x.id,o:x.owner_id,u:o.username||'user',name:o.display_name||'',av:o.avatar_url,vf:o.verified,c:x.body,img:x.image_path,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my:my[x.id]||null,t:x.created_at}))})}
+let visible=data;
+if(me){
+const [a,b]=await Promise.all([sb.from('follows').select('followed_id').eq('follower_id',me.id),sb.from('follows').select('follower_id').eq('followed_id',me.id)]);
+const following=new Set((a.data||[]).map(x=>x.followed_id)),followers=new Set((b.data||[]).map(x=>x.follower_id));
+visible=data.filter(x=>{const audience=x.audience||'Everyone';if(audience==='Only me')return x.owner_id===me.id;if(audience==='Friends')return x.owner_id===me.id||(following.has(x.owner_id)&&followers.has(x.owner_id));return true});
+}else visible=data.filter(x=>(x.audience||'Everyone')==='Everyone');
+if(!visible.length){d.append(el('<div class="empty">No posts to show yet.</div>'));return}
+const ids=[...new Set(visible.map(x=>x.owner_id))],pm={};((await sb.from('profiles').select('id,username,avatar_url,verified').in('id',ids)).data||[]).forEach(x=>pm[x.id]=x);
+const my={};if(me)((await sb.from('post_reactions').select('post_id,reaction').in('post_id',visible.map(x=>x.id)).eq('user_id',me.id)).data||[]).forEach(x=>my[x.post_id]=x.reaction);
+visible.forEach(x=>{const o=pm[x.owner_id]||{};d.append(postCard({id:x.id,o:x.owner_id,u:o.username||'user',name:o.display_name||'',av:o.avatar_url,vf:o.verified,c:x.description||x.body,img:x.image_path,location:x.location,hashtags:x.hashtags||[],audience:x.audience||'Everyone',allow_comments:x.allow_comments!==false,rx:x.reactions||{},n:x.reaction_count,cb:x.comment_count,my:my[x.id]||null,t:x.created_at}))})}
 function composePost(pre){
 if(gate('post'))return;
 const cfg=pre&&pre.type?pre:{type:pre?'image':'text',file:pre||null};
