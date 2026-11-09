@@ -284,6 +284,34 @@ nav button:not(.plus).on::before{display:none}
 @keyframes bouncyHeartFloat{0%{opacity:0;transform:translateY(12px) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translateY(-130px) scale(1.35)}}
 @media(max-height:650px){#sheet.live-sheet .live-room-screen .live-comments{height:90px!important;bottom:calc(112px + env(safe-area-inset-bottom,0px))!important}#sheet.live-sheet .live-room-screen .live-title-line{top:calc(env(safe-area-inset-top,0px) + 122px)!important}}
 
+
+/* BOUNCY Gifts Phase 1 — free test coins only */
+#sheet.live-sheet .live-room-screen .live-gift-earned{position:absolute;z-index:8;top:calc(env(safe-area-inset-top,0px) + 116px);right:12px;padding:7px 10px;border-radius:10px;background:#101116d9;border:1px solid #ffffff35;color:#fff;font-size:11px;font-weight:850;backdrop-filter:blur(10px)}
+#sheet.live-sheet .live-room-screen .live-gift-fx{position:absolute;z-index:20;left:50%;top:42%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;text-align:center;animation:bouncyGiftPop 2.5s ease both}
+#sheet.live-sheet .live-room-screen .live-gift-fx div{font-size:clamp(64px,18vw,112px);filter:drop-shadow(0 8px 18px #0009)}
+#sheet.live-sheet .live-room-screen .live-gift-fx strong{padding:8px 14px;border-radius:999px;background:#090a10dd;color:#fff;font-size:14px;box-shadow:0 4px 18px #0008}
+#sheet.live-sheet .live-room-screen .live-gift-overlay{position:absolute;z-index:30;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));background:#0009;backdrop-filter:blur(3px)}
+#sheet.live-sheet .live-room-screen .live-gift-panel{width:100%;max-width:520px;max-height:72%;overflow:auto;padding:16px;border-radius:22px;background:#171820;color:#fff;border:1px solid #ffffff24;box-shadow:0 12px 40px #0009}
+#sheet.live-sheet .live-gift-panel-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+#sheet.live-sheet .live-gift-panel-head strong{font-size:17px;font-weight:900}
+#sheet.live-sheet .live-gift-panel-head span{margin-left:auto;font-size:12px;color:#fff;background:#292b36;padding:7px 10px;border-radius:999px}
+#sheet.live-sheet .live-gift-close{width:32px;height:32px;border:0;border-radius:50%;background:#30313b;color:#fff;font-size:22px}
+#sheet.live-sheet .live-gift-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#sheet.live-sheet .live-gift-card{min-width:0;display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 5px;border-radius:15px;background:#22242e;border:1px solid #ffffff18;color:#fff}
+#sheet.live-sheet .live-gift-card.selected{border:2px solid #ff426d;background:#34202a}
+#sheet.live-sheet .live-gift-card span{font-size:30px;line-height:1.2}
+#sheet.live-sheet .live-gift-card b{font-size:12px}
+#sheet.live-sheet .live-gift-card small{font-size:10px;color:#c6c7cf}
+#sheet.live-sheet .live-gift-quantity{display:flex;align-items:center;justify-content:flex-end;gap:14px;margin:14px 0}
+#sheet.live-sheet .live-gift-quantity span{margin-right:auto;color:#d0d1d8;font-size:13px}
+#sheet.live-sheet .live-gift-quantity button{width:34px;height:34px;border-radius:10px;background:#30313b;color:#fff;border:1px solid #ffffff20;font-size:20px}
+#sheet.live-sheet .live-gift-send,#sheet.live-sheet .live-gift-free{width:100%;height:44px;border:0;border-radius:12px;font-weight:900;margin-top:8px}
+#sheet.live-sheet .live-gift-send{background:#e52f38;color:#fff}
+#sheet.live-sheet .live-gift-free{background:#30313b;color:#fff;border:1px solid #ffffff22}
+#sheet.live-sheet .live-gift-note{text-align:center;color:#bfc0c9;font-size:11px;margin:10px 0 0}
+#sheet.live-sheet .live-room-screen .live-gift-comment{color:#ffd3df;font-weight:800}
+@keyframes bouncyGiftPop{0%{opacity:0;transform:translate(-50%,-35%) scale(.35)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}30%{transform:translate(-50%,-50%) scale(1)}82%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(.85)}}
+
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
@@ -463,7 +491,7 @@ async function subscribeLiveSignals(session){return await new Promise((resolve,r
 async function sendLiveSignal(session,peer,type,payload={}){if(!session||(session.closing&&type!=='leave'))return;const r=await sb.from('live_signals').insert({stream_id:session.id,sender_id:me.id,recipient_id:peer,signal_type:type,payload});if(r.error)console.warn('Live signal error',r.error)}
 async function showLiveRoom(){
  const s=liveSession;if(!s)return;
- const d=liveScreen(s.host?'You are LIVE':'Watching LIVE');d.classList.add('live-room-screen');
+ const d=liveScreen(s.host?'You are LIVE':'Watching LIVE');d.classList.add('live-room-screen');s._room=d;
  const wrap=E('div','');wrap.className='live-video-wrap';s._wrap=wrap;
  const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=!!s.host;video.srcObject=s.host?s.stream:null;wrap.append(video);
  const badge=E('span','','● LIVE');badge.className='live-badge';const count=E('span','',s.host?'0 watching':'1 watching');count.className='live-view-count';wrap.append(badge,count);
@@ -478,26 +506,127 @@ async function showLiveRoom(){
  const compose=E('div','');compose.className='live-compose';const ci=E('input','');ci.type='text';ci.maxLength=500;ci.placeholder='Say something…';ci.setAttribute('aria-label','Live comment');const send=E('button','','Send');compose.append(ci,send);
  const actions=E('div','');actions.className='live-actions';
  const mkAction=(icon,label,fn)=>{const b=E('button','');b.innerHTML='<span class="action-icon">'+icon+'</span><span>'+label+'</span>';b.onclick=fn;return b};
- const like=mkAction('♥','Like',()=>sendLiveLike(s));const share=mkAction('↗','Share',async()=>{const url=location.href;try{if(navigator.share)await navigator.share({title:'BOUNCY Live',text:'Watch @'+(s.host?me.username:s.hostName)+' live on BOUNCY',url});else{await navigator.clipboard.writeText(url);toast('Live link copied')}}catch(e){}});const gift=mkAction('🎁','Gift',()=>toast('Gifts are coming soon. No payment is taken.'));actions.append(like,share,gift);
+ const like=mkAction('♥','Like',()=>sendLiveLike(s));const share=mkAction('↗','Share',async()=>{const url=location.href;try{if(navigator.share)await navigator.share({title:'BOUNCY Live',text:'Watch @'+(s.host?me.username:s.hostName)+' live on BOUNCY',url});else{await navigator.clipboard.writeText(url);toast('Live link copied')}}catch(e){}});const gift=mkAction('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));actions.append(like,share,gift);
  const bottom=E('div','');bottom.className='live-bottom-controls';const leave=E('button','',s.host?'End live':'Leave live');leave.className='live-end-btn';bottom.append(leave);
  let soundBtn=null;if(!s.host){soundBtn=E('button','','Turn sound on');soundBtn.className='live-sound-btn';soundBtn.onclick=()=>{video.muted=!video.muted;soundBtn.textContent=video.muted?'Turn sound on':'Mute sound';video.play().catch(()=>{})};bottom.append(soundBtn)}
  d.append(wrap,info,topTools,titleLine,comments,compose,actions,bottom);if(!s.host)video.muted=true;liveOpenSheet(d);video.play().catch(()=>{});
  if(s.host){mute.onclick=()=>{const track=s.stream.getAudioTracks()[0];if(track){track.enabled=!track.enabled;mute.textContent=track.enabled?'Mic on':'Mic off'}};flip.onclick=async()=>{try{const old=s.stream.getVideoTracks()[0],nextFacing=s.facing==='user'?'environment':'user';const fresh=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:nextFacing},width:{ideal:640,max:640},height:{ideal:480,max:480},frameRate:{ideal:15,max:15}},audio:false});const next=fresh.getVideoTracks()[0];for(const pc of s.pcs.values()){const sender=pc.getSenders().find(x=>x.track?.kind==='video');if(sender)await sender.replaceTrack(next)}if(old){s.stream.removeTrack(old);old.stop()}s.stream.addTrack(next);s.facing=nextFacing;video.srcObject=s.stream;toast('Camera flipped')}catch(e){toast('Could not switch camera on this device')}}}
- const renderComments=async()=>{const q=await sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id',s.id).order('created_at',{ascending:true}).limit(100);if(!q.error){comments.replaceChildren();const ids=[...new Set((q.data||[]).map(x=>x.user_id))],names={};if(ids.length){const p=await sb.from('profiles').select('id,username').in('id',ids);(p.data||[]).forEach(x=>names[x.id]=x.username)}(q.data||[]).forEach(x=>{if(x.body==='__bouncy_live_like__'){const heart=E('span','','♥');heart.className='live-float-heart';wrap.append(heart);setTimeout(()=>heart.remove(),1400);return}const row=E('div','');row.className='live-comment';row.append(E('b','', '@'+(names[x.user_id]||'user')),document.createTextNode(x.body));comments.append(row)});if(!comments.children.length)comments.textContent='Be kind. Start the conversation.';comments.scrollTop=comments.scrollHeight}};
+ const renderComments=async()=>{
+ const [q,g]=await Promise.all([
+  sb.from('live_comments').select('id,user_id,body,created_at').eq('stream_id',s.id).order('created_at',{ascending:true}).limit(100),
+  sb.from('live_gifts').select('id,sender_id,gift_id,quantity,total_coins,created_at,gifts(name,emoji)').eq('live_id',s.id).order('created_at',{ascending:true}).limit(100)
+ ]);
+ if(q.error&&g.error)return;
+ comments.replaceChildren();
+ const rows=[...(q.data||[]).map(x=>({...x,_kind:'comment'})),...(g.data||[]).map(x=>({...x,_kind:'gift'}))].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+ const ids=[...new Set(rows.map(x=>x.user_id||x.sender_id).filter(Boolean))],names={};
+ if(ids.length){const p=await sb.from('profiles').select('id,username').in('id',ids);(p.data||[]).forEach(x=>names[x.id]=x.username)}
+ rows.forEach(x=>{
+  if(x._kind==='comment'&&x.body==='__bouncy_live_like__'){const heart=E('span','','♥');heart.className='live-float-heart';wrap.append(heart);setTimeout(()=>heart.remove(),1400);return}
+  const row=E('div','');row.className='live-comment'+(x._kind==='gift'?' live-gift-comment':'');
+  if(x._kind==='gift'){const g=x.gifts||{};row.append(E('b','', '@'+(names[x.sender_id]||'user')),document.createTextNode(' sent '+(g.emoji||'🎁')+(x.quantity>1?' x'+x.quantity:'')));}
+  else row.append(E('b','', '@'+(names[x.user_id]||'user')),document.createTextNode(x.body));
+  comments.append(row);
+ });
+ if(!comments.children.length)comments.textContent='Be kind. Start the conversation.';
+ comments.scrollTop=comments.scrollHeight;
+};
  await renderComments();s.commentChannel=sb.channel('live-comments-'+s.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'live_comments',filter:'stream_id=eq.'+s.id},()=>renderComments()).subscribe();
+ await setupLiveGifts(s,comments,wrap);
  send.onclick=async()=>{const body=ci.value.trim();if(!body)return;send.disabled=true;const q=await sb.from('live_comments').insert({stream_id:s.id,user_id:me.id,body});if(q.error)toast('Comment could not be sent');else ci.value='';send.disabled=false};ci.onkeydown=e=>{if(e.key==='Enter')send.click()};
  leave.onclick=()=>s.host?endLiveStream(false):leaveLiveStream(false);
  // X always performs the correct cleanup action; never just dismisses a live session.
  const x=d.querySelector('.live-close');if(x)x.onclick=()=>s.host?endLiveStream(false):leaveLiveStream(false);
  if(s.host){if(!s.channel)await subscribeLiveSignals(s);const refresh=async()=>{if(liveSession!==s)return;await sb.from('live_viewers').delete().eq('stream_id',s.id).lt('last_seen_at',new Date(Date.now()-45000).toISOString());const c=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',s.id);count.textContent=(c.count||0)+' watching'};await refresh();s.countTimer=setInterval(refresh,3000);s.viewerChannel=sb.channel('live-viewers-'+s.id).on('postgres_changes',{event:'*',schema:'public',table:'live_viewers',filter:'stream_id=eq.'+s.id},()=>refresh()).subscribe();s.heartbeat=setInterval(()=>sb.from('live_streams').update({last_heartbeat_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id),20000)}else{count.textContent='Connecting…'}
 }
+
+async function setupLiveGifts(s,comments,wrap){
+ const w=await sb.rpc('bouncy_get_coin_wallet');
+ if(!w.error)s.coinWallet=w.data||{balance:1000,earned_coins:0};
+ if(s.host){
+  const earned=E('div','','Earned '+Number(s.coinWallet?.earned_coins||0).toLocaleString()+' coins');
+  earned.className='live-gift-earned';wrap.append(earned);s.giftEarnedLabel=earned;
+ }
+ s.giftChannel=sb.channel('live-gifts-'+s.id)
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'live_gifts',filter:'live_id=eq.'+s.id},async ev=>{
+   if(liveSession!==s||s.closing)return;
+   await renderGiftAnimation(s,ev.new);
+   const w=await sb.rpc('bouncy_get_coin_wallet');
+   if(!w.error){s.coinWallet=w.data||s.coinWallet;if(s.host&&s.giftEarnedLabel)s.giftEarnedLabel.textContent='Earned '+Number(s.coinWallet.earned_coins||0).toLocaleString()+' coins'}
+   const panel=s._giftPanel;if(panel){const bal=panel.querySelector('[data-gift-balance]');if(bal)bal.textContent='Your balance: '+Number(s.coinWallet?.balance||0).toLocaleString()+' coins'}
+  }).subscribe();
+}
+async function renderGiftAnimation(s,giftRow){
+ const [gr,pr]=await Promise.all([
+  sb.from('gifts').select('name,emoji,animation_type').eq('id',giftRow.gift_id).maybeSingle(),
+  sb.from('profiles').select('username').eq('id',giftRow.sender_id).maybeSingle()
+ ]);
+ const emoji=gr.data?.emoji||'🎁',username=pr.data?.username||'user';
+ const fx=E('div','');fx.className='live-gift-fx';
+ fx.append(E('div','',emoji),E('strong','', '@'+username+' sent '+emoji+(giftRow.quantity>1?' x'+giftRow.quantity:'')));
+ s._wrap?.append(fx);setTimeout(()=>fx.remove(),2600);
+}
+async function openLiveGiftPanel(s,comments,wrap){
+ if(!s||s.closing||!liveSession||liveSession!==s)return;
+ if(s._giftPanel){s._giftPanel.remove();s._giftPanel=null;return}
+ const [wallet,catalog]=await Promise.all([
+  sb.rpc('bouncy_get_coin_wallet'),
+  sb.from('gifts').select('id,name,emoji,coin_cost,animation_type').order('coin_cost',{ascending:true})
+ ]);
+ if(wallet.error){toast(wallet.error.message||'Could not load your coin wallet');return}
+ if(catalog.error||!catalog.data?.length){toast('Gift catalogue could not load');return}
+ s.coinWallet=wallet.data||{balance:1000,earned_coins:0};
+ const overlay=E('div','');overlay.className='live-gift-overlay';s._giftPanel=overlay;
+ const panel=E('div','');panel.className='live-gift-panel';
+ const head=E('div','');head.className='live-gift-panel-head';
+ head.append(E('strong','','Send a gift'),E('span','',Number(s.coinWallet.balance||0).toLocaleString()+' coins'));head.lastChild.dataset.giftBalance='1';
+ const closeGift=E('button','','×');closeGift.className='live-gift-close';closeGift.onclick=()=>{overlay.remove();s._giftPanel=null};head.append(closeGift);
+ const grid=E('div','');grid.className='live-gift-grid';
+ const qtyLine=E('div','');qtyLine.className='live-gift-quantity';
+ const minus=E('button','','−'),qtyText=E('strong','','1'),plus=E('button','','+');
+ minus.onclick=()=>{quantity=Math.max(1,quantity-1);qtyText.textContent=String(quantity);updateSend()};
+ plus.onclick=()=>{quantity=Math.min(20,quantity+1);qtyText.textContent=String(quantity);updateSend()};
+ qtyLine.append(E('span','','Quantity'),minus,qtyText,plus);
+ const sendGift=E('button','','Send gift');sendGift.className='live-gift-send';
+ const free=E('button','','Get 1,000 free coins');free.className='live-gift-free';
+ const note=E('p','','Free test coins only · No real money');note.className='live-gift-note';
+ let selected=catalog.data[0],quantity=1;
+ const cards=[];
+ const updateSend=()=>{sendGift.textContent='Send '+selected.emoji+' · '+(selected.coin_cost*quantity).toLocaleString()+' coins';cards.forEach(({b,g})=>b.classList.toggle('selected',g.id===selected.id))};
+ catalog.data.forEach(g=>{
+  const b=E('button','');b.className='live-gift-card';
+  b.append(E('span','',g.emoji),E('b','',g.name),E('small','',g.coin_cost+' coins'));
+  b.onclick=()=>{selected=g;quantity=1;qtyText.textContent='1';updateSend()};
+  cards.push({b,g});grid.append(b);
+ });
+ const updateBalance=()=>{head.lastChild.previousSibling.textContent=Number(s.coinWallet?.balance||0).toLocaleString()+' coins'};
+ sendGift.onclick=async()=>{
+  if(sendGift.disabled)return;
+  sendGift.disabled=true;
+  const result=await sb.rpc('bouncy_send_live_gift',{p_live_id:s.id,p_gift_id:selected.id,p_quantity:quantity});
+  if(result.error){toast(result.error.message?.includes('Not enough coins')?'Not enough coins':(result.error.message||'Gift could not be sent'));sendGift.disabled=false;return}
+  s.coinWallet={...(s.coinWallet||{}),balance:Number(result.data?.balance??s.coinWallet?.balance??0)};
+  updateBalance();toast('Gift sent!');sendGift.disabled=false;
+ };
+ free.onclick=async()=>{
+  free.disabled=true;
+  const result=await sb.rpc('bouncy_claim_free_coins');
+  if(result.error)toast(result.error.message||'Free coins are not available yet');
+  else{s.coinWallet=result.data;updateBalance();toast('1,000 free coins added')}
+  free.disabled=false;
+ };
+ updateSend();
+ panel.append(head,grid,qtyLine,sendGift,free,note);overlay.append(panel);
+ overlay.onclick=e=>{if(e.target===overlay){overlay.remove();s._giftPanel=null}};
+ s._room?.append(overlay);
+}
 async function sendLiveLike(s){if(!s||s.closing)return;const heart=E('span','','♥');heart.className='live-float-heart';s._wrap?.append(heart);setTimeout(()=>heart.remove(),1400);const r=await sb.from('live_comments').insert({stream_id:s.id,user_id:me.id,body:'__bouncy_live_like__'});if(r.error)toast('Like could not be sent')}
 
 async function hostAcceptViewer(s,viewerId,offer){let pc=s.pcs.get(viewerId);if(pc){pc.close();s.pcs.delete(viewerId)}pc=new RTCPeerConnection(liveRtcConfig);s.pcs.set(viewerId,pc);pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,viewerId,'candidate',e.candidate.toJSON())};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'||pc.connectionState==='closed'){pc.close();if(s.pcs.get(viewerId)===pc)s.pcs.delete(viewerId)}};s.stream.getTracks().forEach(t=>pc.addTrack(t,s.stream));for(const sender of pc.getSenders()){if(sender.track?.kind==='video'){try{const p=sender.getParameters();p.encodings=p.encodings?.length?p.encodings:[{}];p.encodings[0].maxBitrate=500000;p.encodings[0].maxFramerate=15;await sender.setParameters(p)}catch(e){console.warn('Live bitrate cap unavailable',e)}}}await pc.setRemoteDescription(offer);const q=s.queues.get(viewerId)||[];s.queues.delete(viewerId);for(const c of q)try{await pc.addIceCandidate(c)}catch(e){}const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendLiveSignal(s,viewerId,'answer',pc.localDescription.toJSON())}
 async function handleLiveSignal(s,x){if(!s||liveSession!==s||s.closing||x.sender_id===me.id||x.recipient_id!==me.id)return;try{if(s.host){if(x.signal_type==='offer')await hostAcceptViewer(s,x.sender_id,x.payload);else if(x.signal_type==='candidate'){const pc=s.pcs.get(x.sender_id);if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else{const q=s.queues.get(x.sender_id)||[];q.push(x.payload);s.queues.set(x.sender_id,q)}}else if(x.signal_type==='leave'){const pc=s.pcs.get(x.sender_id);pc?.close();s.pcs.delete(x.sender_id);s.queues.delete(x.sender_id)}}else{const pc=s.pc;if(x.signal_type==='answer'&&pc?.signalingState==='have-local-offer'){await pc.setRemoteDescription(x.payload);for(const c of(s.queues||[]))try{await pc.addIceCandidate(c)}catch(e){}s.queues=[];}else if(x.signal_type==='candidate'){if(pc?.remoteDescription)await pc.addIceCandidate(x.payload);else s.queues.push(x.payload)}else if(x.signal_type==='leave'){toast('Live ended');leaveLiveStream(true)}}}catch(e){console.warn('BOUNCY LIVE signal',e)}}
 async function joinLiveStream(st,hostName){if(!me)return;if(liveSession){toast('Leave your current live stream first');return}const cnt=await sb.from('live_viewers').select('user_id',{count:'exact',head:true}).eq('stream_id',st.id);if((cnt.count||0)>=LIVE_MAX_VIEWERS){toast('This free live stream has reached its viewer limit');return}const s=liveSession={host:false,id:st.id,hostId:st.host_id,title:st.title||'Live now',hostName,pc:null,queues:[],channel:null,commentChannel:null,closing:false};try{await subscribeLiveSignals(s);const j=await sb.from('live_viewers').upsert({stream_id:s.id,user_id:me.id,last_seen_at:new Date().toISOString()},{onConflict:'stream_id,user_id'});if(j.error)throw j.error;const pc=s.pc=new RTCPeerConnection(liveRtcConfig);pc.addTransceiver('video',{direction:'recvonly'});pc.addTransceiver('audio',{direction:'recvonly'});pc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,st.host_id,'candidate',e.candidate.toJSON())};pc.ontrack=e=>{const v=sheet.querySelector('.live-video-wrap video');if(v){if(!s.remote)s.remote=new MediaStream();if(!s.remote.getTracks().some(t=>t.id===e.track.id))s.remote.addTrack(e.track);v.srcObject=s.remote;v.play().catch(()=>{})}};pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){toast('Connection failed. This network may need a relay server.');clearTimeout(s.connectionTimer)}if(pc.connectionState==='connected'){clearTimeout(s.connectionTimer);const c=sheet.querySelector('.live-view-count');if(c)c.textContent='Watching live'}};const offer=await pc.createOffer();await pc.setLocalDescription(offer);await showLiveRoom();await sendLiveSignal(s,st.host_id,'offer',pc.localDescription.toJSON());s.connectionTimer=setTimeout(()=>{if(liveSession===s&&s.pc?.connectionState!=='connected'){toast('The live stream could not connect on this network');leaveLiveStream(true);openLiveHub()}},18000);s.heartbeat=setInterval(()=>sb.from('live_viewers').update({last_seen_at:new Date().toISOString()}).eq('stream_id',s.id).eq('user_id',me.id),20000)}catch(e){console.error('BOUNCY LIVE join',e);toast(e.message||'Could not join this live stream');await leaveLiveStream(true);openLiveHub()}}
-async function endLiveStream(silent=false){const s=liveSession;if(!s||!s.host)return;s.closing=true;for(const id of s.pcs.keys())await sendLiveSignal(s,id,'leave',{});s.pcs.forEach(pc=>pc.close());s.pcs.clear();s.stream.getTracks().forEach(t=>t.stop());clearInterval(s.countTimer);clearInterval(s.heartbeat);if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id);liveSession=null;close();if(!silent)toast('Your live stream has ended')}
-async function leaveLiveStream(silent=false){const s=liveSession;if(!s||s.host)return;s.closing=true;clearInterval(s.heartbeat);clearTimeout(s.connectionTimer);s.pc?.close();if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.hostId)await sendLiveSignal(s,s.hostId,'leave',{}).catch(()=>{});await sb.from('live_viewers').delete().eq('stream_id',s.id).eq('user_id',me.id);liveSession=null;close();if(!silent)toast('You left the live stream')}
+async function endLiveStream(silent=false){const s=liveSession;if(!s||!s.host)return;s.closing=true;for(const id of s.pcs.keys())await sendLiveSignal(s,id,'leave',{});s.pcs.forEach(pc=>pc.close());s.pcs.clear();s.stream.getTracks().forEach(t=>t.stop());clearInterval(s.countTimer);clearInterval(s.heartbeat);if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();await sb.from('live_streams').update({status:'ended',ended_at:new Date().toISOString()}).eq('id',s.id).eq('host_id',me.id);liveSession=null;close();if(!silent)toast('Your live stream has ended')}
+async function leaveLiveStream(silent=false){const s=liveSession;if(!s||s.host)return;s.closing=true;clearInterval(s.heartbeat);clearTimeout(s.connectionTimer);s.pc?.close();if(s.channel)sb.removeChannel(s.channel);if(s.commentChannel)sb.removeChannel(s.commentChannel);if(s.viewerChannel)sb.removeChannel(s.viewerChannel);if(s.giftChannel)sb.removeChannel(s.giftChannel);if(s._giftPanel)s._giftPanel.remove();if(s.hostId)await sendLiveSignal(s,s.hostId,'leave',{}).catch(()=>{});await sb.from('live_viewers').delete().eq('stream_id',s.id).eq('user_id',me.id);liveSession=null;close();if(!silent)toast('You left the live stream')}
 $('#liveOpen').onclick=openLiveHub;
 
 const IC={grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',doc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',heart:'<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',add:'<circle cx="10" cy="8" r="4"/><path d="M3 21c1-5 13-5 14 0M19 8v6M16 11h6"/>',back:'<path d="M15 5l-7 7 7 7"/>',share:'<path d="M12 15V3m0 0L7 8m5-5 5 5M5 13v8h14v-8"/>',dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'};
