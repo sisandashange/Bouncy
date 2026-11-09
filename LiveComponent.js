@@ -258,11 +258,6 @@
     gift.onclick = () => openLiveGiftPanel(s, comments, stage);
     bottom.append(options, share, gift);
 
-    const sound = el('button', 'live-demo-sound', '🔊');
-    sound.setAttribute('aria-label', 'Toggle sound');
-    sound.onclick = () => { video.muted = !video.muted; sound.textContent = video.muted ? '🔇' : '🔊'; };
-    if (!s.host) identity.append(sound);
-
     room.append(stage, heartLayer, top, second, giftBanner, comments, bottom);
     liveOpenSheet(room);
     video.play().catch(() => {});
