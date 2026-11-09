@@ -707,7 +707,7 @@
       const v = document.createElement('video');
       v.autoplay = true; v.playsInline = true; v.muted = !!isHost; v.className = 'bouncy-cohost-main';
       const tag = el('span', 'bouncy-live-guest-label', label);
-      tile.append(bg, v, tag); s._cohostGrid.append(tile);
+      tile.append(bg, v, tag); const selfTile=s._cohostGrid.querySelector('[data-cohost-key="self"]'); if(String(key)!=='self'&&selfTile)s._cohostGrid.insertBefore(tile,selfTile);else s._cohostGrid.append(tile);
     }
     const bg = tile.querySelector('.bouncy-cohost-blur');
     const v = tile.querySelector('.bouncy-cohost-main');
