@@ -102,7 +102,8 @@
       if (row.status === 'requested' || row.status === 'invited') {
         act('Accept', 'accept'); act('Decline', 'decline');
       } else if (row.status === 'accepted') {
-        act(row.is_muted_by_host ? 'Unmute' : 'Mute', 'mute'); act('Remove', 'kick');
+        const mutePending = el('button', '', 'Mute · media pending'); mutePending.disabled = true; actions.append(mutePending);
+        act('Remove', 'kick');
       }
       if (actions.childNodes.length) item.append(actions);
       list.append(item);
@@ -114,6 +115,7 @@
     if (s._cohostPanel) { s._cohostPanel.remove(); s._cohostPanel = null; return; }
     const panel = el('section', 'live-demo-host-panel live-cohost-panel');
     panel.append(el('strong', '', 'BOUNCY CO-HOSTS · MAX 4 PEOPLE'));
+    panel.append(el('p', 'bouncy-cohost-note', 'Seat approvals and invitations are active. Guest camera/audio and multi-person video layout are still being connected.'));
     const settings = el('div', 'bouncy-cohost-settings');
     const allow = el('button', '', s.cohostAllowRequests === false ? 'Turn requests on' : 'Turn requests off');
     allow.onclick = async () => {
