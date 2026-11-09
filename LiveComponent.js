@@ -305,7 +305,10 @@
         (p.data || []).forEach(x => names[x.id] = x.username);
       }
       rows.forEach(x => {
-        if (x.kind === 'comment' && x.body === '__bouncy_live_like__') return;
+        if (x.kind === 'comment' && x.body === '__bouncy_live_like__') {
+          if (x.user_id !== me.id) spawnHeart(s, stage.clientWidth * 0.72, stage.clientHeight * 0.72, false);
+          return;
+        }
         const line = el('div', 'live-comment' + (x.kind === 'gift' ? ' live-gift-comment' : ''));
         line.textContent = x.kind === 'gift'
           ? '@' + (names[x.sender_id] || 'user') + ' sent ' + (x.gifts?.name || 'Gift') + ' ' + (x.gifts?.emoji || '🎁')
