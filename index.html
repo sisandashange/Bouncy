@@ -688,10 +688,10 @@ async function showLiveRoom(){
  const compose=E('div','');compose.className='live-compose live-compose-tiktok';
  const ci=E('input','');ci.placeholder='Add comment...';ci.maxLength=500;
  const send=E('button','','');send.className='live-send-comment';send.style.display='none';compose.append(ci,send);bottom.append(compose);
- if(s.host){const hostTools=action('☷','Host controls',()=>{const panel=E('div','');panel.className='live-demo-host-panel';const title=E('strong','','Host controls');const mute=E('button','',s._video?.muted?'Unmute':'Mute');mute.onclick=()=>{const track=s.stream?.getAudioTracks()[0];if(track)track.enabled=!track.enabled;mute.textContent=track?.enabled?'Mute':'Unmute'};const flip=E('button','','Flip camera');flip.onclick=async()=>{const next=s.facing==='user'?'environment':'user';const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:next}},audio:false});const fresh=st.getVideoTracks()[0],old=s.stream.getVideoTracks()[0];s.stream.removeTrack(old);s.stream.addTrack(fresh);if(s._video)s._video.srcObject=s.stream;s.facing=next;old.stop();panel.remove()};const done=E('button','','Close');done.onclick=()=>panel.remove();panel.append(title,mute,flip,done);d.append(panel)});bottom.append(hostTools)}
+ if(s.host){const hostTools=action('☷','Host controls',()=>{const panel=E('div','');panel.className='live-demo-host-panel';const title=E('strong','','Host controls');const mute=E('button','',s._video?.muted?'Unmute':'Mute');mute.onclick=()=>{const track=s.stream?.getAudioTracks()[0];if(track)track.enabled=!track.enabled;mute.textContent=track?.enabled?'Mute':'Unmute'};const pause=E('button','',s._video?.paused?'Resume':'Pause');pause.onclick=()=>{const track=s.stream?.getVideoTracks()[0];if(track)track.enabled=!track.enabled;pause.textContent=track?.enabled?'Pause':'Resume'};const done=E('button','','Close');done.onclick=()=>panel.remove();panel.append(title,mute,pause,done);d.append(panel)});bottom.append(hostTools)}
  else bottom.append(sound);
  const share=action('↗','Share',shareFn),gift=action('🎁','Gift',()=>openLiveGiftPanel(s,comments,wrap));bottom.append(share,gift);
- const big=E('div','','♥');big.className='live-double-heart';d.append(wrap,top,sub,comments,bottom,big);
+ const big=E('div','','♥');big.className='live-double-heart';d.append(wrap,top,topRight,sub,comments,bottom,big);
  liveOpenSheet(d);video.play().catch(()=>{});
  const exit=()=>s.host?endLiveStream(false):leaveLiveStream(false);closeBtn.onclick=exit;
  let lastTap=0,longTimer=null,longDone=false,startY=0,startX=0;
