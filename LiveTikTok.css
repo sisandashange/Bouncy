@@ -1,0 +1,138 @@
+/* ============================================================
+   BOUNCY TikTok LIVE Engine — CSS Overlay & HUD
+   ============================================================ */
+
+#sheet.live-sheet {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  z-index: 99999 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #000 !important;
+  color: #fff !important;
+  overflow: hidden !important;
+}
+
+#sheet.live-sheet::before { display: none !important; }
+
+#sheet.live-sheet .live-room-screen.live-room {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+
+.live-stage {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: #000 !important;
+  z-index: 0 !important;
+}
+
+.live-stage video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  background: #000 !important;
+}
+
+.live-bg-video { filter: blur(20px); opacity: .3; transform: scale(1.1); }
+
+.live-tiktok-topbar {
+  position: absolute !important;
+  z-index: 10 !important;
+  top: calc(env(safe-area-inset-top, 8px) + 8px) !important;
+  left: 12px !important;
+  right: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  pointer-events: none !important;
+}
+.live-tiktok-topbar * { pointer-events: auto !important; }
+
+.live-host-pill {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: rgba(0,0,0,.45) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  padding: 4px 12px 4px 4px !important;
+  border-radius: 999px !important;
+}
+.live-host-avatar {
+  width: 34px !important; height: 34px !important;
+  border-radius: 50% !important; object-fit: cover !important;
+  border: 1.5px solid #fe2c55 !important;
+}
+.live-host-details { display: flex !important; flex-direction: column !important; line-height: 1.2 !important; }
+.live-host-name-row { display: flex !important; align-items: center !important; gap: 4px !important; font-size: 13px !important; font-weight: 800 !important; color: #fff !important; }
+.live-tag-badge { background: #fe2c55 !important; color: #fff !important; font-size: 9px !important; font-weight: 900 !important; padding: 1px 5px !important; border-radius: 4px !important; letter-spacing: .05em !important; }
+.live-diamonds-count { font-size: 11px !important; color: #ffda6b !important; font-weight: 750 !important; }
+.live-top-actions { display: flex !important; align-items: center !important; gap: 8px !important; }
+.live-goal-pill {
+  background: rgba(0,0,0,.45) !important; backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important; border: 1px solid rgba(255,255,255,.18) !important;
+  color: #fff !important; padding: 6px 12px !important; border-radius: 999px !important;
+  font-size: 12px !important; font-weight: 750 !important;
+}
+.live-tiktok-close {
+  width: 36px !important; height: 36px !important; border-radius: 50% !important;
+  background: rgba(0,0,0,.45) !important; backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important; border: 1px solid rgba(255,255,255,.18) !important;
+  color: #fff !important; font-size: 22px !important; display: grid !important;
+  place-items: center !important; line-height: 1 !important;
+}
+
+.live-tiktok-chat {
+  position: absolute !important; z-index: 10 !important; left: 12px !important; right: 76px !important;
+  bottom: calc(env(safe-area-inset-bottom, 12px) + 64px) !important; max-height: 200px !important;
+  display: flex !important; flex-direction: column !important; justify-content: flex-end !important;
+  gap: 6px !important; overflow-y: auto !important; pointer-events: none !important;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 20%) !important;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 20%) !important;
+}
+.live-tiktok-chat-msg {
+  pointer-events: auto !important; background: rgba(0,0,0,.45) !important;
+  backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important;
+  padding: 6px 12px !important; border-radius: 14px !important; color: #fff !important;
+  font-size: 13px !important; line-height: 1.35 !important; width: max-content !important;
+  max-width: 100% !important; word-break: break-word !important; box-shadow: 0 2px 8px rgba(0,0,0,.3) !important;
+}
+.live-tiktok-chat-user { font-weight: 800 !important; color: #aeb8c7 !important; margin-right: 6px !important; }
+
+.live-tiktok-bottombar {
+  position: absolute !important; z-index: 11 !important; left: 12px !important; right: 12px !important;
+  bottom: calc(env(safe-area-inset-bottom, 8px) + 8px) !important; display: flex !important;
+  align-items: center !important; gap: 8px !important;
+}
+.live-tiktok-input {
+  flex: 1 !important; min-width: 0 !important; height: 44px !important;
+  background: rgba(0,0,0,.45) !important; backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important; border: 1px solid rgba(255,255,255,.2) !important;
+  border-radius: 999px !important; padding: 0 16px !important; color: #fff !important; font-size: 14px !important;
+}
+.live-tiktok-input::placeholder { color: rgba(255,255,255,.7) !important; }
+.live-tiktok-btn {
+  width: 44px !important; height: 44px !important; min-width: 44px !important;
+  border-radius: 50% !important; background: rgba(0,0,0,.45) !important;
+  backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255,255,255,.2) !important; color: #fff !important;
+  display: grid !important; place-items: center !important; font-size: 20px !important; padding: 0 !important;
+}
