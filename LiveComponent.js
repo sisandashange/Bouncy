@@ -234,7 +234,9 @@
         }
         if (!s.host && ev.new?.user_id === me.id) {
           if (s.isCohost && ev.new.status === 'accepted' && ev.old?.is_muted_by_host !== ev.new.is_muted_by_host) {
-            s.cohostStream?.getAudioTracks().forEach(t => t.enabled = !ev.new.is_muted_by_host);
+            s.cohostHostMuted = !!ev.new.is_muted_by_host;
+            s.cohostStream?.getAudioTracks().forEach(t => t.enabled = !s.cohostHostMuted && !s.cohostSelfMuted);
+            const mic=s._room?.querySelector('.bouncy-cohost-mic-toggle'); if(mic){mic.disabled=s.cohostHostMuted;mic.textContent=s.cohostHostMuted?'Muted by host':(s.cohostSelfMuted?'Mic off':'Mic on')}
             toast(ev.new.is_muted_by_host ? 'The host muted your microphone' : 'The host unmuted your microphone');
           }
           if (ev.new.status === 'kicked' || ev.new.status === 'left' || ev.new.status === 'declined') {
