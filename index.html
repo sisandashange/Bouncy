@@ -810,7 +810,7 @@ async function relayCohostTrackToViewers(s,userId,stream){
  }
 }
 async function hostAcceptCohost(s,userId,offer){
- const member=await sb.from('live_cohosts').select('id,status,is_muted_by_host').eq('live_id',s.id).eq('user_id',userId).maybeSingle();
+ const member=await sb.from('live_cohosts').select('id,status,is_muted_by_host,username').eq('live_id',s.id).eq('user_id',userId).maybeSingle();
  if(member.error||member.data?.status!=='accepted')return;
  let pc=s.cohostPcs?.get(userId);if(pc){pc.close();s.cohostPcs.delete(userId)}
  if(!s.cohostPcs)s.cohostPcs=new Map();if(!s.cohostStreams)s.cohostStreams=new Map();
@@ -820,7 +820,7 @@ async function hostAcceptCohost(s,userId,offer){
   let stream=e.streams?.[0];if(!stream){stream=s.cohostStreams.get(userId)||new MediaStream();if(!stream.getTracks().some(t=>t.id===e.track.id))stream.addTrack(e.track)}
   s.cohostStreams.set(userId,stream);
   if(member.data.is_muted_by_host&&e.track.kind==='audio')e.track.enabled=false;
-  window.BouncyLiveComponent?.onCohostTrack?.(s,userId,stream);
+  window.BouncyLiveComponent?.onCohostTrack?.(s,userId,stream,member.data.username);
   await relayCohostTrackToViewers(s,userId,stream);
  };
  pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState)){pc.close();if(s.cohostPcs.get(userId)===pc)s.cohostPcs.delete(userId)}};
@@ -898,7 +898,7 @@ window.bouncyStartCohost=async function(s){
   const row=await sb.from('live_cohosts').select('status,is_muted_by_host').eq('live_id',s.id).eq('user_id',me.id).maybeSingle();
   if(row.error||row.data?.status!=='accepted')throw new Error('Your co-host seat is not active');
   const media=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-  s.isCohost=true;s.cohostStream=media;s.cohostPc=new RTCPeerConnection(liveRtcConfig);s.cohostQueues=[];
+  s.isCohost=true;s.cohostStream=media;s.cohostPc=new RTCPeerConnection(liveRtcConfig);s.cohostQueues=[];window.BouncyLiveComponent?.onLocalCohostStream?.(s,media);
   media.getTracks().forEach(t=>{if(t.kind==='audio'&&row.data.is_muted_by_host)t.enabled=false;s.cohostPc.addTrack(t,media)});
   s.cohostPc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,s.hostId,'candidate',{...e.candidate.toJSON(),_peer:'cohost'})};
   s.cohostPc.onconnectionstatechange=()=>{if(s.cohostPc?.connectionState==='failed')toast('Co-host connection failed. Check your network.')};
