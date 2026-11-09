@@ -112,8 +112,7 @@
 /* BOUNCY live camera framing + host zoom control */
 #sheet.live-sheet .live-room-screen .live-stage video{
   width:100%!important;height:100%!important;object-fit:cover!important;
-  object-position:center top!important;transform:scale(1);transform-origin:center top;
-  max-height:none!important;
+  object-position:center top!important;max-height:none!important;
 }
 #sheet.live-sheet .live-composer-screen .live-camera-preview,
 #sheet.live-sheet .live-composer-screen .live-camera-full{
@@ -136,3 +135,36 @@
 #sheet.live-sheet .live-room-screen .live-demo-host-panel .live-host-zoom strong{
   min-width:42px!important;text-align:right!important;font-variant-numeric:tabular-nums!important;
 }
+
+
+/* BOUNCY full-frame camera: blurred cover backdrop + uncropped main image */
+#sheet.live-sheet .live-room-screen .live-stage,
+#sheet.live-sheet .live-composer-screen .live-camera-preview,
+#sheet.live-sheet .live-composer-screen .live-camera-full{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-height:100%!important;overflow:hidden!important;background:#000!important;
+}
+#sheet.live-sheet .live-room-screen .live-stage video.live-video-blur-layer,
+#sheet.live-sheet .live-composer-screen video.live-camera-blur-layer{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:cover!important;object-position:center!important;
+  filter:blur(20px) brightness(.6)!important;transform:none!important;
+  z-index:1!important;pointer-events:none!important;
+}
+#sheet.live-sheet .live-room-screen .live-stage video.live-video-main-layer,
+#sheet.live-sheet .live-composer-screen video.live-camera-main-layer{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center!important;
+  filter:none!important;transform:none!important;z-index:2!important;
+  max-height:none!important;background:transparent!important;
+}
+#sheet.live-sheet .live-composer-screen .live-camera-top,
+#sheet.live-sheet .live-composer-screen .live-camera-bottom{
+  position:absolute!important;z-index:20!important;
+}
+#sheet.live-sheet .live-room-screen .live-demo-top,
+#sheet.live-sheet .live-room-screen .live-demo-bottom,
+#sheet.live-sheet .live-room-screen .live-demo-host-panel{
+  z-index:20!important;
+}
+#sheet.live-sheet .live-room-screen .live-demo-host-panel .live-host-zoom[hidden]{display:none!important}
