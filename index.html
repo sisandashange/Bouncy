@@ -838,7 +838,7 @@ async function hostAcceptCohost(s,userId,offer){
   window.BouncyLiveComponent?.onCohostTrack?.(s,userId,stream,member.data.username);
   await relayCohostTrackToViewers(s,userId,stream);
  };
- pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState)){pc.close();if(s.cohostPcs.get(userId)===pc)s.cohostPcs.delete(userId)}};
+ pc.onconnectionstatechange=()=>{if(pc.connectionState==='failed'){window.bouncyRemoveCohost?.(s,userId)}else if(pc.connectionState==='closed'&&s.cohostPcs.get(userId)===pc){s.cohostPcs.delete(userId)}};
  await pc.setRemoteDescription(offer);
  const q=s.cohostQueues?.get(userId)||[];if(s.cohostQueues)s.cohostQueues.delete(userId);for(const cand of q)try{await pc.addIceCandidate(cand)}catch(e){}
  const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
@@ -916,7 +916,7 @@ window.bouncyStartCohost=async function(s){
   s.isCohost=true;s.cohostStream=media;sb.rpc('bouncy_get_coin_wallet').then(({data})=>{if(data){const badge=s._room?.querySelector('.live-demo-profile-coins');if(badge)badge.textContent='💎 '+Number(data.earned_coins||0).toLocaleString()}});s.cohostPc=new RTCPeerConnection(liveRtcConfig);s.cohostQueues=[];s.cohostSelfMuted=false;s.cohostHostMuted=!!row.data.is_muted_by_host;window.BouncyLiveComponent?.onLocalCohostStream?.(s,media);
   media.getTracks().forEach(t=>{if(t.kind==='audio')t.enabled=!s.cohostHostMuted;s.cohostPc.addTrack(t,media)});
   s.cohostPc.onicecandidate=e=>{if(e.candidate)sendLiveSignal(s,s.hostId,'candidate',{...e.candidate.toJSON(),_peer:'cohost'})};
-  s.cohostPc.onconnectionstatechange=()=>{if(s.cohostPc?.connectionState==='failed')toast('Co-host connection failed. Check your network.')};
+  s.cohostPc.onconnectionstatechange=()=>{if(s.cohostPc?.connectionState==='failed')window.bouncyStopCohost?.(s,'Co-host connection failed. Check your network and request a seat again.')};
   const offer=await s.cohostPc.createOffer();await s.cohostPc.setLocalDescription(offer);
   await sendLiveSignal(s,s.hostId,'offer',{...s.cohostPc.localDescription.toJSON(),_peer:'cohost'});
   const control=document.createElement('button');control.className='bouncy-cohost-mic-toggle';control.textContent=s.cohostHostMuted?'Muted by host':'Mic on';control.disabled=s.cohostHostMuted;
