@@ -999,7 +999,11 @@ async function setupPeer(c){
 async function startCall(peer,name,kind){
  if(!me){authSheet('make a call');return}if(!navigator.mediaDevices?.getUserMedia||!window.RTCPeerConnection){toast('Calls need a supported browser and HTTPS');return}if(activeCall){toast('Finish your current call first');return}
  try{const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:kind==='video'});stream.getTracks().forEach(t=>t.stop())}catch(e){toast('Allow microphone'+(kind==='video'?' and camera':'')+' access to call');return}
- const r=await sb.from('call_sessions').insert({caller_id:me.id,callee_id:peer,call_type:kind,status:'ringing'}).select('id').single();if(r.error){toast('Calling is not set up yet. Run the BOUNCY calls SQL setup first.');console.error(r.error);return}
+ const r=await sb.from('call_sessions').insert({caller_id:me.id,callee_id:peer,call_type:kind,status:'ringing'}).select('id').single();if(r.error){
+  console.error('BOUNCY CALL ERROR:',r.error);
+  toast('Call error: '+r.error.message);
+  return;
+}
  activeCall={id:r.data.id,peer,kind,caller:true,name,accepted:true};$('#callname').textContent='Calling @'+name;$('#callstatus').textContent='Ringing…';callUi(true);renderCallControls();
  try{await setupPeer(activeCall);const o=await activeCall.pc.createOffer();await activeCall.pc.setLocalDescription(o);await signalCall('offer',activeCall.pc.localDescription.toJSON());
  activeCall.sessionChannel=sb.channel('call-session-'+activeCall.id).on('postgres_changes',{event:'UPDATE',schema:'public',table:'call_sessions',filter:'id=eq.'+activeCall.id},ev=>{if(ev.new.status==='rejected')endCall('rejected');if(ev.new.status==='ended')endCall('ended')}).subscribe();
