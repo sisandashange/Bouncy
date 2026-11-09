@@ -34,6 +34,20 @@
     if (!q.error && s._viewerCount) s._viewerCount.textContent = '👁 ' + Number(q.count || 0).toLocaleString();
   }
 
+  async function refreshLiveGoal(s) {
+    if (!s || liveSession !== s || s.closing || !s._goalButton) return;
+    const target = Number(s.goalTarget || 0);
+    let current = 0;
+    if (target > 0) {
+      const q = await sb.from('live_gifts').select('total_coins').eq('live_id', s.id);
+      if (!q.error) current = (q.data || []).reduce((sum, row) => sum + Number(row.total_coins || 0), 0);
+    }
+    s.goalCurrent = current;
+    const label = s.goalLabel || 'LIVE goal';
+    s._goalButton.textContent = '🎯 ' + label + (target > 0 ? ' · ' + current.toLocaleString() + '/' + target.toLocaleString() : ' · ' + (s.host ? 'Set goal' : 'No goal'));
+    s._goalButton.style.setProperty('--goal-progress', target > 0 ? Math.min(100, current / target * 100) + '%' : '0%');
+  }
+
   async function refreshGifters(s) {
     if (!s || liveSession !== s || s.closing || !s._gifters) return;
     const q = await sb.from('live_gifts').select('sender_id,total_coins').eq('live_id', s.id);
@@ -471,13 +485,15 @@
 
     if (s.id) {
       const owner = await sb.from('live_streams')
-        .select('host_id,cohost_layout,cohost_allow_requests,cohost_enabled')
+        .select('host_id,cohost_layout,cohost_allow_requests,cohost_enabled,goal_target,goal_label')
         .eq('id', s.id).maybeSingle();
       if (!owner.error && owner.data) {
         s.hostId = owner.data.host_id;
         s.host = !!me?.id && owner.data.host_id === me.id;
         s.cohostLayout = Number(owner.data.cohost_layout || 4);
         s.cohostAllowRequests = owner.data.cohost_allow_requests !== false;
+        s.goalTarget = Number(owner.data.goal_target || 0);
+        s.goalLabel = owner.data.goal_label || 'LIVE goal';
       }
     }
 
@@ -527,6 +543,11 @@
     const name = el('strong', 'b-live-username', '@' + username);
     const liveTag = el('span', 'b-live-tag', 'LIVE');
     profileMeta.append(name, liveTag);
+    const verified = el('span', 'b-live-verified', '✓');
+    if (s.host ? me.verified : s.hostVerified) profileMeta.append(verified);
+    const coinValue = Number(s.host ? s.coinWallet?.earned_coins : s.coinWallet?.balance) || 0;
+    const coins = el('span', 'b-live-coins live-gift-earned-pill', '💎 ' + coinValue.toLocaleString());
+    profileMeta.append(coins);
     profile.append(avatar, profileMeta);
 
     const follow = el('button', 'b-live-follow', '+ Follow');
@@ -568,13 +589,17 @@
     profile.append(follow);
 
     const topRight = el('div', 'b-live-top-right');
+    const goalButton = el('button', 'b-live-goal', '🎯 ' + (s.goalLabel || 'LIVE goal') + (s.goalTarget ? ' · ' + Number(s.goalTarget).toLocaleString() : ' · Set goal'));
+    goalButton.type = 'button';
+    s._goalButton = goalButton;
+    goalButton.setAttribute('aria-label', 'LIVE gift goal');
     const viewerCount = el('span', 'b-live-viewers', '◉ —');
     s._viewerCount = viewerCount;
     const close = el('button', 'b-live-close', '×');
     close.type = 'button';
     close.setAttribute('aria-label', s.host ? 'End LIVE' : 'Leave LIVE');
     close.onclick = () => s.host ? endLiveStream(false) : leaveLiveStream(false);
-    topRight.append(viewerCount, close);
+    topRight.append(goalButton, viewerCount, close);
     top.append(profile, topRight);
 
     const streamInfo = el('div', 'b-live-stream-info');
@@ -585,9 +610,7 @@
     const activity = el('div', 'b-live-activity');
     const giftLeaders = el('div', 'b-live-gifters');
     s._gifters = giftLeaders;
-    const coinValue = Number(s.host ? s.coinWallet?.earned_coins : s.coinWallet?.balance) || 0;
-    const coins = el('span', 'b-live-coins live-gift-earned-pill', '💎 ' + coinValue.toLocaleString());
-    activity.append(giftLeaders, coins);
+    activity.append(giftLeaders);
 
     const giftBanner = el('div', 'b-live-gift-banners');
     s._giftBanner = giftBanner;
@@ -682,6 +705,34 @@
     bottom.append(compose, bottomHint);
 
     room.append(stage, hearts, top, streamInfo, activity, giftBanner, comments, actionRail, bottom);
+    goalButton.onclick = () => {
+      if (!s.host) { toast('The host sets this LIVE goal'); return; }
+      if (s._goalPanel) { s._goalPanel.remove(); s._goalPanel = null; return; }
+      const panel = el('section', 'b-live-goal-panel');
+      panel.append(el('strong', '', 'Set your LIVE goal'));
+      const labelInput = el('input', 'b-live-goal-label');
+      labelInput.maxLength = 40; labelInput.value = s.goalLabel || 'LIVE goal'; labelInput.placeholder = 'Goal name';
+      const targetInput = el('input', 'b-live-goal-target');
+      targetInput.type = 'number'; targetInput.min = '1'; targetInput.max = '100000000'; targetInput.step = '1'; targetInput.inputMode = 'numeric'; targetInput.value = s.goalTarget ? String(s.goalTarget) : ''; targetInput.placeholder = 'Diamond target';
+      const actions = el('div', 'b-live-goal-actions');
+      const cancel = el('button', '', 'Cancel'); cancel.type = 'button'; cancel.onclick = () => { panel.remove(); s._goalPanel = null; };
+      const save = el('button', '', 'Save goal'); save.type = 'button';
+      save.onclick = async () => {
+        const target = Math.floor(Number(targetInput.value));
+        const label = labelInput.value.trim() || 'LIVE goal';
+        if (!Number.isSafeInteger(target) || target < 1 || target > 100000000) { toast('Enter a goal between 1 and 100,000,000 diamonds'); return; }
+        save.disabled = true;
+        const result = await sb.from('live_streams').update({ goal_target: target, goal_label: label }).eq('id', s.id).eq('host_id', me.id);
+        if (result.error) { toast('Could not save goal: ' + result.error.message); save.disabled = false; return; }
+        s.goalTarget = target; s.goalLabel = label;
+        goalButton.textContent = '🎯 ' + label + ' · ' + target.toLocaleString();
+        panel.remove(); s._goalPanel = null;
+        await refreshLiveGoal(s);
+      };
+      actions.append(cancel, save); panel.append(labelInput, targetInput, actions);
+      room.append(panel); s._goalPanel = panel;
+    };
+    await refreshLiveGoal(s);
     liveOpenSheet(room);
 
     watchCohostChanges(s);
@@ -777,6 +828,7 @@
     await setupLiveGifts(s, comments, stage);
     await refreshViewerCount(s);
     await refreshGifters(s);
+    await refreshLiveGoal(s);
     s.viewerCountTimer = setInterval(() => refreshViewerCount(s), 5000);
     s.giftersTimer = setInterval(() => refreshGifters(s), 15000);
 
@@ -845,6 +897,7 @@
       await renderGiftAnimation(s, giftRow);
       await refreshGifters(s);
       const wallet = await sb.rpc('bouncy_get_coin_wallet');
+      await refreshLiveGoal(s);
       if (!wallet.error) {
         s.coinWallet = wallet.data;
         const label = s._room?.querySelector('.b-live-coins, .live-demo-profile-coins');
