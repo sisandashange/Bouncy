@@ -165,6 +165,14 @@ nav button:not(.plus).on::before{display:none}
 @keyframes nhop{0%{margin-top:0}35%{margin-top:-9px}100%{margin-top:0}}
 .liked svg{animation:lk .45s cubic-bezier(.34,1.8,.5,1)}
 @keyframes lk{0%{transform:scale(.55)}100%{transform:scale(1)}}
+
+/* BOUNCY WebRTC calling */
+.call-actions{display:flex;gap:8px;margin-left:auto}.call-actions button{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--soft);font-size:19px}
+#callui{position:fixed;inset:0;z-index:1000;background:#080808;color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:16px}
+#callui.open{display:flex}#callui .call-name{font-size:22px;font-weight:800}#callui .call-status{color:#bbb;font-size:14px}
+#callui video{background:#171717;object-fit:cover;border-radius:18px;max-width:100%}#callremote{width:min(100%,520px);height:min(58vh,520px)}#calllocal{position:absolute;width:112px;height:158px;right:18px;top:calc(env(safe-area-inset-top) + 18px);border:2px solid #fff;z-index:2}
+#callui .call-controls{display:flex;gap:18px;align-items:center;justify-content:center;margin-top:12px}#callui .call-controls button{width:58px;height:58px;border-radius:50%;background:#292929;color:#fff;font-size:21px;font-weight:800}#callui .call-controls .hang{background:#e53935}#callui .call-controls .answer{background:#16a34a}
+@media(max-width:420px){#calllocal{width:90px;height:130px;right:12px;top:calc(env(safe-area-inset-top) + 12px)}}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
@@ -182,7 +190,7 @@ nav button:not(.plus).on::before{display:none}
 <button data-v="inbox"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Chats<i id="dot" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--fg);margin-left:4px;vertical-align:middle"></i></span></button>
 <button data-v="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 15-5 16 0"/></svg><span>Me</span></button>
 </nav>
-<div id="shade"></div><div id="sheet" role="dialog"></div><div id="toast" role="status"></div>
+<div id="shade"></div><div id="sheet" role="dialog"></div><div id="toast" role="status"></div><div id="callui" aria-live="polite"><video id="callremote" autoplay playsinline></video><video id="calllocal" autoplay muted playsinline></video><div class="call-name" id="callname">BOUNCY call</div><div class="call-status" id="callstatus">Connecting…</div><div class="call-controls" id="callcontrols"></div></div>
 <input type="file" id="file" accept="video/*" hidden><input type="file" id="pic" accept="image/*" hidden>
 </div>
 <script>
@@ -460,6 +468,7 @@ d.replaceChildren(...el('<div style="display:flex;align-items:center;gap:10px;pa
 d.querySelector('#cn').textContent=(g?'':'@')+name;d.querySelector('#cb').onclick=()=>{inboxTab='msg';show('inbox')};
 if(g){const lv=document.createElement('button');lv.className='fol';lv.textContent='Leave';lv.onclick=async()=>{if(!confirm('Leave this group?'))return;const r=await sb.rpc('leave_conversation',{p_conv:id});if(r.error){toast('Couldn’t leave the group');return}toast('You left the group');inboxTab='msg';show('inbox')};d.firstChild.append(lv)}
 const pm={},mem=await sb.from('conversation_members').select('user_id,last_read_at').eq('conversation_id',id),mu=(mem.data||[]).map(x=>x.user_id);
+const otherMember=(mem.data||[]).find(x=>x.user_id!==me.id),otherIdForCall=!g&&otherMember?otherMember.user_id:null;if(otherIdForCall){const ca=E('div','display:flex;gap:7px;margin-left:auto');[['☎','Start voice call','audio'],['▣','Start video call','video']].forEach(([ic,lab,kind])=>{const b=E('button','width:40px;height:40px;border-radius:50%;background:var(--soft);font-size:19px',ic);b.type='button';b.title=lab;b.setAttribute('aria-label',lab);b.onclick=()=>startCall(otherIdForCall,name,kind);ca.append(b)});d.firstChild.append(ca)}
 if(mu.length)((await sb.from('profiles').select('id,username').in('id',mu)).data||[]).forEach(x=>pm[x.id]=x.username);
 if(g)d.querySelector('#cn').textContent=name+' · '+mu.length+' members';
 let otherRead=null;const om=(mem.data||[]).find(x=>x.user_id!==me.id),otherId=!g&&om?om.user_id:null;if(otherId)otherRead=om.last_read_at;
@@ -701,7 +710,7 @@ const thumb=(c,fi)=>{const vw=vid.videoWidth,vh=vid.videoHeight,s=Math.min(vw,vh
 const begin=async id=>{stopStream();torch=false;dz=1;const b0=id?{deviceId:{exact:id}}:{facingMode:face},tries=[{...b0,width:{exact:1080},height:{exact:1440}},{...b0,aspectRatio:{exact:0.75}},{...b0,width:{ideal:720},height:{ideal:1280}},b0];let s=null;
 for(const v of tries){try{const x=await navigator.mediaDevices.getUserMedia({video:v,audio:true}),t=x.getVideoTracks()[0].getSettings();if(v===b0||t.height>=t.width){s=x;break}x.getTracks().forEach(k=>k.stop())}catch(e){}}
 if(!s){try{s=await navigator.mediaDevices.getUserMedia({video:b0})}catch(e){toast('Allow the camera to use this feature');closeCam();return}}
-st=s;vid.srcObject=s;await vid.play().catch(()=>{});cancelAnimationFrame(raf);draw()};
+st=s;vid.srcObject=s;try{await vid.play();if(vid.videoWidth)hideCamLoad()}catch(e){camLoad.textContent='Couldn’t start the camera. Check permissions and try again.';toast('Camera could not start')}cancelAnimationFrame(raf);draw()};
 const track=()=>st&&st.getVideoTracks()[0],caps=()=>{const t=track();return t&&t.getCapabilities?t.getCapabilities():{}};
 const zoomTo=async z=>{const cp=caps();dz=1;
 if(face=='user'){if(z<1){toast('0.5x is for the back camera');return false}dz=z;return true}
@@ -754,7 +763,11 @@ const gb=E('button','width:46px;height:46px;border-radius:14px;display:grid;plac
 const srow=E('div','display:flex;align-items:center;justify-content:space-between;padding:0 28px 4px');srow.append(gb,sh,E('span','width:46px'));
 const zw=E('div','display:flex;justify-content:center;min-height:36px;padding-bottom:6px');zw.append(zs);
 const bot=E('div','position:absolute;left:0;right:0;bottom:0;padding-top:30px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.78));z-index:3');bot.append(rt,zw,tabsEl,strip,modes,srow);
-o.append(cv,pg,top,rail,bot);$('#app').append(o);if(!fok&&!glOK)toast('Filters need Chrome on Android');renderStrip();markTabs();mark2();
+const camLoad=E('div','position:absolute;inset:0;display:grid;place-items:center;background:#000;color:#fff;z-index:2;text-align:center;padding:24px');
+camLoad.innerHTML='<div><div style="font-size:40px;animation:hop 1s infinite">●</div><div style="margin-top:12px">Opening camera…</div><div style="font-size:13px;opacity:.65;margin-top:6px">Allow camera and microphone access if asked</div></div>';
+const hideCamLoad=()=>camLoad.remove();
+vid.onloadedmetadata=hideCamLoad;
+o.append(cv,pg,top,rail,bot,camLoad);$('#app').append(o);if(!fok&&!glOK)toast('Filters need Chrome on Android');renderStrip();markTabs();mark2();
 thT=setInterval(()=>{if(tab!='f'||!vid.videoWidth)return;fC.forEach((c,i)=>thumb(c,i))},700);begin()}
 function segCtl(c,t,opts,get,set){c.append(E('p','margin:10px 0 0;font-weight:800',t));const r=E('div','display:flex;gap:8px');opts.forEach(([k,l])=>{const b=E('button','flex:1;padding:10px 0',l);b.className='fol'+(get()==k?' on':'');b.onclick=()=>{set(k);r.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on',opts[i][0]==k))};r.append(b)});c.append(r)}
 function privacySheet(){const d=el('<h3>Privacy and safety</h3><div class="col" id="st"></div>'),c=d.querySelector('#st');
@@ -953,11 +966,54 @@ const ft=E('p','margin:22px 0 0;text-align:center;color:var(--mute);font-size:13
 w.append(seg,form,msg,go,gs,ft);o.append(w);render();$('#app').append(o)}
 function newPassSheet(){const d=el('<h3>Set a new password</h3><div class="col"><input type="password" id="np" placeholder="New password (8+ characters)" aria-label="New password" autocomplete="new-password"></div><div class="row"><button class="btn" id="npb">Save password</button></div><p id="npm" class="sub" style="margin:10px 0 0" role="alert"></p>');
 d.querySelector('#npb').onclick=async()=>{const x=d.querySelector('#np').value;if(x.length<8){d.querySelector('#npm').textContent='Use at least 8 characters.';return}const r=await sb.auth.updateUser({password:x});if(r.error){d.querySelector('#npm').textContent=r.error.message;return}recovering=false;close();toast('Password updated')};open(d)}
-async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio,who_can_message,show_online,display_name,verified').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';me.display=(data&&data.display_name)||'';me.verified=!!(data&&data.verified);me.who=(data&&data.who_can_message)||'everyone';me.showOnline=!(data&&data.show_online===false);startPresence();sb.rpc('is_admin').then(r=>{me.admin=r.data===true});
+// ---- BOUNCY peer-to-peer voice and video calling (WebRTC) ----
+let activeCall=null,incomingCallChannel=null;
+const rtcConfig={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+function callUi(on){const u=$('#callui');if(u)u.classList.toggle('open',!!on)}
+function callButtons(items){const c=$('#callcontrols');c.replaceChildren();items.forEach(([label,fn,cls])=>{const b=E('button','',label);if(cls)b.className=cls;b.onclick=fn;c.append(b)})}
+async function signalCall(kind,payload){if(!activeCall)return;const r=await sb.from('call_signals').insert({call_id:activeCall.id,sender_id:me.id,recipient_id:activeCall.peer,signal_type:kind,payload});if(r.error)console.warn('Call signal failed',r.error.message)}
+async function endCall(status='ended'){
+ const c=activeCall;if(!c)return;activeCall=null;
+ if(c.id&&c.peer&&status==='ended'&&!c.remoteEnded){await sb.from('call_signals').insert({call_id:c.id,sender_id:me.id,recipient_id:c.peer,signal_type:'hangup',payload:{}}).catch(()=>{})}
+ try{if(c.pc)c.pc.close()}catch(e){}
+ try{if(c.stream)c.stream.getTracks().forEach(t=>t.stop())}catch(e){}
+ if(c.channel)sb.removeChannel(c.channel);if(c.sessionChannel)sb.removeChannel(c.sessionChannel);
+ const ui=$('#callui');if(ui){ui.classList.remove('open');$('#callremote').srcObject=null;$('#calllocal').srcObject=null}
+ if(c.id)await sb.from('call_sessions').update({status,ended_at:new Date().toISOString()}).eq('id',c.id);
+}
+function renderCallControls(incoming=false){if(incoming){callButtons([['Decline',()=>endCall('rejected'),'hang'],['Answer',()=>answerCall(),'answer']]);return}
+ callButtons([['Mute',()=>{if(!activeCall)return;activeCall.muted=!activeCall.muted;activeCall.stream.getAudioTracks().forEach(t=>t.enabled=!activeCall.muted);$('#callcontrols').firstChild.textContent=activeCall.muted?'Unmute':'Mute'},''],['Camera',()=>{if(!activeCall)return;activeCall.cameraOff=!activeCall.cameraOff;activeCall.stream.getVideoTracks().forEach(t=>t.enabled=!activeCall.cameraOff);$('#callcontrols').children[1].textContent=activeCall.cameraOff?'Camera on':'Camera off'},''],['End',()=>endCall(),'hang']]);
+}
+async function setupPeer(c){
+ c.pc=new RTCPeerConnection(rtcConfig);c.pendingCandidates=[];
+ c.pc.onicecandidate=e=>{if(e.candidate)signalCall('candidate',e.candidate.toJSON())};
+ c.pc.ontrack=e=>{const v=$('#callremote');if(v.srcObject!==e.streams[0])v.srcObject=e.streams[0];$('#callstatus').textContent='Connected'};
+ c.pc.onconnectionstatechange=()=>{if(!activeCall||activeCall!==c)return;const st=c.pc.connectionState;if(st==='connected')$('#callstatus').textContent='Connected';if(st==='failed'){ $('#callstatus').textContent='Connection failed. This network may need a TURN relay.';toast('Call failed. A TURN relay may be required.')}if(st==='disconnected')$('#callstatus').textContent='Reconnecting…';if(st==='closed'&&activeCall===c)endCall()};
+ c.stream=await navigator.mediaDevices.getUserMedia({audio:true,video:c.kind==='video'});
+ $('#calllocal').srcObject=c.stream;c.stream.getTracks().forEach(t=>c.pc.addTrack(t,c.stream));
+ c.channel=sb.channel('call-signals-'+c.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'call_signals',filter:'call_id=eq.'+c.id},async ev=>{const x=ev.new;if(!activeCall||activeCall!==c||x.sender_id===me.id)return;try{if(x.signal_type==='answer'&&c.pc.signalingState==='have-local-offer'){await c.pc.setRemoteDescription(x.payload);$('#callstatus').textContent='Connecting…'}else if(x.signal_type==='offer'&&c.pc.signalingState==='stable'){await c.pc.setRemoteDescription(x.payload);for(const cand of c.pendingCandidates.splice(0))await c.pc.addIceCandidate(cand);const a=await c.pc.createAnswer();await c.pc.setLocalDescription(a);await signalCall('answer',c.pc.localDescription.toJSON())}else if(x.signal_type==='candidate'&&x.payload){if(c.pc.remoteDescription)await c.pc.addIceCandidate(x.payload);else c.pendingCandidates.push(x.payload);}else if(x.signal_type==='hangup')endCall()}catch(err){console.warn('Call signal handling',err);toast('Could not establish the call')}}).subscribe();
+ // Re-read signals after subscribing so an early offer is not missed.
+ const old=await sb.from('call_signals').select('*').eq('call_id',c.id).neq('sender_id',me.id).order('created_at');
+ for(const x of (old.data||[])){try{if(x.signal_type==='offer'&&c.pc.signalingState==='stable'){await c.pc.setRemoteDescription(x.payload);for(const cand of c.pendingCandidates.splice(0))await c.pc.addIceCandidate(cand);if(c.accepted){const a=await c.pc.createAnswer();await c.pc.setLocalDescription(a);await signalCall('answer',c.pc.localDescription.toJSON())}}else if(x.signal_type==='candidate'&&x.payload){if(c.pc.remoteDescription)await c.pc.addIceCandidate(x.payload);else c.pendingCandidates.push(x.payload);}else if(x.signal_type==='answer'&&c.pc.signalingState==='have-local-offer')await c.pc.setRemoteDescription(x.payload)}catch(e){}}
+}
+async function startCall(peer,name,kind){
+ if(!me){authSheet('make a call');return}if(!navigator.mediaDevices?.getUserMedia||!window.RTCPeerConnection){toast('Calls need a supported browser and HTTPS');return}if(activeCall){toast('Finish your current call first');return}
+ try{const stream=await navigator.mediaDevices.getUserMedia({audio:true,video:kind==='video'});stream.getTracks().forEach(t=>t.stop())}catch(e){toast('Allow microphone'+(kind==='video'?' and camera':'')+' access to call');return}
+ const r=await sb.from('call_sessions').insert({caller_id:me.id,callee_id:peer,call_type:kind,status:'ringing'}).select('id').single();if(r.error){toast('Calling is not set up yet. Run the BOUNCY calls SQL setup first.');console.error(r.error);return}
+ activeCall={id:r.data.id,peer,kind,caller:true,name,accepted:true};$('#callname').textContent='Calling @'+name;$('#callstatus').textContent='Ringing…';callUi(true);renderCallControls();
+ try{await setupPeer(activeCall);const o=await activeCall.pc.createOffer();await activeCall.pc.setLocalDescription(o);await signalCall('offer',activeCall.pc.localDescription.toJSON());
+ activeCall.sessionChannel=sb.channel('call-session-'+activeCall.id).on('postgres_changes',{event:'UPDATE',schema:'public',table:'call_sessions',filter:'id=eq.'+activeCall.id},ev=>{if(ev.new.status==='rejected')endCall('rejected');if(ev.new.status==='ended')endCall('ended')}).subscribe();
+ }catch(e){console.error(e);toast('Could not start the call. Check microphone/camera permissions.');endCall()}
+}
+async function incomingCall(row){if(!me||activeCall||row.status!=='ringing')return;const {data:p}=await sb.from('profiles').select('username').eq('id',row.caller_id).single();activeCall={id:row.id,peer:row.caller_id,kind:row.call_type,name:p?.username||'BOUNCY user',caller:false,accepted:false};$('#callname').textContent=(row.call_type==='video'?'Video':'Voice')+' call from @'+activeCall.name;$('#callstatus').textContent='Incoming call…';callUi(true);renderCallControls(true);}
+async function answerCall(){const c=activeCall;if(!c||c.caller)return;c.accepted=true;$('#callstatus').textContent='Connecting…';try{await setupPeer(c);await sb.from('call_sessions').update({status:'accepted'}).eq('id',c.id);renderCallControls();}catch(e){console.error(e);toast('Could not answer. Check microphone/camera permissions.');endCall('ended')}}
+function watchIncomingCalls(){if(incomingCallChannel)sb.removeChannel(incomingCallChannel);incomingCallChannel=sb.channel('incoming-calls-'+me.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'call_sessions',filter:'callee_id=eq.'+me.id},ev=>incomingCall(ev.new)).subscribe();}
+
+async function start(user){me=user;me.email=user.email;const {data}=await sb.from('profiles').select('username,avatar_url,bio,who_can_message,show_online,display_name,verified').eq('id',user.id).single();me.username=data?data.username:'user';me.avatar=data&&data.avatar_url;me.bio=(data&&data.bio)||'';me.display=(data&&data.display_name)||'';me.verified=!!(data&&data.verified);me.who=(data&&data.who_can_message)||'everyone';me.showOnline=!(data&&data.show_online===false);startPresence();watchIncomingCalls();sb.rpc('is_admin').then(r=>{me.admin=r.data===true});
 const want=user.user_metadata&&user.user_metadata.username;
 if(want&&me.username.startsWith('user_')){const r=await sb.from('profiles').update({username:want}).eq('id',user.id);if(!r.error)me.username=want;else toast('That username is taken. You can change it later.')}
 if(!recovering)close();show('feed');await load();unread();
 deep()}
-sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){if(presCh){sb.removeChannel(presCh);presCh=null;online=new Set()}me=null;clips=[];close();dot(0);show('feed');load()}});
+sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){if(activeCall)endCall();if(incomingCallChannel){sb.removeChannel(incomingCallChannel);incomingCallChannel=null}if(presCh){sb.removeChannel(presCh);presCh=null;online=new Set()}me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
 </script></body></html>
