@@ -647,7 +647,7 @@ async function showNoLiveScreen(){
  const closeBtn=E('button','','×');closeBtn.className='live-no-live-close';closeBtn.onclick=()=>close();
  const center=E('div','');center.className='live-no-live-center';center.append(E('h1','','No one is live'));
  const go=E('button','','Go Live');go.className='live-no-live-go';go.onclick=()=>{d._stopLivePreview?.();liveComposer()};center.append(go);d.append(closeBtn,center);liveOpenSheet(d);
- try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:0.5625}},audio:false});if(!d.isConnected){stream.getTracks().forEach(t=>t.stop());return}video.srcObject=stream;d._stopLivePreview=()=>stream.getTracks().forEach(t=>t.stop());video.play().catch(()=>{})}catch(e){}
+ try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});if(!d.isConnected){stream.getTracks().forEach(t=>t.stop());return}video.srcObject=stream;d._stopLivePreview=()=>stream.getTracks().forEach(t=>t.stop());video.play().catch(()=>{})}catch(e){}
 }
 async function navigateLiveQueue(dir){
  if(!liveSession||liveSession.host)return;
@@ -660,7 +660,8 @@ async function liveComposer(){
  if(!me)return;
  const d=liveScreen('');d.classList.add('live-composer-screen');
  const preview=E('div','');preview.className='live-camera-preview live-camera-full';
- const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;preview.append(video);
+ const bgVideo=document.createElement('video');bgVideo.autoplay=true;bgVideo.playsInline=true;bgVideo.muted=true;bgVideo.className='live-camera-blur-layer';
+ const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.muted=true;video.className='live-camera-main-layer';preview.append(bgVideo,video);
  const top=E('div','');top.className='live-camera-top';
  const x=E('button','','×');x.className='live-camera-close';
  const flip=E('button','','↻');flip.className='live-preview-flip';
@@ -670,8 +671,8 @@ async function liveComposer(){
  const start=E('button','','LIVE');start.className='live-go-circle live-start-button';
  const msg=E('p','');msg.className='live-start-message';bottom.append(input,start,msg);preview.append(top,bottom);d.append(preview);liveOpenSheet(d);
  let previewStream=null,facing='user',starting=false,beautyOn=false;
- const stopPreview=()=>{previewStream?.getTracks().forEach(t=>t.stop());previewStream=null;video.srcObject=null};
- const openPreview=async()=>{try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:720},height:{ideal:1280},aspectRatio:{ideal:0.5625}},audio:false});if(starting){st.getTracks().forEach(t=>t.stop());return}previewStream=st;video.srcObject=st;video.play().catch(()=>{})}catch(e){msg.textContent='Camera unavailable. Allow camera access.'}};
+ const stopPreview=()=>{previewStream?.getTracks().forEach(t=>t.stop());previewStream=null;video.srcObject=null;bgVideo.srcObject=null};
+ const openPreview=async()=>{try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}},audio:false});if(starting){st.getTracks().forEach(t=>t.stop());return}previewStream=st;video.srcObject=st;bgVideo.srcObject=st;video.play().catch(()=>{});bgVideo.play().catch(()=>{})}catch(e){msg.textContent='Camera unavailable. Allow camera access.'}};
  x.onclick=()=>{if(!starting){stopPreview();close()}};
  flip.onclick=async()=>{if(starting)return;facing=facing==='user'?'environment':'user';stopPreview();await openPreview()};
  beauty.onclick=()=>{beautyOn=!beautyOn;video.style.filter=beautyOn?'brightness(1.08) saturate(1.12)':'none';beauty.classList.toggle('active',beautyOn)};
