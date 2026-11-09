@@ -136,3 +136,48 @@
   border: 1px solid rgba(255,255,255,.2) !important; color: #fff !important;
   display: grid !important; place-items: center !important; font-size: 20px !important; padding: 0 !important;
 }
+
+
+/* BOUNCY High-Roller Gift Animations */
+@keyframes slideInGiftBanner {
+  0% { transform: translateX(-120%) scale(.9); opacity: 0; }
+  60% { transform: translateX(10%) scale(1.02); opacity: 1; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+@keyframes floatAwayUp {
+  0% { transform: translateY(0) scale(.5); opacity: 0; }
+  20% { transform: translateY(-40px) scale(1.2); opacity: 1; }
+  80% { transform: translateY(-180px) scale(1); opacity: 1; }
+  100% { transform: translateY(-240px) scale(1.1); opacity: 0; }
+}
+.live-gift-banner-container {
+  position:absolute !important; top:90px !important; left:12px !important; z-index:9999 !important;
+  display:flex !important; flex-direction:column !important; gap:8px !important; pointer-events:none !important;
+}
+.live-gift-banner {
+  background:linear-gradient(135deg,rgba(254,44,85,.85),rgba(120,20,255,.85)) !important;
+  backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important;
+  border:1px solid rgba(255,255,255,.3) !important; border-radius:999px !important;
+  padding:6px 16px 6px 6px !important; display:flex !important; align-items:center !important;
+  gap:10px !important; box-shadow:0 8px 32px rgba(0,0,0,.4) !important;
+  animation:slideInGiftBanner .4s cubic-bezier(.175,.885,.32,1.275) forwards;
+  max-width:min(320px,calc(100vw - 24px)) !important;
+}
+.live-gift-banner-icon {
+  width:40px !important; height:40px !important; flex:0 0 40px !important;
+  background:rgba(0,0,0,.3) !important; border-radius:50% !important;
+  display:grid !important; place-items:center !important; font-size:24px !important;
+}
+.live-gift-banner-text { display:flex !important; flex-direction:column !important; min-width:0 !important; line-height:1.2 !important; }
+.live-gift-banner-title { font-size:12px !important; font-weight:700 !important; color:#ffda6b !important; }
+.live-gift-banner-sub {
+  font-size:11px !important; font-weight:600 !important; color:#fff !important;
+  white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important;
+}
+.floating-gift-particle {
+  position:absolute !important; bottom:100px !important; right:20px !important; font-size:48px !important;
+  z-index:9998 !important; pointer-events:none !important; animation:floatAwayUp 2.5s ease-out forwards;
+}
+@media (prefers-reduced-motion:reduce) {
+  .live-gift-banner,.floating-gift-particle { animation:none !important; }
+}
