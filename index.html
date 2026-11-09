@@ -858,7 +858,7 @@ function cover(f){return new Promise(res=>{const v=document.createElement('video
 const fail=()=>{URL.revokeObjectURL(u);res(null)};v.onerror=fail;setTimeout(fail,8000);
 v.onloadeddata=()=>{v.currentTime=Math.min(1,(v.duration||2)/2)};
 v.onseeked=()=>{const w=360,hh=Math.round(w*(v.videoHeight/v.videoWidth))||640,c=document.createElement('canvas');c.width=w;c.height=hh;try{c.getContext('2d').drawImage(v,0,0,w,hh);c.toBlob(b=>{URL.revokeObjectURL(u);res(b)},'image/jpeg',.8)}catch(e){fail()}}})}
-$('#up').onclick=createSheet;
+$('#up').onclick=openCamera;
 $('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
 const d=el('<h3>New video</h3><video controls playsinline muted></video><div class="row"><input type="text" id="cap" maxlength="150" placeholder="Write a caption" aria-label="Caption"><button class="btn" id="post">Post</button></div>');
@@ -1314,7 +1314,8 @@ gal.onchange=async()=>{const f=gal.files[0];gal.value='';if(!f)return;if(f.type.
 const gb=E('button','width:46px;height:46px;border-radius:14px;display:grid;place-items:center;'+GL);gb.innerHTML='<svg viewBox="0 0 24 24" style="width:24px;height:24px"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg>';gb.setAttribute('aria-label','Upload from your gallery');gb.onclick=()=>gal.click();
 const srow=E('div','display:flex;align-items:center;justify-content:space-between;padding:0 28px 4px');srow.append(gb,sh,E('span','width:46px'));
 const zw=E('div','display:flex;justify-content:center;min-height:36px;padding-bottom:6px');zw.append(zs);
-const bot=E('div','position:absolute;left:0;right:0;bottom:0;padding-top:30px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.78));z-index:3');bot.append(rt,zw,tabsEl,strip,modes,srow);
+const liveBtn=E('button','display:block;margin:4px auto 0;padding:7px 22px;border-radius:18px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.72);font-size:12px;font-weight:800;letter-spacing:.08em','LIVE');liveBtn.type='button';liveBtn.setAttribute('aria-label','LIVE — coming soon');liveBtn.onclick=()=>toast('BOUNCY LIVE is coming soon');
+const bot=E('div','position:absolute;left:0;right:0;bottom:0;padding-top:30px;padding-bottom:max(10px,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.78));z-index:3');bot.append(rt,zw,tabsEl,strip,modes,srow,liveBtn);
 o.append(cv,pg,top,rail,bot);$('#app').append(o);if(!fok&&!glOK)toast('Filters need Chrome on Android');renderStrip();markTabs();mark2();
 thT=setInterval(()=>{if(tab!='f'||!vid.videoWidth)return;fC.forEach((c,i)=>thumb(c,i))},700);begin()}
 function segCtl(c,t,opts,get,set){c.append(E('p','margin:10px 0 0;font-weight:800',t));const r=E('div','display:flex;gap:8px');opts.forEach(([k,l])=>{const b=E('button','flex:1;padding:10px 0',l);b.className='fol'+(get()==k?' on':'');b.onclick=()=>{set(k);r.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on',opts[i][0]==k))};r.append(b)});c.append(r)}
