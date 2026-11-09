@@ -241,3 +241,16 @@
   min-height:40px!important;padding:0 14px!important;border:1px solid #ffffff35!important;
   border-radius:24px!important;background:#24242d!important;color:#fff!important;font-weight:800!important;
 }
+
+#sheet.live-sheet .live-gift-recipient{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;
+  padding:9px 11px!important;border:1px solid #ffffff20!important;border-radius:12px!important;
+  background:#202028!important;color:#fff!important;
+}
+#sheet.live-sheet .live-gift-recipient label{font-size:11px!important;font-weight:800!important;white-space:nowrap!important}
+#sheet.live-sheet .live-gift-recipient select{
+  min-width:0!important;max-width:68%!important;height:36px!important;padding:0 9px!important;
+  border:1px solid #ffffff25!important;border-radius:9px!important;background:#30303a!important;
+  color:#fff!important;font-size:11px!important;
+}
+#sheet.live-sheet .bouncy-cohost-mic-toggle:disabled{background:#5a2630!important;color:#ffdce2!important;opacity:1!important}
