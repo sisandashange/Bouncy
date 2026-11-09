@@ -858,7 +858,8 @@ function cover(f){return new Promise(res=>{const v=document.createElement('video
 const fail=()=>{URL.revokeObjectURL(u);res(null)};v.onerror=fail;setTimeout(fail,8000);
 v.onloadeddata=()=>{v.currentTime=Math.min(1,(v.duration||2)/2)};
 v.onseeked=()=>{const w=360,hh=Math.round(w*(v.videoHeight/v.videoWidth))||640,c=document.createElement('canvas');c.width=w;c.height=hh;try{c.getContext('2d').drawImage(v,0,0,w,hh);c.toBlob(b=>{URL.revokeObjectURL(u);res(b)},'image/jpeg',.8)}catch(e){fail()}}})}
-const plusButton=$('#up');plusButton.type='button';plusButton.setAttribute('aria-label','Create on BOUNCY');plusButton.style.cssText+=';position:relative;z-index:20;pointer-events:auto;touch-action:manipulation';plusButton.onclick=e=>{e.preventDefault();e.stopPropagation();openCamera()};
+const plusButton=$('#up');plusButton.type='button';plusButton.setAttribute('aria-label','Open camera');plusButton.style.cssText+=';position:relative;z-index:60;pointer-events:auto;touch-action:manipulation';plusButton.onclick=openCameraDirect;
+function openCameraDirect(e){e?.preventDefault();e?.stopPropagation();console.log('PLUS TAPPED');openCamera()}
 $('#file').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
 if(!f.type.startsWith('video/')){toast('Choose a video file');return}
 if(f.size>52428800){toast('Videos must be under 50 MB');return}
@@ -1259,8 +1260,8 @@ if(isVideo){media.pause();media.addEventListener('timeupdate',()=>{if(!scrub.mat
 next.onclick=showTimeline;
 }
 function openCamera(){
-if(gate('use the camera'))return;
-if(!navigator.mediaDevices||!window.MediaRecorder){toast('The camera isn’t supported in this browser');return}
+if(document.body.classList.contains('camera-open'))return;
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Camera access is unavailable in this browser');}
 document.querySelectorAll('#feed video').forEach(x=>x.pause());
 document.body.classList.add('camera-open');
 let stream=null,rec=null,recordTimer=null,recordStart=0,pausedAt=0,elapsedBeforePause=0,recordPaused=false,mode='video',maxSeconds=15,timerSeconds=0,flashOn=false,retouch=false,filterIndex=0,ratio='9:16',layoutIndex=0,effectFilter='none',activeEffect='',teleprompterOn=false,teleprompterEditing=false,moreEffectsSheet=null,labelTimer=null,musicFile=null,musicUrl=null,musicAudio=null,audioCtx=null,recording=false;
@@ -1292,7 +1293,7 @@ stream.getVideoTracks().forEach(t=>t.addEventListener('ended',()=>{if(o.isConnec
 previewVideos().forEach(v=>{v.srcObject=stream;v.play().catch(()=>{})});
 video.srcObject=stream;
 await video.play();
-}catch(e){toast('Camera permission needed');closeCam()}
+}catch(e){console.warn('BOUNCY camera start failed:',e);toast(e&&e.name==='NotAllowedError'?'Allow camera access in browser settings':'Camera unavailable — check browser permissions');}
 };
 let faceMode='user';
 const icon=(path)=>'<svg viewBox="0 0 24 24" aria-hidden="true" style="width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">'+path+'</svg>';
