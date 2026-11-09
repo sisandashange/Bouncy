@@ -370,7 +370,7 @@ let me=null,clips=[],tt;
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('o');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('o'),2200)}
 function el(h){const d=document.createElement('div');d.innerHTML=h;return d}
 function open(node){sheet.replaceChildren(node);sheet.classList.add('o');shade.classList.add('o')}
-function close(){const au=document.getElementById('auth');if(au)au.remove();if(rc){const f=rc;rc=null;f()}if(liveSession&&!liveSession.closing){if(liveSession.host)endLiveStream(true);else leaveLiveStream(true)}sheet.classList.remove('live-sheet');sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
+function close(){const liveComposerNode=sheet.querySelector('.live-composer-screen');if(liveComposerNode?._stopLivePreview)liveComposerNode._stopLivePreview();const au=document.getElementById('auth');if(au)au.remove();if(rc){const f=rc;rc=null;f()}if(liveSession&&!liveSession.closing){if(liveSession.host)endLiveStream(true);else leaveLiveStream(true)}sheet.classList.remove('live-sheet');sheet.classList.remove('o');shade.classList.remove('o');sheet.querySelectorAll('video').forEach(v=>v.pause())}
 shade.onclick=close;
 const vt=new Map(),seen=new Set();
 const io=new IntersectionObserver(es=>es.forEach(e=>{const v=e.target.querySelector('video');e.target.classList.toggle('on',e.isIntersecting);if(v){if(e.isIntersecting){if(!ds||v.dataset.u){v.muted=!soundOn;v.play().catch(()=>{v.muted=true;v.play().catch(()=>{});if(soundOn&&!blocked){blocked=true;sndUI();toast('Tap the screen to turn sound on')}})}}else v.pause()}
