@@ -4,6 +4,7 @@
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('bouncy-theme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#ffffff"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="LiveTikTok.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 :root{--bg:#fff;--fg:#000;--mute:#666;--line:#e2e2e2;--soft:#f0f0f0;--f:'Bricolage Grotesque',system-ui,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -1081,4 +1082,6 @@ if(!recovering)close();show('feed');await load();unread();
 deep()}
 sb.auth.onAuthStateChange((ev,s)=>{if(ev=='PASSWORD_RECOVERY'){recovering=true;setTimeout(newPassSheet,400)}if((ev=='SIGNED_IN'||ev=='INITIAL_SESSION')&&s&&(!me||me.id!==s.user.id))setTimeout(()=>start(s.user),0);if(ev=='SIGNED_OUT'){if(activeCall)endCall();if(incomingCallChannel){sb.removeChannel(incomingCallChannel);incomingCallChannel=null}if(presCh){sb.removeChannel(presCh);presCh=null;online=new Set()}me=null;clips=[];close();dot(0);show('feed');load()}});
 sb.auth.getSession().then(({data})=>{if(!data.session&&!me){show('feed');load().then(deep)}});
-</script></body></html>
+</script>
+<script src="LiveComponent.js"></script>
+</body></html>
