@@ -197,3 +197,47 @@
 #sheet.live-sheet .live-room-screen .bouncy-cohost-actions button:disabled{
   opacity:.5!important;cursor:not-allowed!important;
 }
+
+
+/* BOUNCY four-person co-host stage */
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-grid{
+  position:absolute!important;inset:0!important;z-index:3!important;display:none!important;
+  width:100%!important;height:100%!important;grid-template-columns:1fr!important;
+  grid-template-rows:1fr!important;gap:2px!important;background:#08080b!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-grid.visible{display:grid!important}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-grid[data-layout="2"]{
+  grid-template-columns:1fr!important;grid-template-rows:1fr 1fr!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-grid[data-layout="3"]{
+  grid-template-columns:1fr 1fr!important;grid-template-rows:60% 40%!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-grid[data-layout="3"] .bouncy-live-guest-tile:first-child{
+  grid-column:1/-1!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-grid[data-layout="4"]{
+  grid-template-columns:1fr 1fr!important;grid-template-rows:1fr 1fr!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-tile{
+  position:relative!important;min-width:0!important;min-height:0!important;overflow:hidden!important;
+  background:#141419!important;border:1px solid #ffffff1c!important;border-radius:5px!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-tile video{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:cover!important;background:#111!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-live-guest-label{
+  position:absolute!important;left:8px!important;bottom:8px!important;z-index:2!important;
+  padding:4px 8px!important;border-radius:20px!important;background:#000a!important;color:#fff!important;
+  font-size:10px!important;font-weight:800!important;max-width:80%!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;white-space:nowrap!important;
+}
+#sheet.live-sheet .live-room-screen.bouncy-live-has-cohosts .live-video-blur-layer,
+#sheet.live-sheet .live-room-screen.bouncy-live-has-cohosts .live-video-main-layer{
+  opacity:0!important;pointer-events:none!important;
+}
+#sheet.live-sheet .live-room-screen .bouncy-cohost-mic-toggle{
+  position:absolute!important;z-index:30!important;left:14px!important;bottom:105px!important;
+  min-height:40px!important;padding:0 14px!important;border:1px solid #ffffff35!important;
+  border-radius:24px!important;background:#24242d!important;color:#fff!important;font-weight:800!important;
+}
