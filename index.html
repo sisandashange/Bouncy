@@ -1022,7 +1022,7 @@ const grid=d.querySelector('.b-create-grid');
 const items=[
 ['video','Record a video','Use the camera, effects and timer',()=>{close();openCamera()}],
 ['upload','Upload a video','Choose a video from your phone',()=>{close();$('#file').click()}],
-['photo','Photo post','Share a photo with a caption',()=>{const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.onchange=()=>{const f=fi.files&&fi.files[0];if(f)composePost(f)};fi.click();close()}],
+['photo','Photo post','Share a photo with a caption',()=>{const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.onchange=async()=>{const f=fi.files&&fi.files[0];if(!f)return;const bl=await shrink(f,1080);if(!bl){toast('That image can’t be read');return}composePost(bl)};close();fi.click()}],
 ['text','Text post','Share an update with the community',()=>{close();composePost()}],
 ['story','Add to story','Share a photo or video to your story',()=>{close();addStory()}]
 ];
