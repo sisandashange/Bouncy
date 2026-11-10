@@ -691,7 +691,7 @@ body{position:fixed;inset:0}
 <input type="file" id="file" accept="video/*" hidden><input type="file" id="pic" accept="image/*" hidden>
 </div>
 <script>
-if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=2').catch(()=>{}));
 (()=>{const s=document.getElementById('splash');if(!s)return;const end=()=>{if(s.dataset.d)return;s.dataset.d=1;s.classList.add('out');setTimeout(()=>s.remove(),500)};s.onclick=end;
 const go=()=>{if(s.dataset.g)return;s.dataset.g=1;s.classList.add('go');setTimeout(end,4300)};
 Promise.race([document.fonts?document.fonts.load('800 62px "Bricolage Grotesque"'):Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(go,go)})();
@@ -1283,13 +1283,15 @@ if(isVideo){media.pause();media.addEventListener('timeupdate',()=>{if(!scrub.mat
 next.onclick=showTimeline;
 }
 function openCamera(){
-if(document.body.classList.contains('camera-open'))return;
-if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Camera access is unavailable in this browser');}
-document.querySelectorAll('#feed video').forEach(x=>x.pause());
-document.body.classList.add('camera-open');
+if(document.body.classList.contains('camera-open')&&document.getElementById('cameraOverlay'))return;
+// Recover safely if an earlier camera attempt left behind a stale lock.
+document.body.classList.remove('camera-open');
+document.getElementById('cameraOverlay')?.remove();
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert('Camera access is unavailable. Open Chrome Site settings > Camera, allow access, then tap + again.');return;}
 let stream=null,rec=null,recordTimer=null,recordStart=0,pausedAt=0,elapsedBeforePause=0,recordPaused=false,mode='video',maxSeconds=15,timerSeconds=0,flashOn=false,retouch=false,filterIndex=0,ratio='9:16',layoutIndex=0,effectFilter='none',activeEffect='',teleprompterOn=false,teleprompterEditing=false,moreEffectsSheet=null,labelTimer=null,musicFile=null,musicUrl=null,musicAudio=null,audioCtx=null,recording=false;
 const filters=['none','contrast(1.12) saturate(1.2)','grayscale(1)','sepia(.25) saturate(1.2)','hue-rotate(15deg) saturate(1.15)','brightness(1.08) saturate(1.45)'];
 const o=E('div','position:fixed;inset:0;width:100vw;height:100dvh;height:100dvh;background:#000;color:#fff;z-index:9999;overflow:hidden;display:flex;flex-direction:column;font-family:inherit');
+o.id='cameraOverlay';
 const video=document.createElement('video');
 video.autoplay=true;video.playsInline=true;video.muted=true;video.setAttribute('playsinline','');video.setAttribute('autoplay','');video.addEventListener('pause',()=>{if(stream&&stream.active&&o.isConnected&&!document.hidden)video.play().catch(()=>{})});video.style.cssText='position:relative;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover;z-index:1;background:#000;filter:none;pointer-events:none';
 const preview=E('div','position:absolute;inset:0;z-index:1;display:grid;place-items:center;grid-template-columns:1fr;grid-template-rows:1fr;gap:2px;overflow:hidden;background:#000;pointer-events:none');
@@ -1316,7 +1318,12 @@ stream.getVideoTracks().forEach(t=>t.addEventListener('ended',()=>{if(o.isConnec
 previewVideos().forEach(v=>{v.srcObject=stream;v.play().catch(()=>{})});
 video.srcObject=stream;
 await video.play();
-}catch(e){console.warn('BOUNCY camera start failed:',e);toast(e&&e.name==='NotAllowedError'?'Allow camera access in browser settings':'Camera unavailable — check browser permissions');}
+}catch(e){
+console.warn('BOUNCY camera start failed:',e);
+const message=e&&e.name==='NotAllowedError'?'Allow camera and microphone access in Chrome Site settings, then tap + again.':'Camera could not start: '+(e&&e.message?e.message:'check browser permissions')+'. Tap + to try again.';
+closeCam();
+alert(message);
+}
 };
 let faceMode='user';
 const icon=(path)=>'<svg viewBox="0 0 24 24" aria-hidden="true" style="width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">'+path+'</svg>';
@@ -1429,6 +1436,9 @@ const cameraStyle=document.createElement('style');cameraStyle.textContent='@keyf
 o.append(preview,top,rail,modeRow,captureRow,recordClock,bottom,timerOverlay,teleprompter,cameraLabel,soundInput,galleryInput);
 document.getElementById('camera-layer-style')?.remove();const css=document.createElement('style');css.id='camera-layer-style';css.textContent='body.camera-open #app>header,body.camera-open #app>nav,body.camera-open #app>main{display:none!important}body.camera-open{overflow:hidden!important}body.camera-open #app{z-index:1!important}';document.head.append(css);
 $('#app').append(o);
+// Only pause the feed and set the lock after the complete camera UI is mounted.
+document.querySelectorAll('#feed video').forEach(x=>x.pause());
+document.body.classList.add('camera-open');
 begin();
 }
 function segCtl(c,t,opts,get,set){c.append(E('p','margin:10px 0 0;font-weight:800',t));const r=E('div','display:flex;gap:8px');opts.forEach(([k,l])=>{const b=E('button','flex:1;padding:10px 0',l);b.className='fol'+(get()==k?' on':'');b.onclick=()=>{set(k);r.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on',opts[i][0]==k))};r.append(b)});c.append(r)}
