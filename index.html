@@ -691,7 +691,7 @@ body{position:fixed;inset:0}
 <input type="file" id="file" accept="video/*" hidden><input type="file" id="pic" accept="image/*" hidden>
 </div>
 <script>
-if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js?v=2').catch(()=>{}));
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 (()=>{const s=document.getElementById('splash');if(!s)return;const end=()=>{if(s.dataset.d)return;s.dataset.d=1;s.classList.add('out');setTimeout(()=>s.remove(),500)};s.onclick=end;
 const go=()=>{if(s.dataset.g)return;s.dataset.g=1;s.classList.add('go');setTimeout(end,4300)};
 Promise.race([document.fonts?document.fonts.load('800 62px "Bricolage Grotesque"'):Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(go,go)})();
@@ -1283,15 +1283,13 @@ if(isVideo){media.pause();media.addEventListener('timeupdate',()=>{if(!scrub.mat
 next.onclick=showTimeline;
 }
 function openCamera(){
-if(document.body.classList.contains('camera-open')&&document.getElementById('cameraOverlay'))return;
-// Recover safely if an earlier camera attempt left behind a stale lock.
-document.body.classList.remove('camera-open');
-document.getElementById('cameraOverlay')?.remove();
-if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){alert('Camera access is unavailable. Open Chrome Site settings > Camera, allow access, then tap + again.');return;}
+if(document.body.classList.contains('camera-open'))return;
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Camera access is unavailable in this browser');}
+document.querySelectorAll('#feed video').forEach(x=>x.pause());
+document.body.classList.add('camera-open');
 let stream=null,rec=null,recordTimer=null,recordStart=0,pausedAt=0,elapsedBeforePause=0,recordPaused=false,mode='video',maxSeconds=15,timerSeconds=0,flashOn=false,retouch=false,filterIndex=0,ratio='9:16',layoutIndex=0,effectFilter='none',activeEffect='',teleprompterOn=false,teleprompterEditing=false,moreEffectsSheet=null,labelTimer=null,musicFile=null,musicUrl=null,musicAudio=null,audioCtx=null,recording=false;
 const filters=['none','contrast(1.12) saturate(1.2)','grayscale(1)','sepia(.25) saturate(1.2)','hue-rotate(15deg) saturate(1.15)','brightness(1.08) saturate(1.45)'];
 const o=E('div','position:fixed;inset:0;width:100vw;height:100dvh;height:100dvh;background:#000;color:#fff;z-index:9999;overflow:hidden;display:flex;flex-direction:column;font-family:inherit');
-o.id='cameraOverlay';
 const video=document.createElement('video');
 video.autoplay=true;video.playsInline=true;video.muted=true;video.setAttribute('playsinline','');video.setAttribute('autoplay','');video.addEventListener('pause',()=>{if(stream&&stream.active&&o.isConnected&&!document.hidden)video.play().catch(()=>{})});video.style.cssText='position:relative;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover;z-index:1;background:#000;filter:none;pointer-events:none';
 const preview=E('div','position:absolute;inset:0;z-index:1;display:grid;place-items:center;grid-template-columns:1fr;grid-template-rows:1fr;gap:2px;overflow:hidden;background:#000;pointer-events:none');
@@ -1318,12 +1316,7 @@ stream.getVideoTracks().forEach(t=>t.addEventListener('ended',()=>{if(o.isConnec
 previewVideos().forEach(v=>{v.srcObject=stream;v.play().catch(()=>{})});
 video.srcObject=stream;
 await video.play();
-}catch(e){
-console.warn('BOUNCY camera start failed:',e);
-const message=e&&e.name==='NotAllowedError'?'Allow camera and microphone access in Chrome Site settings, then tap + again.':'Camera could not start: '+(e&&e.message?e.message:'check browser permissions')+'. Tap + to try again.';
-closeCam();
-alert(message);
-}
+}catch(e){console.warn('BOUNCY camera start failed:',e);toast(e&&e.name==='NotAllowedError'?'Allow camera access in browser settings':'Camera unavailable — check browser permissions');}
 };
 let faceMode='user';
 const icon=(path)=>'<svg viewBox="0 0 24 24" aria-hidden="true" style="width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">'+path+'</svg>';
@@ -1367,23 +1360,23 @@ const effectButtons={};
 const effect=(label)=>{const b=E('button','flex:0 0 43px;width:43px;height:43px;border:1.5px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(0,0,0,.18);color:#fff;font-size:10px;font-weight:700;pointer-events:auto;touch-action:manipulation',label);b.onclick=()=>label==='More'?openMoreEffects():applyCameraEffect(label,b);effectButtons[label]=b;captureRow.append(b);return b};
 
 const shutter=E('button','position:relative;flex:0 0 76px;width:76px;height:76px;border:0;border-radius:50%;background:transparent;display:grid;place-items:center;padding:0;overflow:visible');
+const ringCircumference=2*Math.PI*38;
 const ringSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');ringSvg.setAttribute('viewBox','0 0 86 86');ringSvg.setAttribute('aria-hidden','true');ringSvg.style.cssText='position:absolute;left:-5px;top:-5px;width:86px;height:86px;overflow:visible;pointer-events:none';
 const ringBg=document.createElementNS('http://www.w3.org/2000/svg','circle');ringBg.setAttribute('cx','43');ringBg.setAttribute('cy','43');ringBg.setAttribute('r','38');ringBg.setAttribute('fill','none');ringBg.setAttribute('stroke','rgba(255,255,255,.35)');ringBg.setAttribute('stroke-width','4');
 const recordRing=document.createElementNS('http://www.w3.org/2000/svg','circle');recordRing.setAttribute('id','recordRing');recordRing.setAttribute('cx','43');recordRing.setAttribute('cy','43');recordRing.setAttribute('r','38');recordRing.setAttribute('fill','none');recordRing.setAttribute('stroke','#FE2C55');recordRing.setAttribute('stroke-width','4');recordRing.setAttribute('stroke-linecap','round');recordRing.setAttribute('stroke-dasharray',String(ringCircumference));recordRing.setAttribute('stroke-dashoffset',String(ringCircumference));recordRing.setAttribute('transform','rotate(-90 43 43)');recordRing.style.transition='stroke-dashoffset .1s linear';
 ringSvg.append(ringBg,recordRing);
-const shutterCore=E('span','position:relative;z-index:1;display:block;width:62px;height:62px;border:4px solid #fff;border-radius:50%;background:#fff;transition:all .12s');shutter.append(ringSvg,shutterCore);captureRow.append(shutter,finishBtn,galleryRight);
+const shutterCore=E('span','position:relative;z-index:1;display:block;width:62px;height:62px;border:4px solid #fff;border-radius:50%;background:#fff;transition:all .12s');shutter.append(ringSvg,shutterCore);captureRow.append(shutter,finishBtn);
 finishBtn.onclick=()=>{if(rec&&rec.state!=='inactive')finishRecording()};
 
 const bottom=E('div','position:absolute;z-index:5;left:0;right:0;bottom:0;padding:10px 18px calc(12px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;background:linear-gradient(transparent,rgba(0,0,0,.35))');
 const galleryInput=document.createElement('input');galleryInput.type='file';galleryInput.accept='image/*,video/*';galleryInput.hidden=true;
-const uploadVideoOrPhoto=()=>galleryInput.click();const gallery=E('button','flex:0 0 48px;width:48px;height:48px;border:1px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center');gallery.innerHTML=icon('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-8 8"/>');gallery.onclick=uploadVideoOrPhoto;const galleryRight=E('button','flex:0 0 48px;width:48px;height:48px;border:1px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center');galleryRight.innerHTML=gallery.innerHTML;galleryRight.setAttribute('aria-label','Upload photo or video');galleryRight.onclick=uploadVideoOrPhoto;captureRow.append(gallery);
+const uploadVideoOrPhoto=()=>galleryInput.click();const gallery=E('button','flex:0 0 48px;width:48px;height:48px;border:1px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center');gallery.innerHTML=icon('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-8 8"/>');gallery.onclick=uploadVideoOrPhoto;const galleryRight=E('button','flex:0 0 48px;width:48px;height:48px;border:1px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center');galleryRight.innerHTML=gallery.innerHTML;galleryRight.setAttribute('aria-label','Upload photo or video');galleryRight.onclick=uploadVideoOrPhoto;captureRow.append(galleryRight,gallery);
 const nav=E('div','display:flex;align-items:center;justify-content:flex-end;gap:18px');
 const navTab=(label,selected,fn)=>{const b=E('button','border:0;background:transparent;color:'+(selected?'#fff':'rgba(255,255,255,.55)')+';font-size:13px;font-weight:'+(selected?'900':'700')+';letter-spacing:.04em;padding:8px 0',label);b.onclick=fn;nav.append(b);return b};
 navTab('CAMERA',true,()=>toast('Camera mode'));
 navTab('CREATE',false,()=>toast('Templates coming soon'));
 navTab('LIVE',false,()=>toast('Live coming soon'));
 bottom.append(nav);
-const ringCircumference=2*Math.PI*38;
 const timerOverlay=E('div','position:absolute;inset:0;z-index:8;display:none;align-items:center;justify-content:center;font-size:110px;font-weight:800;color:#fff;text-shadow:0 2px 16px #000;pointer-events:none');
 const review=(blob,isVideo)=>{
 const ext=isVideo?(blob.type.includes('mp4')?'mp4':blob.type.includes('quicktime')?'mov':'webm'):'jpg';
@@ -1436,9 +1429,6 @@ const cameraStyle=document.createElement('style');cameraStyle.textContent='@keyf
 o.append(preview,top,rail,modeRow,captureRow,recordClock,bottom,timerOverlay,teleprompter,cameraLabel,soundInput,galleryInput);
 document.getElementById('camera-layer-style')?.remove();const css=document.createElement('style');css.id='camera-layer-style';css.textContent='body.camera-open #app>header,body.camera-open #app>nav,body.camera-open #app>main{display:none!important}body.camera-open{overflow:hidden!important}body.camera-open #app{z-index:1!important}';document.head.append(css);
 $('#app').append(o);
-// Only pause the feed and set the lock after the complete camera UI is mounted.
-document.querySelectorAll('#feed video').forEach(x=>x.pause());
-document.body.classList.add('camera-open');
 begin();
 }
 function segCtl(c,t,opts,get,set){c.append(E('p','margin:10px 0 0;font-weight:800',t));const r=E('div','display:flex;gap:8px');opts.forEach(([k,l])=>{const b=E('button','flex:1;padding:10px 0',l);b.className='fol'+(get()==k?' on':'');b.onclick=()=>{set(k);r.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('on',opts[i][0]==k))};r.append(b)});c.append(r)}
@@ -1605,6 +1595,7 @@ function hm(t){return new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'
 function dlabel(t){const d=new Date(t),n=new Date(),y=new Date(n-864e5);return d.toDateString()==n.toDateString()?'Today':d.toDateString()==y.toDateString()?'Yesterday':d.toLocaleDateString([],{weekday:'short',day:'numeric',month:'short'})}
 function moveBall(hop){const nb=document.getElementById('nball'),nv=document.querySelector('nav'),a=document.querySelector('nav [data-v].on');if(!nb||!nv||!a)return;const nr=nv.getBoundingClientRect(),r=a.getBoundingClientRect();nb.style.transform='translateX('+(r.left-nr.left+r.width/2-4.5)+'px)';if(hop){nb.classList.remove('hop');void nb.offsetWidth;nb.classList.add('hop')}}
 addEventListener('resize',()=>moveBall(0));setTimeout(()=>moveBall(0),300);
+function openPostPhoto(p){const d=el('<img alt="" style="width:100%;max-height:80vh;object-fit:contain;border-radius:12px;display:block">');const im=d.querySelector('img');im.src=pub(p.img);im.alt='Photo by @'+(p.u||'user');open(d)}
 async function openPost(id){const r=await sb.from('posts').select('id,owner_id,body,image_path,reactions,reaction_count,comment_count,created_at').eq('id',id).single();
 if(r.error||!r.data){toast('That post isn’t available anymore');return}
 const x=r.data,o=((await sb.from('profiles').select('username,display_name,avatar_url,verified').eq('id',x.owner_id).single()).data)||{};let my=null;
