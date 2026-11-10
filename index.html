@@ -657,6 +657,14 @@ body{position:fixed;inset:0}
 #app.watch nav{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:1000!important;pointer-events:auto!important;isolation:isolate}
 #app.watch nav button{position:relative;z-index:1001;pointer-events:auto!important;touch-action:manipulation}
 #app.watch nav .plus{z-index:1100!important;pointer-events:auto!important;touch-action:manipulation}
+
+/* FINAL WATCH NAV HIT-TEST FIX: nav must sit above the full-screen feed */
+#app.watch{isolation:isolate!important}
+#app.watch main{position:absolute!important;inset:0!important;z-index:1!important;pointer-events:none!important}
+#app.watch #feed,#app.watch #trend,#app.watch #me,#app.watch #user,#app.watch #inbox,#app.watch #chat{pointer-events:auto}
+#app.watch nav{position:absolute!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;z-index:9999!important;pointer-events:auto!important;isolation:isolate!important}
+#app.watch nav button{position:relative!important;z-index:10000!important;pointer-events:auto!important;touch-action:manipulation!important}
+#app.watch nav #up{position:relative!important;z-index:10001!important;pointer-events:auto!important;touch-action:manipulation!important}
 </style></head><body>
 <div id="splash" aria-hidden="true"><div class="sp-stage"><i class="sp-floor"></i><i class="sp-shadow"></i><i class="sp-ring" style="--t:.96s"></i><i class="sp-ring" style="--t:1.64s"></i><i class="sp-ring" style="--t:2s"></i><svg class="sp-crack" viewBox="0 0 320 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 L50 8 L85 4 L120 11 L150 4 L182 12 L214 5 L250 10 L310 3 M120 11 L112 21 M182 12 L190 22 M85 4 L79 14 M214 5 L221 15"/></svg><i class="sp-ball"></i><i class="sp-d" style="--dx:-86px;--dy:-70px"></i><i class="sp-d" style="--dx:-52px;--dy:-96px"></i><i class="sp-d" style="--dx:-20px;--dy:-110px"></i><i class="sp-d" style="--dx:14px;--dy:-104px"></i><i class="sp-d" style="--dx:48px;--dy:-92px"></i><i class="sp-d" style="--dx:84px;--dy:-72px"></i><i class="sp-d" style="--dx:-104px;--dy:-40px"></i><i class="sp-d" style="--dx:102px;--dy:-44px"></i><div class="sp-word"><b style="--d:2.05s">B</b><b style="--d:2.12s">O</b><b style="--d:2.19s">U</b><b style="--d:2.26s">N</b><b style="--d:2.33s">C</b><b style="--d:2.40s">Y</b></div><p class="sp-tag">Bounce Into Your World.</p></div></div>
 <div id="app" class="watch">
